@@ -1,0 +1,7 @@
+This is Lormyr Daviau's original three-prim cell controller from about 2008, 
+with additions made by Timberwoof Lupindo in 2009. 
+The cells use two hollow box prims as the cells and a small bo prim as the controller. 
+CellController.lsl lives in each cell box. It handles all the major features such as 
+interval timer, dime-of-day timer, trap, alpha and reservation. 
+CellControllerButton lives in the controller box. It handles the menu and sends commands
+to the individual cells. Its major feature is structural simplicty: three prims per pair of cells. 
