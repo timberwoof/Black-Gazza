@@ -10,6 +10,7 @@ list KNOWN_AVATARS_RLV;
 
 //list DEFAULT_RLV = ["UNSIT","SHOW INV","TP","IN IM","OUT IM","MAPS","ADMIN","WEAR","FLY","ID"];
 list DEFAULT_RLV = ["TP","MAPS","ADMIN","FLY"];
+list WINDOW_RLV = ["TP","MAPS","HEARING","WHISPERING","ADMIN","FLY","ID"]
 list CURRENT_RLV;
 list ALL_RLV;
 list RLV_TX;
@@ -40,6 +41,7 @@ initialize() {
                "TP",
                "HEARING",
                "SPEAKING",
+               "WHISPERING",
                "IN IM",
                "OUT IM",
                "MAPS",
@@ -52,6 +54,7 @@ initialize() {
               "@tplm=,@tploc=,@tplure=,@sittp=",
               "@recvchat=",
               "@chatshout=,@chatnormal=,@chatwhisper=,@sendchat=",
+              "@chatshout=,@chatnormal=",
               "@recvim=",
               "@sendim=",
               "@showloc=,@showminimap=,@showworldmap=",
