@@ -1,0 +1,218 @@
+Welcome to Warden AI News. 
+When I make significant changes to the Warden system, I'll write about it here. I'll issue a new date on this document every time. 
+
+The high security cells in the blue cellblock and the mental ward cells have been updated. 
+
+20140904 Warden AI News
+---------------------------
+• The Shout command has been removed because it was abused. When you're RPing the AI, don't be an ass. IF you abuse the AI system, then you ruin the fun for everyone. 
+
+20140903 Warden AI News
+---------------------------
+• Integration with the High Security Cells
+The nearby terminal is 8f18. 
+The controller designator is 7h17. 
+The basic commands available are
+/2 open 7h17 3
+/2 close 7h17 4
+where that number on the end is the number of the cell. 
+Cells are numbered 1-6. 
+Open lowers the plunger so the inmate can get in or out.
+CLose raises the plunger to seal the inmate in. 
+
+When someone goes into a cell, you are notified: 
+[11:56]  HighSecurityCell 7h17: High Security Cell 7h17 4 is occupied,Timberwoof Lupindo
+
+Here are premade commands you can copy and paste into text
+/2 open 7h17 1
+/2 open 7h17 2
+/2 open 7h17 3
+/2 open 7h17 4
+/2 open 7h17 5
+/2 open 7h17 6
+
+/2 close 7h17 1
+/2 close 7h17 2
+/2 close 7h17 3
+/2 close 7h17 4
+/2 close 7h17 5
+/2 close 7h17 6
+
+
+20140830 Warden AI News
+-------------------------
+• Terminals no longer have floating text. Floating text is ugly. Now the terminals speak their change in status when you sit, activate a terminal, or stand. 
+
+• I've reinstated the Zap command. It's
+/2 zap,timber
+
+Any part of the intended target's name will work. It will zap anyone whose name matches within 20 meters of the active terminal. You have to put a comma between the zap command and the target name. 
+/2 zap,a
+is really unfair. 
+
+
+20140810 Warden AI News (Updated!) 
+---------------------------
+• Integration with the Medical mental Ward Cells
+The nearby terminal is 163e13. 
+The designator is 14e13. 
+The basic commands available are
+/2 open 14e13 3
+/2 close 14e13 4
+/2 who 14e13 5
+where that number on the end is the number of the cell. 
+Cells are numbered 1-5. 
+Open opens the door so the inmate can get in or out. 
+Close closes the door to seal them in. 
+Who tells you who's inside. 
+
+You can set the size of a cell to Small, Medium or Large: 
+/2 Small 14e13 5
+
+You can set the inside texture of a cell to Rubber, Canvas, Pink, Paws, or Old
+/2 Rubber 14e13 1
+The commands for the Mental Ward Cells are case-sensitive. 
+
+When someone goes into a cell, you are notified: 
+[11:56]  MentalWardCells 13e13: Mental Ward Cell 13e13 4 is occupied,Timberwoof Lupindo
+
+Here are some premade commands you can copy and paste into chat. 
+/2 open 14e13 1
+/2 open 14e13 2
+/2 open 14e13 3
+/2 open 14e13 4
+/2 open 14e13 5
+
+/2 close 14e13 1
+/2 close 14e13 2
+/2 close 14e13 3
+/2 close 14e13 4
+/2 close 14e13 5
+
+/2 who 14e13 1
+/2 who 14e13 2
+/2 who 14e13 3
+/2 who 14e13 4
+/2 who 14e13 5
+
+/2 small 14e13 1
+/2 small 14e13 2
+/2 small 14e13 3
+/2 small 14e13 4
+/2 small 14e13 5
+
+/2 medium 14e13 1
+/2 medium 14e13 2
+/2 medium 14e13 3
+/2 medium 14e13 4
+/2 medium 14e13 5
+
+/2 large 14e13 1
+/2 large 14e13 2
+/2 large 14e13 3
+/2 large 14e13 4
+/2 large 14e13 5
+
+As AI you have access to all the textures in the cells, including some that are not present on the operator's menu. 
+rubber - shiny black latex
+canvas - classic mental hospital padded cell
+paws - tacky cute pawprints
+pink - shiny pink latex
+old - grungy, mmismatched mental hospital padded cell
+
+steel - steel plates and rivets
+glass - transparent to the carpeted walls of the pod. 
+stars - My god, it's full of stars!
+white - cold white tile
+opt2 - creepy moving optical illusion
+opt3 - creepy moving optical illusion
+opt5 - creepy moving optical illusion
+
+Note: The Medical staff perfer using the first set as these are "padded" and thus safe for the inmates. 
+The others are mean and cold and clammy and crazy-inducing. 
+
+• Ground station
+-110 is the designator for the ground station. 
+
+• Scan
+/2 scan lets you look at the whole station in sequence. 
+/2 scan Main lets you look at all the terminals on the Main decks. 
+/2 scan Medical lets you look at all the terminals on the Medical decks. 
+/2 scan Cellblock lets you look at all the terminals on the Cellblock decks. 
+
+/2 stop 
+to stop the scan
+
+
+
+20140429 Warden AI News
+---------------------------
+• New Command:
+shout
+
+/2 shout * Number Five is alive!
+/2 shout Main Number Five is alive!
+
+The first word after the shout command is the filter.
+* sends the message to all terminals. 
+"Main" for example sends the message to all terminals that have "Main" in their name or description. 
+This cycles through them one at a time so if you send a message to * it may take a few seconds to get everywhere. 
+
+
+• No More Cells. 
+The cells are tricky and problematic to control, and they take up a huge amount of memory given what they can do, so I short-circuit registering them. They no longer appear in the devices list and you cannot control them. 
+
+During normal operations, the script creates and destroys temporary variables. They go in the same place as the list of terminals, and all of that is limited to 64 kB. If it goes over 64kB, it dies. I hope that not listing the terminals will eliminate the random crashes the AI has been suffering. 
+
+The plan is to make blocks of cells that are controlled from a central terminal. And if I'm clever, a cellb-lock controller is also a Warden terminal at the same time. 
+
+
+• Debug works differently. 
+Every message goes through the debug system. 
+/2 debug 0 - normal operations 
+/2 debug 1 - debug
+/2 debug 2 - trace (very detailed)
+When you're sitting, you get all the messages through IMs. 
+When no one's sitting, they get whispered at the current debug level. 
+Debug levels 1 and 2 report on free memory available. You can see it drain as it registers the terminals. 
+---------------------------
+
+20h8: 20h8, Main Intake
+20g4: 20g4, Main Lounge
+20g12: 20g12, Main Hangar
+20g10: 20g10, Main Visitation
+20f13: 20f13, Main Lobby
+20c18: 20c18, Main Office Central
+19g8: 19g8, Main K9 Lobby
+18d18: 18d18, Research
+18b7: 18b7, Main Office Lormyr
+18b10: 18b10, Main Office Timberwoof
+16e13: 16e13, Medical Mental Ward
+15g16: 15g16, Medical Lab
+15e9: 15e9, Medical Day Room
+15e13: 15e13, Mental Ward Cells
+15d4: 15d4, Medical Surgery
+15c2: 15c2, Medical Exam
+15c11: 15c11, Medical Lobby
+13c9: 13c9, Control
+12g9: 12g9, Yard South
+12g3: 12g3, Yard West
+12g14: 12g14, Yard West
+10g18: 10g18, Cellblock Blue Isolation Observation
+10a18: 10a18, Brain Room
+8j4: 8j4, Guard Barracks Meeting
+8f18: 8f18, Cellblock Blue Isolation Control
+7f4: 7f4, Cellblock Robots
+6k8: 6k8, Cellblock Green Back
+6f9: 6f9, Cellblock Green Front
+6f4: 6f4, Cellblock Pink
+6f18: 6f18, Cellblock Blue
+6f13: 6f13, Cellblock Orange
+5g5: 5g5, Cellblock Kitchen
+5d9: 5d9, Cellblock  Laundry
+5d6: 5d6, Cellblock Mess SE
+5d17: 5d17, Cellblock Blue Information Retrieval
+5d15: 5d15, Cellblock Mess NW
+5d14: 5d14, Cellblock Orange Information Retrieval
+2d9: 2d9, Cellblock Interrogation
+010: 010, Ground Station
