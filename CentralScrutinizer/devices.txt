@@ -1,0 +1,50 @@
+Black Gazza AI Terminals and Devices
+2017-06-04
+
+20d5: 20d5, Main Holding
+20e9: 20e9, Main Intake
+20f14: 20f14, Main Lobby
+20g11: 20g11, Main Operations
+18b9: 18b9, Main Office Timberwoof
+
+15b18: 15b18, Medical Lobby - needs better
+15c2: 15c2, Medical Recovery
+15d12: 15d12, Medical Mental Ward
+15d11: 15d11, Medical Mental Day Room
+15d4: 15d4, Medical Surgery
+15g8: 15g8, Medical Exam
+15g15: 15g15, Medical Lab
+
+13b2: 13b2, Control
+
+12g4: 12g4, Yard West
+12g13: 12g13, Yard South
+
+11c18: 11c18, Arena
+
+10a18: 10a18, Brain Room
+
+8d4: 8d4, Guard Barracks Meeting
+
+7e4: 7e4, Cellblock Robots
+7e13: 7e13, Cellblock Mechanics
+7j18: 7j18, Cellblock K9
+
+6f2 Cellblock NE Pods
+6f6 Cellblock SE Teleport
+6f11 Cellblock NE Pink-Blue
+6f15 Cellblock NW Blue-Orange
+
+6e4: 6e4, Cellblock Pink
+6f9: 6f9, Cellblock Green Front
+6f13: 6f13, Cellblock Orange
+6f18: 6f18, Cellblock Blue
+6k8: 6k8, Cellblock Green Back
+
+5d14: 5d14, Cellblock Orange Information Retrieval
+5d17: 5d17, Cellblock Blue Information Retrieval
+5d15: 5d15, Cellblock Mess NW
+5d9: 5d9, Cellblock  Laundry
+5g5: 5g5, Cellblock Kitchen
+5d6: 5d6, Cellblock Mess SE
+2c9: 2c9, Cellblock Isolation1
