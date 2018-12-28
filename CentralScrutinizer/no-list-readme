@@ -1,0 +1,12 @@
+The no-list branch is specifically for the Central Scrutinizer. 
+At present the CS keeps a list of all the terminals. The list gets big fast and blows out its memory. 
+But the sim has a list of terminals. 
+When the CS needs terminals, it should request them to respond, preferably with a filter string. 
+Only terminals that match the filter string will respond. 
+For example, 
+type:door location:cellblock-blue
+type:terminal location:main
+They then return their IDs, which the CS can then store in a list of whatever. 
+If the CS needs to activate a terminal, it sends the terminal's identifier 
+and it repsonds with parameters such as eye coordinates. 
+The goal is to store no persistent information about terminals in the CS. 
