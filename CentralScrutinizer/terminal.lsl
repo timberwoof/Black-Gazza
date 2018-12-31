@@ -1,9 +1,9 @@
 integer giZapChannel = -106969;
 integer giUpdatePin = 7658042;
-integer giRegistrationChannel = 7658005;
+integer giRegistrationChannel = 7659005;
 string gsSystemName = "Central Scrutinizer";
 integer giRegistrationListen;
-string gsMyCommandChannel;
+string gsMyCommandChannel;  
 integer giMyCommandChannel;
 integer giMyCommandListen;
 string gsMyDescription;
@@ -48,10 +48,14 @@ floatyLog(string newEntry)
 
 // register this terminal with the mainframe.
 // send it a bunch of information about where it is. 
-register() {
-    string registrationMessage  = "register," + gsMyCommandChannel + "," + gsMyDescription + "," + (string)llGetPos() + "," + (string)llGetRot();
-    floatyLog("register:"+registrationMessage);
-    llRegionSay(giRegistrationChannel,registrationMessage);
+register(string message) {
+    integer colon = llSubStringIndex(message, ",");
+    string filter =  llToLower(llGetSubString(message, colon+1, -1));
+    string registrationMessage = gsMyCommandChannel + "," + gsMyDescription + "," + (string)llGetPos() + "," + (string)llGetRot();
+    if (llSubStringIndex( llToLower(registrationMessage), filter) > -1) {
+        floatyLog("register:"+registrationMessage);
+        llRegionSay(giRegistrationChannel, "register," + registrationMessage);
+    }
 }
 
 // convert a poisition vector into a string that encodes the integer meters part; 
@@ -138,7 +142,7 @@ default
         giRegistrationListen = llListen(giRegistrationChannel, gsSystemName, "", "");
         gsMyCommandChannel = coordinatesToChannel(llGetPos());
         giMyCommandChannel = (integer)gsMyCommandChannel;
-        register();
+        //register(); // don't register until asked
         giMyCommandListen = llListen(giMyCommandChannel, gsSystemName, "", "");
         activate(giActiveState,"iniitlaized",gkWarden);
     }
@@ -162,7 +166,7 @@ default
             list messageList = llCSV2List(message);
             string command = llList2String(messageList,0);
             if (command == "REGISTER") {
-                register();
+                register(message);
             } else  if (command == "present") {
                 activate(isPRESENT, llList2String(messageList,1), (key)llList2String(messageList,2));
             } else if (command == "absent") {
