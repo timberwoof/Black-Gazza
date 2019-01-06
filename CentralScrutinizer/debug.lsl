@@ -21,17 +21,20 @@ integer IsInteger(string var){
     return TRUE;
 }
 
+
 // message comes in on 900+debugLevel
 twDebug(integer messageLevel, string message) 
 {
     message = llList2String(logLevelNames, messageLevel) + ": " + message; // append debug level name
     if (gAvatar != "" && messageLevel <= messageLevelThreshold) {
         if (messageLevelThreshold < TRACE) {
-            llInstantMessage(gAvatar, message);
+            //llInstantMessage(gAvatar, message);
+            llSay(0, message);
         }
         else
         {
-            llInstantMessage(gAvatar, "debug.twDebug:"+message);
+            //llInstantMessage(gAvatar, "debug.twDebug:"+message);
+            llSay(0, "debug.twDebug:"+message);
         }
     }
     llRegionSay(gLogChannel,message);
@@ -57,7 +60,15 @@ default
                     twDebug(INFO,"set message level to "+(string)messageLevelThreshold);
                 }
             } else {
-                twDebug(WARN,"unable to set message level to "+message+": not an integer");
+                integer newThreshold = llListFindList(logLevelNames,[message]);
+                if (newThreshold < 0) {
+                    twDebug(WARN,"unable to set message level to "+message+": not a log level.");
+                    twDebug(INFO,"log levels are ERROR, WARN, INFO, DEBUG, TRACE");
+                }
+                else
+                {
+                    messageLevelThreshold = newThreshold;
+                }
             }
         }
                 
