@@ -325,26 +325,33 @@ Search(list CommandList){
 }
 
 integer SendMessageToOneDevice(string designator, string message) {
+    twDebug(DEBUG,"SendMessageToOneDevice(\""+designator+"\", \""+message+"\")");
     list theDevice = findDeviceByDesignator(designator);
     integer channel = llList2Integer(theDevice,deviceListOffsetChannel);
     if(channel != 0) {
-        twDebug(DEBUG,"sending message "+message+" to "+(string)channel);
+        twDebug(TRACE,"sending message \""+message+"\" to channel "+(string)channel);
         llRegionSay(channel,message);
+    }
+    else
+    {
+        twDebug(ERROR, "SendMessageToOneDevice channel was "+(string)channel);
     }
     return channel;
 }
 
 list findDeviceByDesignator(string designator) {
-    twDebug(DEBUG,"findDeviceByDesignator "+(string)designator);
+    designator = llToLower(designator);
+    twDebug(DEBUG,"findDeviceByDesignator ("+designator+")");
     integer index;
     integer limit = llGetListLength(deviceList);
     list result = [];
     for(index = 0; index < limit; index = index + deviceListStride) {
         string location = llToLower(llList2String(deviceList, index + deviceListOffsetLocation));
-        if(location == llToLower(designator)) {
-            result = llList2List(deviceList,index, index+deviceListStride-1);
+        if(location == designator) {
+            result = llList2List(deviceList, index, index+deviceListStride-1);
         }
     }
+    twDebug(DEBUG,"findDeviceByDesignator returns "+(string)result);
     return result;
 }
 
@@ -434,6 +441,7 @@ initialize() {
 
 // set the sitter's camera to the parameters sent in the list
 activate(string terminalDesignator) {
+    twDebug(DEBUG,"activate ("+terminalDesignator+")");
     // get the new active device
     list theDevice = findDeviceByDesignator(terminalDesignator);
     
@@ -476,7 +484,7 @@ activate(string terminalDesignator) {
         // send it the activate command. 
         gActiveTerminalChannel = llList2Integer(theDevice,deviceListOffsetChannel);
         string message = "activate," + gSitterName + "," +(string)gSitterKey;
-        SendMessageToOneDevice(terminalDesignator,message);
+        SendMessageToOneDevice(terminalDesignator, message);
         gsPreviousTerminalDesignator = terminalDesignator;
     } else {
         twDebug(WARN,"Could not find " + terminalDesignator);
@@ -484,6 +492,7 @@ activate(string terminalDesignator) {
 }
 
 deactivate(string terminalDesignator) {
+    twDebug(DEBUG,"deactivate "+terminalDesignator);
     string message = "deactivate," + gSitterName + "," +(string)gSitterKey;
     SendMessageToOneDevice(terminalDesignator,message);
 }
@@ -659,16 +668,15 @@ default{
             {
                 return;
             }
-            twDebug(INFO,"processing command \""+message+"\"");
             list parameters = llParseString2List(message, [" "], []);
             string command = llToLower(llList2String(parameters,0));
             string parameter = llToLower(llList2String(parameters,1));
+            twDebug(INFO,"processing command \""+command+"\" \""+parameter+"\"");
                 
             if(command == "activate") 
             {
                 deactivate(gsPreviousTerminalDesignator);
                 activate(parameter);
-                
             } 
             else if((command == "cycle") |(command == "scan")) 
             {
@@ -677,7 +685,7 @@ default{
             } 
             else if(command == "debug") 
             {
-                setDebugLevel(parameter);
+                setDebugLevel(llToUpper(parameter));
                 
             } 
             else if(command == "report") 
@@ -717,21 +725,30 @@ default{
             } 
             else 
             {
-                // see if the parameter is a designator
-                list device = findDeviceByDesignator(parameter);
+                // see if the command is a designator
+                list device = findDeviceByDesignator(command);
                 if(device != []) 
                 {
                     // we found something, so we have a device.
-                    // Send it the commands unaltered. 
-                    string message = llList2String(parameters,0) + "," + llList2String(parameters,2);
-                    twDebug(DEBUG,"sending message to device "+parameter+": "+message);
-                    SendMessageToOneDevice(parameter, message);
+                    // if command is empty, activate the terminal
+                    if (parameter == "")
+                    {
+                        twDebug(DEBUG,"command handler activating "+command);
+                        deactivate(gsPreviousTerminalDesignator);
+                        activate(command);
+                    }
+                    else 
+                    {
+                        // Send the commands unaltered to the terminal. 
+                        twDebug(DEBUG,"command handler sending message \""+parameter+ "\" to terminal " + command);
+                        //string message = llList2String(parameters,0) + "," + llList2String(parameters,2);
+                        SendMessageToOneDevice(command, parameter);
+                    }
                 }
                 
                 // may be a command to the current terminal
                 else
                 {
-                    twDebug(DEBUG,"sending message to device "+gsPreviousTerminalDesignator+": "+message);
                     SendMessageToOneDevice(gsPreviousTerminalDesignator, message);
                 }
             } 
