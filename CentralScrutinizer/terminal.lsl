@@ -23,6 +23,9 @@ integer isINACTIVE = 0;
 string logTitle = "Terminal Log";
 string logText = "";
 
+
+key beepSound = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
+
 floatyLog(string newEntry)
 {
     // chop off the title from the old log
@@ -43,6 +46,7 @@ floatyLog(string newEntry)
         logText = llDeleteSubString(logText, 0, chop);
     }
     logText = logTitle + "\n" + logText + newEntry;
+    logText="";
     llSetText(logText,<0,1,0>,1);//logText
 }
 
@@ -85,7 +89,7 @@ activate(integer newstate, string newName, key newKey) {
     vector textColor = <1,0,0>;
     
     if (newstate == isACTIVE) {
-        llPlaySound("beepbeepbeepbeep",1.0);
+        llPlaySound(beepSound,1.0);
         llSetLinkPrimitiveParams(lensprim,[PRIM_FULLBRIGHT,lensside,TRUE]);
         llSetLinkPrimitiveParams(lensprim,[PRIM_GLOW,lensside,0.3]);
         statusText = statusText + "   Status:Active   Operator:" + newName;
@@ -102,7 +106,7 @@ activate(integer newstate, string newName, key newKey) {
         giMyOpenListen = 0;
         floatyLog("PRESENT "+newName);
     } else if (newstate == isINACTIVE) {
-        llPlaySound("beepbeepbeepbeep",1.0);
+        llPlaySound(beepSound,1.0);
         llSetLinkPrimitiveParams(lensprim,[PRIM_FULLBRIGHT,lensside,FALSE]);
         llSetLinkPrimitiveParams(lensprim,[PRIM_GLOW,lensside,0.0]);
         statusText = statusText + "   Status:Vacant";
