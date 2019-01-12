@@ -70,6 +70,9 @@ default
                     messageLevelThreshold = newThreshold;
                 }
             }
+            twDebug(INFO, "Debug level is set to "+llList2String(logLevelNames, messageLevelThreshold));
+            twDebug(DEBUG, "Sample DEBUG message.");
+            twDebug(TRACE, "Sample TRACE message.");
         }
                 
         // post debug message
