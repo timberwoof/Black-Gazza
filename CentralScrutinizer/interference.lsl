@@ -22,7 +22,7 @@ integer havePermissions = 0;
 // interference reports via logging handler
 twDebug(integer debugLevel, string message)
 {
-    llMessageLinked(LINK_THIS, 900+debugLevel, (string)debugLevel+":"+message, "");
+    llMessageLinked(LINK_THIS, 900+debugLevel, message, ""); // (string)debugLevel+":"+
 }
 
 // interference works by setting debug level
@@ -146,7 +146,7 @@ default
 {
     state_entry()
     {
-        gACSListen = llListen(gACSChannel,"","","");
+        //gACSListen = llListen(gACSChannel,"","","");
         havePermissions = 0;
     }
 
