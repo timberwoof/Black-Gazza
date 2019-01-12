@@ -1,7 +1,52 @@
 Welcome to Warden AI News. 
 When I make significant changes to the Warden system, I'll write about it here. I'll issue a new date on this document every time. 
 
-The high security cells in the blue cellblock and the mental ward cells have been updated. 
+2019-01-08 Warden AI News
+---------------------------------
+The MRI Scanner in Medical has a command-line interface under development. 
+When you issue the command /2 register medical, you will see
+Central Scrutinizer: INFO: registered "Central Scrutinizer Terminal 15f6" at 15f6; Medical Scanner
+Send it commands like /2 15f6 on
+The commands it knows are on off reset maint stow ready load scan unload stop. 
+It's a bit finnicky and it doesn't yet report back its state properly. 
+The interface script will become the basis of other interfaced devices.  
+
+
+2019-01-06 Warden AI News
+---------------------------------
+You must "/2 register" before you can activate terminals in an area
+Areas are Main, Medical, Mechanics, Cellblock.
+
+Once an area's terminals are registered, you can activate a terminal directly
+by typing its registration like "/2 13f3". 
+ 
+
+20181231 Warden AI News
+-------------------------------
+The "register" command now takes a parameter: a filter term for what section of the station you want to monitor. 
+Every terminal or device should have a description filled in; Standards for writing descriptions will be written. 
+For example, /2 register main or /2 register cellblock.
+If you leave the filter off, it becomes /2 register default. 
+At least one terminal should have "default" in its description. 
+
+The result of this is that the number of terminals easily accessible at any one time is reduced,
+but now they won't overflow memory, so more devices can be deployed. 
+Since there are so many cells, when cells become devices, their names will have to inherently limit registrations. 
+
+This is a bit of a kludge on the existing system, as the Central Scrutinizer still maintains a list of devices. 
+Early calculations show that each device costs about 300 bytes and there's memory for about 40 devices. 
+
+Debug and Interference modules have been isolated into separate scripts. 
+It will take careful examination of the code to see what more can be extracted into separate modules 
+to free up more memory in the script that maintains the terminal list. 
+
+20181230 Warden AI News
+-------------------------------
+The Warden AI project will be undergoing major architectural revision. 
+See https://github.com/timberwoof/Black-Gazza/tree/master/CentralScrutinizer
+see branch no-list for code. 
+The Warden in this room will use a different channel. 
+
 
 20140904 Warden AI News
 ---------------------------
@@ -176,43 +221,3 @@ When you're sitting, you get all the messages through IMs.
 When no one's sitting, they get whispered at the current debug level. 
 Debug levels 1 and 2 report on free memory available. You can see it drain as it registers the terminals. 
 ---------------------------
-
-20h8: 20h8, Main Intake
-20g4: 20g4, Main Lounge
-20g12: 20g12, Main Hangar
-20g10: 20g10, Main Visitation
-20f13: 20f13, Main Lobby
-20c18: 20c18, Main Office Central
-19g8: 19g8, Main K9 Lobby
-18d18: 18d18, Research
-18b7: 18b7, Main Office Lormyr
-18b10: 18b10, Main Office Timberwoof
-16e13: 16e13, Medical Mental Ward
-15g16: 15g16, Medical Lab
-15e9: 15e9, Medical Day Room
-15e13: 15e13, Mental Ward Cells
-15d4: 15d4, Medical Surgery
-15c2: 15c2, Medical Exam
-15c11: 15c11, Medical Lobby
-13c9: 13c9, Control
-12g9: 12g9, Yard South
-12g3: 12g3, Yard West
-12g14: 12g14, Yard West
-10g18: 10g18, Cellblock Blue Isolation Observation
-10a18: 10a18, Brain Room
-8j4: 8j4, Guard Barracks Meeting
-8f18: 8f18, Cellblock Blue Isolation Control
-7f4: 7f4, Cellblock Robots
-6k8: 6k8, Cellblock Green Back
-6f9: 6f9, Cellblock Green Front
-6f4: 6f4, Cellblock Pink
-6f18: 6f18, Cellblock Blue
-6f13: 6f13, Cellblock Orange
-5g5: 5g5, Cellblock Kitchen
-5d9: 5d9, Cellblock  Laundry
-5d6: 5d6, Cellblock Mess SE
-5d17: 5d17, Cellblock Blue Information Retrieval
-5d15: 5d15, Cellblock Mess NW
-5d14: 5d14, Cellblock Orange Information Retrieval
-2d9: 2d9, Cellblock Interrogation
-010: 010, Ground Station
