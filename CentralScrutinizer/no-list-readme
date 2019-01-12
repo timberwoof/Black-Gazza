@@ -10,3 +10,17 @@ They then return their IDs, which the CS can then store in a list of whatever.
 If the CS needs to activate a terminal, it sends the terminal's identifier 
 and it repsonds with parameters such as eye coordinates. 
 The goal is to store no persistent information about terminals in the CS. 
+
+Installation
+Central Scrutinizer gets
+CentralScrutinizer.lsl
+debug.lsl
+interference.lsl
+
+Both kinds of terminals get 
+terminal.lsl
+
+Sci Fi Desk gets
+terminalScifiDesk.lsl
+
+debugLogger.lsl and messageLogger.lsl are simple ugly floaty-text loggers. 
