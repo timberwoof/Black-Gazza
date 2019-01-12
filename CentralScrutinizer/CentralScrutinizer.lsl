@@ -10,7 +10,7 @@ list altitudesList = [0, 1155, 1165, 1200, 1210, 1215, 1220, 1225, 1230, 1235, 1
 vector coreLocation = <128,128,0>;
 string gsSystemName = "Central Scrutinizer";
 
-string initialTerminal = "13f13";
+string initialTerminal = "13I1";
 
 
 // all devices that want to register do so on this channel;
@@ -365,14 +365,22 @@ integer altitudeToLevel(float altitude) {
     return index;
 }
 
-// convert angle around station axis to a 1-12(hours) segment number
+// convert angle around station axis to a 1-36(ten-degrees) segment number
 integer XYtoSegment(float X, float Y) {
     float deltax = X - coreLocation.x;
     float deltay = Y - coreLocation.y;
-    integer result = llFloor((PI/2 - llAtan2(deltay, deltax)) * 9 / PI) ;
-    if(result < 1) {
-        result = result + 18;
+    integer result = llFloor((-llAtan2(deltay, deltax)) * 18 / PI) + 9 ;
+    // llAtan2 : [-PI, PI]
+    // llAtan2 + PI : [0, 2PI]
+    // (llAtan2 + PI)/PI : [0, 2]
+    // (llAtan2 + PI)/PI * 18 : [0, 36]
+    if(result < 0) {
+        result = result + 36;
     }
+    if (result >= 36){
+        result = result - 36;
+    }
+        
     return result;
 }
 
@@ -380,8 +388,8 @@ integer XYtoSegment(float X, float Y) {
 string XYtoRing(float X, float Y) {
     float deltax = X - coreLocation.x;
     float deltay = Y - coreLocation.y;
-    integer distance = llFloor(llSqrt(deltax * deltax + deltay * deltay)/4);
-    return llGetSubString("abcdefghijklm",distance,distance);
+    integer distance = llFloor(llSqrt(deltax * deltax + deltay * deltay)/3);
+    return llGetSubString("ABCDEFGHIJKLMNOPQRSTUVWXYZ",distance,distance);
 }
 
 // convert device X,Y,Z location to an easier alphanumeric designation. 
@@ -416,7 +424,7 @@ stop_anims(key agent){
 
 
 initialize() {
-    setDebugLevel("DEBUG");
+    setDebugLevel("INFO");
     twDebug(INFO,"initializing");
     giACSInterferenceAmount = 0;
     llMessageLinked(LINK_THIS, 999, "avatar","");
@@ -619,6 +627,7 @@ default{
         {
             list parameters = llParseString2List(message, [","], []);
             string command = llToLower(llList2String(parameters,0));
+            twDebug(DEBUG,"listen("+(string)channel+", "+name+", "+message+")");
 
             if(command == "register") 
             {
@@ -671,7 +680,7 @@ default{
             list parameters = llParseString2List(message, [" "], []);
             string command = llToLower(llList2String(parameters,0));
             string parameter = llToLower(llList2String(parameters,1));
-            twDebug(INFO,"processing command \""+command+"\" \""+parameter+"\"");
+            twDebug(INFO,"processing command "+command+" "+parameter);
                 
             if(command == "activate") 
             {
