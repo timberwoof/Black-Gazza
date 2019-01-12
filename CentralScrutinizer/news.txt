@@ -221,3 +221,57 @@ When you're sitting, you get all the messages through IMs.
 When no one's sitting, they get whispered at the current debug level. 
 Debug levels 1 and 2 report on free memory available. You can see it drain as it registers the terminals. 
 ---------------------------
+
+
+Terminal 19O26 at 9O26; Main Stargate
+Terminal 18G18 at 8G18; Main Security Holding
+Terminal 21I24 at 21I24; Main Court
+Terminal 18H26 at 8H26; Main Ops
+Terminal 19E31 at 9E31; Main Info
+Terminal 18E13 at 8E13; Main Security IC/OOC
+Terminal 18F13 at 8F13; Main Security Intake
+
+Terminal 17B27 at 7B27; Medical 3 Reception
+Terminal 16F13 at 6F13; Medical 2 Scanner Room
+Terminal 16B27 at 6B27; Medical 2 Reception
+ Central Scrutinizer: INFO: registered "TetsuoMRIControl at 5G12; Medical Scanner
+Terminal 15B6 at 5B6; Medical 1 Secure Reception
+
+Terminal 11B9 at 1B9; Guard Room
+Terminal 11B25 at 1B25; guard lounge
+
+Terminal 13K27 at 3K27; Mechanics AI 2
+Terminal 13E27 at 3E27; Mechanics AI 3
+Terminal 13I22 at 3I22; Mechanics Hangar1
+Terminal 13K26 at 3K26; Mechanics AI default
+Terminal 13B18 at 3B18; Mechanics South
+Terminal 14I31 at 4I31; Mechanics Hangar2
+Terminal 14I13 at 4I13; Mechanics Hangar4
+Terminal 13I4 at 3I4; Mechanics Hangar3
+Terminal 13K18 at 3K18; Mechanics PowerCore
+Terminal 13I1 at 3I1; Mechanics AI default
+Terminal 13K9 at 3K9; Mechanics Workshop
+Terminal 14I10 at 4I10; Mechanics Cells
+Terminal 14M27 at 4M27; Mechanics Robots
+Terminal 13B0 at 3B0; Mechanics North
+
+Terminal 4P26 at 4P26; Cellblock Arena South
+Terminal 4J18 at 4J18; Cellblock -1 Hydroponics
+Terminal 6M27 at 6M27; Cellblock Orange 1
+Terminal 6M18 at 6M18; Cellblock pink 1
+Terminal 5P27 at 5P27; Cellblock Arena Ceiling
+Terminal 6F31 at 6F31; Cellblock Mess NW
+Terminal 5L0 at 5L0; Cellblock Blue 0 Kennels
+Terminal 6F13 at 6F13; Cellblock Mess SE
+Terminal 9L0 at 9L0; Cellblock Blue 4
+Terminal 9L9 at 9L9; Cellblock Green 4
+Terminal 6L0 at 6L0; Cellblock Blue 1
+Terminal 6F22 at 6F22; Cellblock Mess SW
+Terminal 4P27 at 4P27; Cellblock Arena North
+Terminal 5L9 at 5L9; Cellblock Green 0 Morgue
+Terminal 9M18 at 9M18; Cellblock pink 4
+Terminal 6L9 at 6L9; Cellblock Green 1
+Terminal 1E23 at E23; Cellblock -2 Isolation Interrogation
+Terminal 6F4 at 6F4; Cellblock Mess NE
+Terminal 9M27 at 9M27; Cellblock Orange 4
+Terminal 0B27 at 0B27; cellblock -4 execution
