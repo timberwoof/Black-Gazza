@@ -42,6 +42,19 @@ string STOP = "Stop";
 string BLANK = "-";
 string DOCS = "Manual";
 
+vector LCARS = <-0.333, 0.333, 0>; 
+vector LCARS_OFF = <-0.333, 0.333, 0>;
+vector LCARS_MAINT = < 0.000, 0.333, 0>;
+vector LCARS_RESET = < 0.333, 0.333, 0>;
+
+vector LCARS_UNLOAD = <-0.333, 0.000, 0>;
+vector LCARS_LOAD = < 0.000, 0.000, 0>;
+vector LCARS_ON = < 0.333, 0.000, 0>;
+
+vector LCARS_SCAN = <-0.333, -0.333, 0>;
+vector LCARS_STOP = < 0.000, -0.333, 0>;
+vector LCARS_READY = < 0.333, -0.333, 0>;
+
 list BUTTON_VECTORS = [<.12,.60,0>, <.12,.44,0>, <.12,.28,0>, <.12,.12,0>, <.35,.75,0>, <.57,.75,0>, <.78,.75,0>];
 list BUTTON_NAMES = ["Power","Load","Ready","Scan","Maint","Reset","Stop"];
 
@@ -67,29 +80,44 @@ string sound_beeps = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
 string jet_start = "1e6e6eec-737b-0bf7-25a1-9e6e4e2f7580";
 string jet_loop = "a6fede89-6bc5-76cc-bd3a-01ef326ea239";
 string jet_looop_fade = "41bcdb2a-d789-13f9-cb7f-0c5d05d8b5dd";
+string warn = "fb0a28c3-4e7a-7554-0403-d8c3f56d1ccc";
 
 string twToCapitalied(string anycase)
 {
     return llToUpper(llGetSubString(anycase,0,0)) + llToLower(llGetSubString(anycase,1,-1));
 }
 
+power(integer ON)
+{
+    if (ON)
+    {
+        llSetColor(<1,1,1>,BUTTONS);
+        llPlaySound(sound_beeps, 1.0);
+        llLoopSound(sound_hum,1.0);
+    }
+    else
+    {
+        llStopSound();
+        llSetColor(<.1,.1,.1>,BUTTONS);
+    }
+}
 
 startActiveSound()
 {
     llStopSound();
     llPlaySound(sound_beeps,1.0);
-    llSleep(1);
-    llPlaySound(jet_start,1.0);
-    llSleep(5);
-    llLoopSound(jet_loop,1.0);
+    //llSleep(1);
+    //llPlaySound(jet_start,0.2);
+    //llSleep(5);
+    //llLoopSound(jet_loop,0.2);
 }
 
 endActiveSound()
 {
     llStopSound();
-    llPlaySound(jet_looop_fade,1.0);
-    llSleep(6);
-    llLoopSound(sound_hum,1.0);
+    //llPlaySound(jet_looop_fade,0.2);
+    //llSleep(6);
+    //llLoopSound(sound_hum,1.0);
 }
 
 processMessage(string Message, string name, key id)
@@ -102,51 +130,57 @@ processMessage(string Message, string name, key id)
         string Message = twToCapitalied(Message);
         if (Message == ON)
         {
-            llSetColor(<1,1,1>,0);
-            llLoopSound(sound_hum,1.0);
+            power(1);
             llSay(CONTROLCHANNEL,ON);
             llSay(CONTROLCHANNEL,STOW);
+            LCARS = LCARS_ON;
         } 
         else if (Message == OFF)
         {
-            llStopSound();
+            power(0);
             llSay(CONTROLCHANNEL,OFF);
-            llSetColor(<.1,.1,.1>,0);
+            LCARS = LCARS_OFF;
         }
         else if (Message == RESET)
         {
-            llSetColor(<.1,.1,.1>,0);
+            llOffsetTexture(LCARS_RESET.x, LCARS_RESET.y, SCREEN);
             llSay(CONTROLCHANNEL,"where?");
-            llSetColor(<1,1,1>,0);
+            power(1);
+            LCARS = LCARS_ON;
         }
         else if (Message == STOP)
         {
+            llOffsetTexture(LCARS_STOP.x, LCARS_STOP.y, SCREEN);
+            endActiveSound();
             Message = READY;
             llSay(CONTROLCHANNEL,READY);
+            LCARS = LCARS_READY;
         }
         else if (Message == READY)// && (name == "TetsuoMRIBed")) // why?
         {
             llSay(CONTROLCHANNEL,READY);
+            LCARS = LCARS_READY;
         }
         else if (Message == MAINT)
         {
             llSay(CONTROLCHANNEL,MAINT);
-        }
-        else if (Message == STOW)
-        {
-            llSay(CONTROLCHANNEL,STOW);
+            LCARS = LCARS_MAINT;
         }
         else if (Message == LOAD)
         {
             llSay(CONTROLCHANNEL,LOAD);
+            LCARS = LCARS_LOAD;
         }
         else if (Message == SCAN)
         {
+            startActiveSound();
             llSay(CONTROLCHANNEL,SCAN);
+            LCARS = LCARS_SCAN;
         }
         else if (Message == UNLOAD)
         {
             llSay(CONTROLCHANNEL,UNLOAD);
+            LCARS = LCARS_UNLOAD;
         }
         else if (Message == DOCS)
         {
@@ -161,8 +195,8 @@ processMessage(string Message, string name, key id)
         {
             llMessageLinked(LINK_THIS, 1, SYSTEMSTATE, "");
         }
+        llOffsetTexture(LCARS.x, LCARS.y, SCREEN);
 }
-
 
 default
 {
@@ -181,7 +215,9 @@ default
         llSay(CONTROLCHANNEL,"where?");
         llListen(CONTROLCHANNEL,"TetsuoMRIBed","","Ready");
         llSay(CONTROLCHANNEL,OFF);
-        llSetColor(<.1,.1,.1>,0);
+        llScaleTexture(0.3333, 0.3333, SCREEN);
+        llOffsetTexture(LCARS.x, LCARS.y, SCREEN);
+        power(0);
     }
 
     touch_start(integer total_number)
@@ -255,11 +291,13 @@ default
             else if (todo == STOP && SYSTEMSTATE == SCAN) Message = STOP;
             if (Message != "")
             {
+                llPlaySound(sound_beeps, 1.0);
                 processMessage(Message, "", "");
+                //llWhisper(0,"State: "+Message);
             }
             else
             {   
-                if (SYSTEMSTATE != OFF) llPlaySound("warn",1);
+                if (SYSTEMSTATE != OFF) llPlaySound(warn,.25);
             }
         }
     }
