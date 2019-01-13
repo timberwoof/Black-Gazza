@@ -1,6 +1,6 @@
+// ThinWhiteLine texture goes on the inside
+
 integer CONTROLCHANNEL = 1988;
-
-
 
 default
 {
