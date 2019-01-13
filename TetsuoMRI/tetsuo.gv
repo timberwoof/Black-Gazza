@@ -1,0 +1,32 @@
+digraph tetsuo {
+
+Off [label="Power Off\nWommers Retracted\nBed Retracted"];
+Maint [label="Maintenance\nWommers Maintenance\nBed Centered"];
+On [label="Power On\nWommers Retracted\nBed Centered"];
+Unload [label="Unloaded\nWommers Retracted\nBed in other room"];
+Load [label="Loaded\nWommers Retracted\nBed Centered"];
+Ready [label="Ready\nWommers Ready\nBed Centered"];
+Scan [label="Scanning\nWommers Active\nBed Active"];
+Reset [label="Reset!\nWommers Retracted\nBed Centered"];
+Stop [label="Stop!"];
+
+Off -> On [label="Power"]
+Off -> Reset [label="Reset"]
+Off -> Maint [label="Maint"]
+Maint -> On [label="Maint"]
+Maint -> Off [label="Power"]
+On -> Off [label="Power"]
+On -> Maint [label="Maint"]
+On -> Ready [label="Ready"]
+On -> Unload [label="Load"]
+Unload -> Load [label="Load"]
+Unload -> On
+Load -> Unload [label="Load"]
+Load -> Ready [label="Ready"]
+Ready -> On [label="Ready"]
+Ready -> Scan [label="Scan"]
+Scan -> Stop [label="Stop"]
+Scan -> Ready [color=red]
+Reset -> On [color=red]
+Stop -> Ready [color=red]
+}
