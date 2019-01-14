@@ -1,0 +1,1883 @@
+//start_unprocessed_text
+/*string g_sSubMenu = "CharacterTitles";
+list g_lMenuIDs;  
+
+integer g_iMenuStride = 3;
+
+key g_kWearer; 
+
+string TIME_MOOD;
+
+
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+
+integer NOTIFY = 1002;
+
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_CHARACTER = 5;
+integer LINK_TITLES = 5;
+integer LINK_UPDATE = -10;
+
+integer LM_SETTING_RESPONSE = 2002;
+integer CHARACTER_LM_SETTING_RESPONSE = 2012;
+integer TITLES_LM_SETTING_SAVE = 2020;
+integer TITLES_LM_SETTING_REQUEST = 2021;
+integer TITLES_LM_SETTING_RESPONSE = 2022;
+integer TITLES_LM_SETTING_DELETE = 2023;
+integer TITLES_LM_SETTING_EMPTY = 2024;
+
+integer DIALOG = -9000;
+/|/integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+integer DIALOG_RESPONSEII = -9003;
+
+string UPMENU = "BACK";
+
+
+string g_sGlobalToken = "global_";
+string g_sCharacterToken = "character_";
+string g_sInmateTitleToken = "inmatetitle_";
+integer g_iCharacterSlot_Save;
+
+
+integer iMood;
+vector vMood;
+float fAlpha;
+integer iTitleVisibility;
+string sTitle_Value_ID;
+string sTitle_Value_Crime;
+string sTitle_Value_Mood;
+integer iTitle_Show_Inmate=1;
+integer iTitle_Offset_Inmate;
+
+string sTitle_Value_1;
+string sTitle_Value_2;
+string sTitle_Value_3;
+string sTitle_Value_4;
+string sTitle_Value_5;
+string sTitle_Value_6;
+
+integer iTitle_Show_1;
+integer iTitle_Show_2;
+integer iTitle_Show_3;
+integer iTitle_Show_4;
+integer iTitle_Show_5;
+integer iTitle_Show_6;
+
+integer iTitle_Offset_1;
+integer iTitle_Offset_2;
+integer iTitle_Offset_3;
+integer iTitle_Offset_4;
+integer iTitle_Offset_5;
+integer iTitle_Offset_6;
+
+vector vTitle_Color_1;
+vector vTitle_Color_2;
+vector vTitle_Color_3;
+vector vTitle_Color_4;
+vector vTitle_Color_5;
+vector vTitle_Color_6;
+
+
+float fTitle_Alpha_1;
+float fTitle_Alpha_2;
+float fTitle_Alpha_3;
+float fTitle_Alpha_4;
+float fTitle_Alpha_5;
+float fTitle_Alpha_6;
+
+integer iTitleAddSpace=0;
+list g_lElementsInmateTitleID ;
+list g_lElementsInmateTitleCrime ;
+list g_lElementsInmateTitleMood ;
+list g_lElementsInmateTitle1 ;
+list g_lElementsInmateTitle2 ;
+list g_lElementsInmateTitle3 ;
+list g_lElementsInmateTitle4 ;
+list g_lElementsInmateTitle5 ;
+list g_lElementsInmateTitle6 ;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+
+integer SetOffset(integer iTitle, integer iOffset,key kID){
+    if(iOffset==1){
+        if(25<=iTitle){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Maximum reached.", kID);
+            iTitle=25;
+        }else{
+            iTitle+=iOffset;
+        }
+    }else
+    if(iOffset==-1){
+        if(iTitle<=0){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Minimum reached.", kID);
+            iTitle=0;
+        }else{
+            iTitle+=iOffset;
+        }
+    }else
+    if(iOffset==0){
+        if(iTitle==0){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Is already set to central.", kID);
+            iTitle=0;
+        }else{
+            iTitle=0;
+        }
+    }
+    return iTitle;
+}
+
+float GetLSLColor(string sValue){
+    float fValue=(float)sValue;
+    integer iValue=(integer)sValue;
+    if(0<=iValue&&iValue<=255){
+        fValue=fValue/255;
+    }
+    if(0.0<=fValue&&fValue<=1.0){
+        return fValue;
+    }
+    return -1.0;
+}
+CharacterSaveII(string sTitle, integer iShow, integer iOffset, float fAlpha, vector vColor, string sText){
+    
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleColor"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)vColor,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleAlpha"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)fAlpha,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleShow"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)iShow,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleOffset"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)iOffset,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleValue"+sTitle+(string)g_iCharacterSlot_Save+"="+sText,"");     
+    
+}
+CharacterSave(){
+    if(g_iCharacterSlot_Save<=0||6<g_iCharacterSlot_Save){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Can't store character as a slot was not selected.", g_kWearer);
+        return;
+    }
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleShowInmate"+(string)g_iCharacterSlot_Save+"="+(string)iTitle_Show_Inmate,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleOffsetInmate"+(string)g_iCharacterSlot_Save+"="+(string)iTitle_Offset_Inmate,"");
+
+    CharacterSaveII("1", iTitle_Show_1, iTitle_Offset_1, fTitle_Alpha_1, vTitle_Color_1, sTitle_Value_1);
+    CharacterSaveII("2", iTitle_Show_2, iTitle_Offset_2, fTitle_Alpha_2, vTitle_Color_2, sTitle_Value_2);
+    CharacterSaveII("3", iTitle_Show_3, iTitle_Offset_3, fTitle_Alpha_3, vTitle_Color_3, sTitle_Value_3);
+    CharacterSaveII("4", iTitle_Show_4, iTitle_Offset_4, fTitle_Alpha_4, vTitle_Color_4, sTitle_Value_4);
+    CharacterSaveII("5", iTitle_Show_5, iTitle_Offset_5, fTitle_Alpha_5, vTitle_Color_5, sTitle_Value_5);
+    CharacterSaveII("6", iTitle_Show_6, iTitle_Offset_6, fTitle_Alpha_6, vTitle_Color_6, sTitle_Value_6);
+}
+CharacterClearII(string sTitle){
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleColor"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleAlpha"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleShow"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleValue"+sTitle+(string)g_iCharacterSlot_Save,"");
+}
+CharacterClear(){
+    if(g_iCharacterSlot_Save<=0||6<g_iCharacterSlot_Save){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Can't store character as a slot was not selected.", g_kWearer);
+        return;
+    }
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleShowInmate"+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleOffsetInmate"+(string)g_iCharacterSlot_Save,"");
+    CharacterClearII("1");
+    CharacterClearII("2");
+    CharacterClearII("3");
+    CharacterClearII("4");
+    CharacterClearII("5");
+    CharacterClearII("6");
+    
+}
+initialize(){
+    iTitleUpdate=FALSE;
+    TIME_MOOD="";
+    llSetTimerEvent(0.0);
+    /|/set to OOC at start
+    iMood=0;sTitle_Value_Mood="OOC";iTitle_Offset_Inmate=0; vMood=<0.66,0.66,0.66>;fAlpha=1.0;
+    DoVisivility();
+    
+}
+display_elements_settext(list ELEMENTS, string TEXT, vector COLOR, float ALPHA, string sName){
+    integer index=0;
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"CHARACTER_TITLES,settext,"+sName+","+TEXT+","+(string)COLOR+","+(string)ALPHA);
+        llSetLinkPrimitiveParamsFast(link, [PRIM_TEXT, TEXT, COLOR, ALPHA]);
+        ++index;
+    }
+}
+UserCommand(integer iNum, string sStr, key kID) { 
+   
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,character_titles(d),17,10,16,119");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu)||llToLower(sStr) == llToLower(g_sSubMenu))
+        CharacterMenu(kID, iNum);
+    else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        CharacterCommand(iNum,sStr, kID);
+    }
+    
+    
+}
+
+TitleUpdate(string sSave){
+    if(sSave=="2"){
+        CharacterSave();
+    }else 
+    if(sSave=="1"){
+        DoVisivility();CharacterSave();
+    }else{
+        DoVisivility();
+    }
+}
+TitleMenu(key kID, integer iAuth, string i) {
+    
+    string sPrompt = "Character Title "+i;
+    sPrompt+="\n•IMPORTANT:Please dont make a rainbow color titles, try using the designated colors, aka Mood colors.";
+    list lMyButtons; 
+    i=llToLower(i);
+    if(i=="id"){
+        if(iTitle_Show_Inmate){
+        lMyButtons=["☒ ID"];
+        }else{
+            lMyButtons=["☐ ID"];
+        }
+        lMyButtons+=["Up ⬆","Central ►","Down ⬇"];
+    }else{
+        if(i=="1"){
+            if(iTitle_Show_1){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="2"){
+            if(iTitle_Show_2){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="3"){
+            if(iTitle_Show_3){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="4"){
+            if(iTitle_Show_4){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="5"){
+            if(iTitle_Show_5){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="6"){
+            if(iTitle_Show_6){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }
+        lMyButtons+=["Text","Color","Alpha"];
+        lMyButtons+=["Up ⬆","Central ►","Down ⬇"];
+    }
+    
+   
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iAuth, "Title_"+i);
+}
+
+integer TitleIsText(string sText){
+    sText=llStringTrim(sText, STRING_TRIM );
+    return llStringLength(sText);
+}
+vector TitleGetColor(vector v){
+    if(v==ZERO_VECTOR){
+        return vMood;
+    }
+    return v;
+}
+
+float TitleGetAlpha(float f){
+    if(f==0.0){
+        return fAlpha;
+    }
+    return f;
+}
+string TitleAddSpace(string sText, integer iOffset){
+    integer i=0;
+    while(i<iTitleAddSpace){
+        sText+="\n ";
+        ++i;
+    }
+    ++iTitleAddSpace;
+    
+    if(0<iOffset){
+        i=0;
+        while(i<iOffset){
+            sText+="\n ";
+            ++i;
+        }
+    }
+    if(iOffset<0){
+        i=iOffset;
+        while(i<0){
+            sText="\n "+sText;
+            ++i;
+        }
+    }
+    
+    return sText;
+}
+SetTitleText(string sTitle, string sText,integer iNum, key kID){
+    sText=llStringTrim(sText, STRING_TRIM );
+    if(sText=="refresh"||sText==""){
+    
+    }else{
+        if(sTitle=="1"){
+            sTitle_Value_1=sText;
+            iTitle_Show_1=1;
+        }else
+        if(sTitle=="2"){
+            sTitle_Value_2=sText;
+            iTitle_Show_2=1;
+        }else
+        if(sTitle=="3"){
+            sTitle_Value_3=sText;
+            iTitle_Show_3=1;
+        }else
+        if(sTitle=="4"){
+            sTitle_Value_4=sText;
+            iTitle_Show_4=1;
+        }else
+        if(sTitle=="5"){
+            sTitle_Value_5=sText;
+            iTitle_Show_5=1;
+        }else
+        if(sTitle=="6"){
+            sTitle_Value_6=sText;
+            iTitle_Show_6=1;
+        }       
+    }
+}
+SetTitleShow(string sTitle, string sText,integer iNum, key kID){
+    sText=llToLower(llStringTrim(sText, STRING_TRIM ));
+    list lParams=llParseString2List(sText, [" "], []);
+    sText="";
+    
+    string sValue = llToLower(llList2String(lParams, 0));
+    integer iValue=-1;
+    
+    if(sValue=="☐"){
+        iValue=1;
+    }else
+    if(sValue=="☒"){
+        iValue=0;
+    }else
+    if(sValue=="1"||sValue=="0"){
+        iValue=(integer)sValue;
+    }
+        
+    if(iValue==1||iValue==0){
+        if(sTitle=="id"){
+            iTitle_Show_Inmate=iValue;
+        }else
+        if(sTitle=="1"){
+            iTitle_Show_1=iValue;
+        }else
+        if(sTitle=="2"){
+            iTitle_Show_2=iValue;
+        }else
+        if(sTitle=="3"){
+            iTitle_Show_3=iValue;
+        }else
+        if(sTitle=="4"){
+            iTitle_Show_4=iValue;
+        }else
+        if(sTitle=="5"){
+            iTitle_Show_5=iValue;
+        }else
+        if(sTitle=="6"){
+            iTitle_Show_6=iValue;
+        }       
+    }
+}
+SetTitleOffsett(string sTitle, string sText,integer iNum, key kID){
+    sText=llStringTrim(sText, STRING_TRIM );
+    list lParams=llParseString2List(sText, [" "], []);
+    sText="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    integer iValue=-2;
+    if(sCommand=="up"){
+        iValue=1;
+    }else
+    if(sCommand=="central"){
+        iValue=0;
+    }else
+    if(sCommand=="down"){
+        iValue=-1;
+    }
+    
+    if(iValue==1||iValue==-1||iValue==0){
+        if(sTitle=="id"){
+            iTitle_Offset_Inmate=SetOffset(iTitle_Offset_Inmate,iValue,kID);
+        }else
+        if(sTitle=="1"){
+            iTitle_Offset_1=SetOffset(iTitle_Offset_1,iValue,kID);
+        }else
+        if(sTitle=="2"){
+            iTitle_Offset_2=SetOffset(iTitle_Offset_2,iValue,kID);
+        }else
+        if(sTitle=="3"){
+            iTitle_Offset_3=SetOffset(iTitle_Offset_3,iValue,kID);
+        }else
+        if(sTitle=="4"){
+            iTitle_Offset_4=SetOffset(iTitle_Offset_4,iValue,kID);
+        }else
+        if(sTitle=="5"){
+            iTitle_Offset_5=SetOffset(iTitle_Offset_5,iValue,kID);
+        }else
+        if(sTitle=="6"){
+            iTitle_Offset_6=SetOffset(iTitle_Offset_6,iValue,kID);
+        }       
+    }
+}
+SetTitleColorClear(string sTitle){
+    if(sTitle=="1"){
+        vTitle_Color_1=ZERO_VECTOR;
+    }else
+    if(sTitle=="2"){
+        vTitle_Color_2=ZERO_VECTOR;
+    }else
+    if(sTitle=="3"){
+        vTitle_Color_3=ZERO_VECTOR;
+    }else
+    if(sTitle=="4"){
+        vTitle_Color_4=ZERO_VECTOR;
+    }else
+    if(sTitle=="5"){
+        vTitle_Color_5=ZERO_VECTOR;
+    }else
+    if(sTitle=="6"){
+        vTitle_Color_6=ZERO_VECTOR;
+    }    
+}
+SetTitleColor(string sTitle, string sColor,integer iNum, key kID){
+    sColor=llToLower(llStringTrim(sColor, STRING_TRIM ));
+    
+    if(sColor=="refresh"||sColor==""){
+        SetTitleColorClear(sTitle);
+    }else{
+        list lParams = llParseString2List(sColor, [","], []);
+        sColor="";
+        integer iParams = llGetListLength(lParams);
+        if(iParams==3){
+            string sValue = llList2String(lParams, 0);
+            string sValue2 = llList2String(lParams, 1);
+            string sValue3 = llList2String(lParams, 2);
+            float color_r=GetLSLColor(sValue);float color_g=GetLSLColor(sValue2);float color_b=GetLSLColor(sValue3);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                vector color=(vector)str_Colors;
+                
+                if(sTitle=="1"){
+                    vTitle_Color_1=color;
+                }else
+                if(sTitle=="2"){
+                    vTitle_Color_2=color;
+                }else
+                if(sTitle=="3"){
+                    vTitle_Color_3=color;
+                }else
+                if(sTitle=="4"){
+                    vTitle_Color_4=color;
+                }else
+                if(sTitle=="5"){
+                    vTitle_Color_5=color;
+                }else
+                if(sTitle=="6"){
+                    vTitle_Color_6=color;
+                }
+            }else{
+                SetTitleColorClear(sTitle);
+            }
+        }
+    }
+}
+SetTitleAlphaClear(string sTitle){
+    if(sTitle=="1"){
+        fTitle_Alpha_1=0.0;
+    }else
+    if(sTitle=="2"){
+        fTitle_Alpha_2=0.0;
+    }else
+    if(sTitle=="3"){
+        fTitle_Alpha_3=0.0;
+    }else
+    if(sTitle=="4"){
+        fTitle_Alpha_4=0.0;
+    }else
+    if(sTitle=="5"){
+        fTitle_Alpha_5=0.0;
+    }else
+    if(sTitle=="6"){
+        fTitle_Alpha_6=0.0;
+    }     
+}
+SetTitleAlpha(string sTitle, string sAlpha,integer iNum, key kID){
+    sAlpha=llToLower(llStringTrim(sAlpha, STRING_TRIM ));
+
+    if(sAlpha=="refresh"||sAlpha==""){
+        SetTitleAlphaClear(sTitle);
+    }else{
+        float alpha=(float)sAlpha;
+        if(0.0<=alpha&&alpha<=1.0){
+            if(sTitle=="1"){
+                fTitle_Alpha_1=alpha;
+            }else
+            if(sTitle=="2"){
+                fTitle_Alpha_2=alpha;
+            }else
+            if(sTitle=="3"){
+                fTitle_Alpha_3=alpha;
+            }else
+            if(sTitle=="4"){
+                fTitle_Alpha_4=alpha;
+            }else
+            if(sTitle=="5"){
+                fTitle_Alpha_5=alpha;
+            }else
+            if(sTitle=="6"){
+                fTitle_Alpha_6=alpha;
+            }
+        }else{
+            SetTitleAlphaClear(sTitle);
+        }
+    }
+}
+GetTitleText(string sTitle,integer iNum, key kID){
+    string tmp;
+    if(sTitle=="1"){
+        tmp=sTitle_Value_1;
+    }else
+    if(sTitle=="2"){
+        tmp=sTitle_Value_2;
+    }else
+    if(sTitle=="3"){
+        tmp=sTitle_Value_3;
+    }else
+    if(sTitle=="4"){
+        tmp=sTitle_Value_4;
+    }else
+    if(sTitle=="5"){
+        tmp=sTitle_Value_5;
+    }else
+    if(sTitle=="6"){
+        tmp=sTitle_Value_6;
+    } 
+    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Title "+sTitle+" text is:"+tmp, kID);
+}
+
+DoVisivility(){
+    display_elements_settext(g_lElementsInmateTitleID,"",ZERO_VECTOR,0.0,"Title_ID"); 
+    display_elements_settext(g_lElementsInmateTitleCrime,"",ZERO_VECTOR,0.0,"Title_CRIME"); 
+    display_elements_settext(g_lElementsInmateTitleMood,"",ZERO_VECTOR,0.0,"Title_MOOD"); 
+    display_elements_settext(g_lElementsInmateTitle1,"",ZERO_VECTOR,0.0,"Title_1"); 
+    display_elements_settext(g_lElementsInmateTitle2,"",ZERO_VECTOR,0.0,"Title_2"); 
+    display_elements_settext(g_lElementsInmateTitle3,"",ZERO_VECTOR,0.0,"Title_3"); 
+    display_elements_settext(g_lElementsInmateTitle4,"",ZERO_VECTOR,0.0,"Title_4"); 
+    display_elements_settext(g_lElementsInmateTitle5,"",ZERO_VECTOR,0.0,"Title_5"); 
+    display_elements_settext(g_lElementsInmateTitle6,"",ZERO_VECTOR,0.0,"Title_6"); 
+    iTitleAddSpace=0;
+    if(iTitleVisibility){
+        if(0<iMood){
+            
+
+            if(iTitle_Show_6&&TitleIsText(sTitle_Value_6)){
+                display_elements_settext(g_lElementsInmateTitle6,TitleAddSpace(sTitle_Value_6,iTitle_Offset_6),TitleGetColor(vTitle_Color_6),TitleGetAlpha(fTitle_Alpha_6),"Title_6"); 
+            }
+            if(iTitle_Show_5&&TitleIsText(sTitle_Value_5)){
+                display_elements_settext(g_lElementsInmateTitle5,TitleAddSpace(sTitle_Value_5,iTitle_Offset_5),TitleGetColor(vTitle_Color_5),TitleGetAlpha(fTitle_Alpha_5),"Title_5"); 
+            }
+            if(iTitle_Show_4&&TitleIsText(sTitle_Value_4)){
+                display_elements_settext(g_lElementsInmateTitle4,TitleAddSpace(sTitle_Value_4,iTitle_Offset_4),TitleGetColor(vTitle_Color_4),TitleGetAlpha(fTitle_Alpha_4),"Title_4"); 
+            }
+            if(iTitle_Show_3&&TitleIsText(sTitle_Value_3)){
+                display_elements_settext(g_lElementsInmateTitle3, TitleAddSpace(sTitle_Value_3,iTitle_Offset_3),TitleGetColor(vTitle_Color_3),TitleGetAlpha(fTitle_Alpha_3),"Title_3"); 
+            }
+            if(iTitle_Show_2&&TitleIsText(sTitle_Value_2)){
+                display_elements_settext(g_lElementsInmateTitle2,TitleAddSpace(sTitle_Value_2,iTitle_Offset_2),TitleGetColor(vTitle_Color_2),TitleGetAlpha(fTitle_Alpha_2),"Title_2"); 
+            }
+            if(iTitle_Show_1&&TitleIsText(sTitle_Value_1)){
+                display_elements_settext(g_lElementsInmateTitle1,TitleAddSpace(sTitle_Value_1,iTitle_Offset_1),TitleGetColor(vTitle_Color_1),TitleGetAlpha(fTitle_Alpha_1),"Title_1"); 
+            }
+            if(iTitle_Show_Inmate){
+                display_elements_settext(g_lElementsInmateTitleMood,TitleAddSpace(sTitle_Value_Mood,iTitle_Offset_Inmate),vMood,fAlpha,"Title_MOOD"); 
+                display_elements_settext(g_lElementsInmateTitleCrime,TitleAddSpace(sTitle_Value_Crime,iTitle_Offset_Inmate),vMood,fAlpha,"Title_CRIME"); 
+                display_elements_settext(g_lElementsInmateTitleID,TitleAddSpace(sTitle_Value_ID,iTitle_Offset_Inmate),vMood,fAlpha,"Title_ID");     
+            }
+        }else{
+            display_elements_settext(g_lElementsInmateTitleMood,TitleAddSpace(sTitle_Value_Mood,iTitle_Offset_Inmate),vMood,fAlpha,"Title_MOOD"); 
+        }
+    }
+    
+}
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string sMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, sMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, sMenuType];
+}
+
+
+ClearValues(){
+    iTitle_Show_Inmate=1;
+    
+    sTitle_Value_1="";
+    sTitle_Value_2="";
+    sTitle_Value_3="";
+    sTitle_Value_4="";
+    sTitle_Value_5="";
+    sTitle_Value_6="";
+
+    iTitle_Show_1=0;
+    iTitle_Show_2=0;
+    iTitle_Show_3=0;
+    iTitle_Show_4=0;
+    iTitle_Show_5=0;
+    iTitle_Show_6=0;
+    
+    iTitle_Offset_Inmate=0;
+    iTitle_Offset_1=0;
+    iTitle_Offset_2=0;
+    iTitle_Offset_3=0;
+    iTitle_Offset_4=0;
+    iTitle_Offset_5=0;
+    iTitle_Offset_6=0;
+
+    vTitle_Color_1=ZERO_VECTOR;
+    vTitle_Color_2=ZERO_VECTOR;
+    vTitle_Color_3=ZERO_VECTOR;
+    vTitle_Color_4=ZERO_VECTOR;
+    vTitle_Color_5=ZERO_VECTOR;
+    vTitle_Color_6=ZERO_VECTOR;
+
+    fTitle_Alpha_1=0.0;
+    fTitle_Alpha_2=0.0;
+    fTitle_Alpha_3=0.0;
+    fTitle_Alpha_4=0.0;
+    fTitle_Alpha_5=0.0;
+    fTitle_Alpha_6=0.0;
+}
+CharacterMenu(key kID, integer iAuth) {
+    
+
+    string sPrompt = "Character Titles Menu\n";
+    list lMyButtons; 
+    lMyButtons+=["ID","1","2","3","4","5","6","Refresh","Clear"];
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iAuth, "-1");
+}
+
+CharacterLoadII(string sTitle){
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleColor"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleAlpha"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleShow"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleOffset"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleValue"+sTitle+(string)g_iCharacterSlot_Save,"");    
+}
+/|/integer iCharacterLoad;
+integer iTitleUpdate;
+CharacterLoad(){
+    
+    if(g_iCharacterSlot_Save<=0||6<g_iCharacterSlot_Save){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Canot load character as a slot was not selected.", g_kWearer);
+        return;
+    }
+    ClearValues();
+    /|/llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Loading titles...", g_kWearer);
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleShowInmate"+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_REQUEST,g_sCharacterToken+"InmateTitleOffsetInmate"+(string)g_iCharacterSlot_Save,"");
+    /|/iCharacterLoad=1;
+    CharacterLoadII("1");
+    CharacterLoadII("2");
+    CharacterLoadII("3");
+    CharacterLoadII("4");
+    CharacterLoadII("5");
+    CharacterLoadII("6");
+}
+string sStr_WEARERNAMES="%WEARERNAMES%";
+CharacterCommand(integer iNum, string sStr, key kID){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);
+    sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    string sValue = llToLower(llList2String(lParams, 1));
+    if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Titles)", kID);
+        return;
+    }
+     if((sCommand=="refresh")){
+        CharacterLoad();
+    }else
+    if((sCommand=="update")){
+        TitleUpdate(sValue);
+    }else
+    if((sCommand=="offset")){
+        SetTitleOffsett(sValue, llList2String(lParams, 2),iNum,kID);
+    }else
+    if((sCommand=="setcolor")){
+        SetTitleColor(sValue, llList2String(lParams, 2),iNum,kID);
+    }else
+    if((sCommand=="setalpha")){
+        SetTitleAlpha(sValue, llList2String(lParams, 2),iNum,kID);
+    }else
+    if((sCommand=="settext")){
+        SetTitleText(sValue, llDumpList2String( llList2List(lParams, 2, -1)," " ),iNum,kID);
+    }else
+    if((sCommand=="gettext")){
+        GetTitleText(sValue,iNum, kID);
+    }else
+    if((sCommand=="setshow")){
+        SetTitleShow(sValue, llList2String(lParams, 2),iNum,kID);
+    }else
+    if(sCommand=="alpha"||sCommand=="color"||sCommand=="text"){
+        if((integer)sValue<1||(integer)sValue||sValue!="id"){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0Invalid title id reference.",kID);
+        }else{
+            InputManage(sCommand,kID, iNum, sValue);
+        }
+    }else
+    if(sCommand=="1"||sCommand=="2"||sCommand=="3"||sCommand=="4"||sCommand=="5"||sCommand=="6"||sCommand=="id"){
+        TitleMenu(kID,iNum,sCommand);
+    }else
+    if(sValue=="id"){
+        SetTitleShow(sValue, sCommand,iNum,kID);
+    }else
+
+    if(sCommand=="clear"){
+        CharacterClear();
+    }
+    
+}
+InputManage(string sType, key kID, integer iNum, string sTitle){
+    if(sType=="alpha"){
+         Dialog(kID, "Type in alpha between 0.0-1.0 in the box and click Submit. Submitting an empty box will resets it.", [], [], 0, iNum, "InputAlpha_"+sTitle);
+    }else
+    if(sType=="color"){
+        Dialog(kID, "Type in color between 0-255 in RGB formate in the box and click Submit. Example 255,0,255 \nSubmitting an empty box will resets it. Remember, keep it to the theme.", [], [], 0, iNum, "InputColor_"+sTitle);
+    }else
+    if(sType=="text"){
+        Dialog(kID, "Type in text value for in the box and click Submit. Submitting an empty box will resets it.", [], [], 0, iNum, "InputText_"+sTitle);
+    }
+}
+BuildElementList() 
+{
+    integer n;
+    integer iLinkCount = llGetNumberOfPrims();
+    string sPrimName;
+    list lParams;
+    
+    g_lElementsInmateTitleID = [];
+    g_lElementsInmateTitleCrime = [];
+    g_lElementsInmateTitleMood = [];
+    g_lElementsInmateTitle1 = [];
+    g_lElementsInmateTitle2 = [];
+    g_lElementsInmateTitle3 = [];
+    g_lElementsInmateTitle4 = [];
+    g_lElementsInmateTitle5 = [];
+    g_lElementsInmateTitle6 = [];
+    
+    for (n = 1; n <= iLinkCount; ++n)
+    {
+        sPrimName=llGetLinkName(n); 
+        lParams=llParseString2List((string)llGetObjectDetails(llGetLinkKey(n), [OBJECT_DESC]), ["~"], []);    
+        if(0<llGetListLength(lParams)){
+            if (sPrimName=="InmateTitleID"||~llListFindList(lParams, ["inmatetitleid"])) {
+                g_lElementsInmateTitleID += [n];
+            }
+            if (sPrimName=="InmateTitleCrime"||~llListFindList(lParams, ["inmatetitlecrime"])) {
+                g_lElementsInmateTitleCrime += [n];
+            }
+            if (sPrimName=="InmateTitleMood"||~llListFindList(lParams, ["inmatetitlemood"])) {
+                g_lElementsInmateTitleMood += [n];
+            }
+            if (sPrimName=="InmateTitle1"||~llListFindList(lParams, ["inmatetitle1"])) {
+                g_lElementsInmateTitle1 += [n];
+            }
+            if (sPrimName=="InmateTitle2"||~llListFindList(lParams, ["inmatetitle2"])) {
+                g_lElementsInmateTitle2 += [n];
+            }
+            if (sPrimName=="InmateTitle3"||~llListFindList(lParams, ["inmatetitle3"])) {
+                g_lElementsInmateTitle3 += [n];
+            }
+            if (sPrimName=="InmateTitle4"||~llListFindList(lParams, ["inmatetitle4"])) {
+                g_lElementsInmateTitle4 += [n];
+            }
+            if (sPrimName=="InmateTitle5"||~llListFindList(lParams, ["inmatetitle5"])) {
+                g_lElementsInmateTitle5 += [n];
+            }
+            if (sPrimName=="InmateTitle6"||~llListFindList(lParams, ["inmatetitle6"])) {
+                g_lElementsInmateTitle6 += [n];
+            }
+        
+        }else{
+            if (sPrimName=="InmateTitleID") {
+                g_lElementsInmateTitleID += [n];
+            }
+            if (sPrimName=="InmateTitleCrime") {
+                g_lElementsInmateTitleCrime += [n];
+            }
+            if (sPrimName=="InmateTitleMood") {
+                g_lElementsInmateTitleMood += [n];
+            }
+            if (sPrimName=="InmateTitle1") {
+                g_lElementsInmateTitle1 += [n];
+            }
+            if (sPrimName=="InmateTitle2") {
+                g_lElementsInmateTitle2 += [n];
+            }
+            if (sPrimName=="InmateTitle3") {
+                g_lElementsInmateTitle3 += [n];
+            }
+            if (sPrimName=="InmateTitle4") {
+                g_lElementsInmateTitle4 += [n];
+            }
+            if (sPrimName=="InmateTitle5") {
+                g_lElementsInmateTitle5 += [n];
+            }
+            if (sPrimName=="InmateTitle6") {
+                g_lElementsInmateTitle6 += [n];
+            }
+            
+        }
+    }
+    lParams=[];
+}
+Querry_TitleUpdate(){
+    if(iTitleUpdate){
+        llSetTimerEvent(2.0);  
+        TIME_MOOD="character_update";
+    }
+}
+default {
+    on_rez(integer param) { 
+        BuildElementList() ;initialize();
+        g_kWearer=llGetOwner();
+    }
+
+    state_entry() {
+        
+        BuildElementList();initialize();
+        g_kWearer=llGetOwner();
+    }
+
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum >= CMD_OWNER && iNum <= CMD_WEARER)
+            UserCommand(iNum, sStr, kID);
+        else if (iNum == DIALOG_RESPONSEII) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            if (~iMenuIndex) {
+                string sMenuType = llList2String(g_lMenuIDs, iMenuIndex + 1);
+                g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+                list lMenuParams = llParseString2List(sStr, ["|¦¬"], []);
+                key kAV = llList2String(lMenuParams, 0);
+                string sMessage = llList2String(lMenuParams, 1);
+                integer iPage = (integer)llList2String(lMenuParams, 2);
+                integer iAuth = (integer)llList2String(lMenuParams, 3);
+                
+                if (sMessage == UPMENU) { 
+                    if(sMenuType=="-1"){
+                        llMessageLinked(LINK_ROOT, iAuth, "menu "+"character", kAV);
+                        return;
+                    }else
+                    if(sMenuType!="0"){
+                        CharacterMenu(kAV, iAuth);
+                    }
+                }else{
+                    if(llSubStringIndex(sMenuType,"InputAlpha_")==0){
+                        string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                        SetTitleAlpha(sTitle,sMessage,iAuth,kAV);
+                        TitleUpdate("1");
+                        TitleMenu(kAV, iAuth, sTitle); 
+                    }else
+                    if(llSubStringIndex(sMenuType,"InputColor_")==0){
+                        string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                        SetTitleColor(sTitle,sMessage,iAuth,kAV);
+                        TitleUpdate("1");
+                        TitleMenu(kAV, iAuth, sTitle); 
+                    }else
+                    if(llSubStringIndex(sMenuType,"InputText_")==0){
+                        string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                        SetTitleText(sTitle,sMessage,iAuth,kAV);
+                        TitleUpdate("1");
+                        TitleMenu(kAV, iAuth, sTitle); 
+                    }else
+                    if(llSubStringIndex(sMenuType,"Title_")==0){
+                        string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                        sMessage=llToLower(sMessage);
+                        if(sMessage=="alpha"||sMessage=="color"){
+                            InputManage(sMessage,kAV, iAuth, sTitle); 
+                        }else
+                        if(sMessage=="text"){
+                            GetTitleText(sTitle,iAuth, kAV);
+                            InputManage(sMessage,kAV, iAuth, sTitle); 
+                        }else
+                        if(llSubStringIndex(sMessage,"☒")==0||llSubStringIndex(sMessage,"☐")==0){
+                            string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                            SetTitleShow(sTitle,sMessage,iAuth,kAV);
+                            TitleUpdate("1");
+                            TitleMenu(kAV, iAuth, sTitle); 
+                        }else
+                        if(llSubStringIndex(sMessage,"up")==0||llSubStringIndex(sMessage,"down")==0||llSubStringIndex(sMessage,"central")==0){
+                            string sTitle=llList2String(llParseString2List(sMenuType, ["_"], []), 1);
+                            SetTitleOffsett(sTitle,sMessage,iAuth,kAV);
+                            TitleUpdate("1");
+                            TitleMenu(kAV, iAuth, sTitle); 
+                        }
+                    }else{
+                        CharacterCommand(iAuth,sMessage,kAV);
+                    }
+                }
+                
+            }
+        } else if (iNum == DIALOG_TIMEOUT) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex +3);  
+        } else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender;
+            else if (sStr == "LINK_CHARACTER") LINK_CHARACTER = iSender;
+            else if (sStr == "LINK_TITLES") LINK_TITLES = iSender;
+        } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
+        else if (iNum == CHARACTER_LM_SETTING_RESPONSE||iNum == LM_SETTING_RESPONSE||iNum==TITLES_LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            lParams=[];
+            if (llSubStringIndex(sToken,g_sCharacterToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sCharacterToken),-1);
+                
+                if (sToken == "slotload")
+                {
+                    g_iCharacterSlot_Save = (integer)sValue;
+                    CharacterLoad();
+                }else
+                if(llSubStringIndex(sToken,"InmateTitleShow")==0&&g_iCharacterSlot_Save!=0){
+                    sToken=llGetSubString(sToken,llStringLength("InmateTitleShow"),-1);
+                    
+                    if (sToken == "Inmate"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_Inmate=(integer)sValue;
+                    }
+                    if (sToken == "1"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_1=(integer)sValue;
+                    }
+                    if (sToken == "2"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_2=(integer)sValue;
+                    }
+                    if (sToken == "3"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_3=(integer)sValue;
+                    }
+                    if (sToken == "4"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_4=(integer)sValue;
+                    }
+                    if (sToken == "5"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_5=(integer)sValue;
+                    }
+                    if (sToken == "6"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Show_6=(integer)sValue;
+                    }
+                    Querry_TitleUpdate();
+                }else
+                if(llSubStringIndex(sToken,"InmateTitleOffset")==0&&g_iCharacterSlot_Save!=0){
+                    sToken=llGetSubString(sToken,llStringLength("InmateTitleOffset"),-1);
+                    
+                    if (sToken == "Inmate"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_Inmate=(integer)sValue;
+                    }
+                    if (sToken == "1"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_1=(integer)sValue;
+                    }
+                    if (sToken == "2"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_2=(integer)sValue;
+                    }
+                    if (sToken == "3"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_3=(integer)sValue;
+                    }
+                    if (sToken == "4"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_4=(integer)sValue;
+                    }
+                    if (sToken == "5"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_5=(integer)sValue;
+                    }
+                    if (sToken == "6"+(string)g_iCharacterSlot_Save)
+                    {
+                       iTitle_Offset_6=(integer)sValue;
+                    }
+                    Querry_TitleUpdate();
+                }else
+                if(llSubStringIndex(sToken,"InmateTitleValue")==0&&g_iCharacterSlot_Save!=0){
+                    sToken=llGetSubString(sToken,llStringLength("InmateTitleValue"),-1);
+                    
+                    if (sToken == "1"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_1=sValue;
+                    }
+                    if (sToken == "2"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_2=sValue;
+                    }
+                    if (sToken == "3"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_3=sValue;
+                    }
+                    if (sToken == "4"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_4=sValue;
+                    }
+                    if (sToken == "5"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_5=sValue;
+                    }
+                    if (sToken == "6"+(string)g_iCharacterSlot_Save)
+                    {
+                       sTitle_Value_6=sValue;
+                    }
+                    Querry_TitleUpdate();
+                }else
+                if(llSubStringIndex(sToken,"InmateTitleColor")==0&&g_iCharacterSlot_Save!=0){
+                    sToken=llGetSubString(sToken,llStringLength("InmateTitleColor"),-1);
+                    
+                    if (sToken == "1"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_1=(vector)sValue;
+                    }
+                    if (sToken == "2"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_2=(vector)sValue;
+                    }
+                    if (sToken == "3"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_3=(vector)sValue;
+                    }
+                    if (sToken == "4"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_4=(vector)sValue;
+                    }
+                    if (sToken == "5"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_5=(vector)sValue;
+                    }
+                    if (sToken == "6"+(string)g_iCharacterSlot_Save)
+                    {
+                       vTitle_Color_6=(vector)sValue;
+                    }
+                    Querry_TitleUpdate();
+                }else
+                if(llSubStringIndex(sToken,"InmateTitleAlpha")==0&&g_iCharacterSlot_Save!=0){
+                    sToken=llGetSubString(sToken,llStringLength("InmateTitleAlpha"),-1);
+                    
+                    if (sToken == "1"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_1=(float)sValue;
+                    }
+                    if (sToken == "2"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_2=(float)sValue;
+                    }
+                    if (sToken == "3"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_3=(float)sValue;
+                    }
+                    if (sToken == "4"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_4=(float)sValue;
+                    }
+                    if (sToken == "5"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_5=(float)sValue;
+                    }
+                    if (sToken == "6"+(string)g_iCharacterSlot_Save)
+                    {
+                       fTitle_Alpha_6=(float)sValue;
+                    }
+                    Querry_TitleUpdate();
+                }
+            }
+            else
+            if(llSubStringIndex(sToken,g_sInmateTitleToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateTitleToken),-1);
+                
+                if (sToken =="visibility"){
+                    iTitleVisibility=(integer)sValue;    
+                }else
+                if (sToken == "id"){
+                    sTitle_Value_ID=sValue;    
+                }else
+                if (sToken =="crime"){
+                    sTitle_Value_Crime=sValue;    
+                }else
+                if (sToken =="mood"){
+                    sTitle_Value_Mood=sValue;    
+                }else
+                if (sToken =="color"){
+                    vMood=(vector)sValue;    
+                }else
+                if (sToken =="alpha"){
+                    fAlpha=(float)sValue;    
+                }else
+                if (sToken =="update"){
+                    if(sValue=="refresh"){
+                        if(1<=g_iCharacterSlot_Save&&g_iCharacterSlot_Save<=6){
+                            CharacterLoad();
+                        }
+                        iTitleUpdate=TRUE;
+                        Querry_TitleUpdate();
+                    }
+                }
+            }else
+            if (sToken == g_sGlobalToken+"moodvalue"){
+                iMood=(integer)sValue; 
+                
+            }
+            
+            
+            sValue="";
+            sToken="";
+        }
+    }
+
+
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) {
+            g_iCharacterSlot_Save=0;
+            iTitleVisibility=1;
+            ClearValues();
+        }
+    }
+    timer() {
+        if(TIME_MOOD=="character_update"){
+           DoVisivility();
+        }
+        llSetTimerEvent(0.0);  
+        TIME_MOOD="";
+    }
+}
+
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 10/19/2017 21:59:29
+//mono
+
+
+
+
+string g_sSubMenu = "CharacterTitles";
+list g_lMenuIDs;  
+
+integer g_iMenuStride = 3;
+
+key g_kWearer; 
+
+string TIME_MOOD;
+
+
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+
+integer NOTIFY = 1002;
+
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_CHARACTER = 5;
+integer LINK_TITLES = 5;
+integer LINK_UPDATE = -10;
+
+integer LM_SETTING_RESPONSE = 2002;
+integer CHARACTER_LM_SETTING_RESPONSE = 2012;
+integer TITLES_LM_SETTING_SAVE = 2020;
+integer TITLES_LM_SETTING_REQUEST = 2021;
+integer TITLES_LM_SETTING_RESPONSE = 2022;
+integer TITLES_LM_SETTING_EMPTY = 2024;
+
+integer DIALOG = -9000;
+
+integer DIALOG_TIMEOUT = -9002;
+integer DIALOG_RESPONSEII = -9003;
+
+string UPMENU = "BACK";
+
+
+string g_sGlobalToken = "global_";
+string g_sCharacterToken = "character_";
+string g_sInmateTitleToken = "inmatetitle_";
+integer g_iCharacterSlot_Save;
+
+
+integer iMood;
+vector vMood;
+float fAlpha;
+integer iTitleVisibility;
+string sTitle_Value_ID;
+string sTitle_Value_Crime;
+string sTitle_Value_Mood;
+integer iTitle_Show_Inmate=1;
+integer iTitle_Offset_Inmate;
+
+string sTitle_Value_1;
+string sTitle_Value_2;
+string sTitle_Value_3;
+string sTitle_Value_4;
+string sTitle_Value_5;
+string sTitle_Value_6;
+
+integer iTitle_Show_1;
+integer iTitle_Show_2;
+integer iTitle_Show_3;
+integer iTitle_Show_4;
+integer iTitle_Show_5;
+integer iTitle_Show_6;
+
+integer iTitle_Offset_1;
+integer iTitle_Offset_2;
+integer iTitle_Offset_3;
+integer iTitle_Offset_4;
+integer iTitle_Offset_5;
+integer iTitle_Offset_6;
+
+vector vTitle_Color_1;
+vector vTitle_Color_2;
+vector vTitle_Color_3;
+vector vTitle_Color_4;
+vector vTitle_Color_5;
+vector vTitle_Color_6;
+
+
+float fTitle_Alpha_1;
+float fTitle_Alpha_2;
+float fTitle_Alpha_3;
+float fTitle_Alpha_4;
+float fTitle_Alpha_5;
+float fTitle_Alpha_6;
+
+integer iTitleAddSpace=0;
+list g_lElementsInmateTitleID ;
+list g_lElementsInmateTitleCrime ;
+list g_lElementsInmateTitleMood ;
+list g_lElementsInmateTitle1 ;
+list g_lElementsInmateTitle2 ;
+list g_lElementsInmateTitle3 ;
+list g_lElementsInmateTitle4 ;
+list g_lElementsInmateTitle5 ;
+list g_lElementsInmateTitle6 ;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+
+integer iTitleUpdate;
+
+integer SetOffset(integer iTitle, integer iOffset,key kID){
+    if(iOffset==1){
+        if(25<=iTitle){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Maximum reached.", kID);
+            iTitle=25;
+        }else{
+            iTitle+=iOffset;
+        }
+    }else
+    if(iOffset==-1){
+        if(iTitle<=0){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Minimum reached.", kID);
+            iTitle=0;
+        }else{
+            iTitle+=iOffset;
+        }
+    }else
+    if(iOffset==0){
+        if(iTitle==0){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Is already set to central.", kID);
+            iTitle=0;
+        }else{
+            iTitle=0;
+        }
+    }
+    return iTitle;
+}
+
+float GetLSLColor(string sValue){
+    float fValue=(float)sValue;
+    integer iValue=(integer)sValue;
+    if(0<=iValue&&iValue<=255){
+        fValue=fValue/255;
+    }
+    if(0.0<=fValue&&fValue<=1.0){
+        return fValue;
+    }
+    return -1.0;
+}
+CharacterSaveII(string sTitle, integer iShow, integer iOffset, float fAlpha, vector vColor, string sText){
+    
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleColor"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)vColor,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleAlpha"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)fAlpha,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleShow"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)iShow,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleOffset"+sTitle+(string)g_iCharacterSlot_Save+"="+(string)iOffset,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleValue"+sTitle+(string)g_iCharacterSlot_Save+"="+sText,"");     
+    
+}
+CharacterSave(){
+    if(g_iCharacterSlot_Save<=0||6<g_iCharacterSlot_Save){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Can't store character as a slot was not selected.", g_kWearer);
+        return;
+    }
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleShowInmate"+(string)g_iCharacterSlot_Save+"="+(string)iTitle_Show_Inmate,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_SAVE,g_sCharacterToken+"InmateTitleOffsetInmate"+(string)g_iCharacterSlot_Save+"="+(string)iTitle_Offset_Inmate,"");
+
+    CharacterSaveII("1", iTitle_Show_1, iTitle_Offset_1, fTitle_Alpha_1, vTitle_Color_1, sTitle_Value_1);
+    CharacterSaveII("2", iTitle_Show_2, iTitle_Offset_2, fTitle_Alpha_2, vTitle_Color_2, sTitle_Value_2);
+    CharacterSaveII("3", iTitle_Show_3, iTitle_Offset_3, fTitle_Alpha_3, vTitle_Color_3, sTitle_Value_3);
+    CharacterSaveII("4", iTitle_Show_4, iTitle_Offset_4, fTitle_Alpha_4, vTitle_Color_4, sTitle_Value_4);
+    CharacterSaveII("5", iTitle_Show_5, iTitle_Offset_5, fTitle_Alpha_5, vTitle_Color_5, sTitle_Value_5);
+    CharacterSaveII("6", iTitle_Show_6, iTitle_Offset_6, fTitle_Alpha_6, vTitle_Color_6, sTitle_Value_6);
+}
+CharacterClearII(string sTitle){
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleColor"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleAlpha"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleShow"+sTitle+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleValue"+sTitle+(string)g_iCharacterSlot_Save,"");
+}
+CharacterClear(){
+    if(g_iCharacterSlot_Save<=0||6<g_iCharacterSlot_Save){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Can't store character as a slot was not selected.", g_kWearer);
+        return;
+    }
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleShowInmate"+(string)g_iCharacterSlot_Save,"");
+    llMessageLinked(LINK_TITLES,TITLES_LM_SETTING_EMPTY,g_sCharacterToken+"InmateTitleOffsetInmate"+(string)g_iCharacterSlot_Save,"");
+    CharacterClearII("1");
+    CharacterClearII("2");
+    CharacterClearII("3");
+    CharacterClearII("4");
+    CharacterClearII("5");
+    CharacterClearII("6");
+    
+}
+initialize(){
+    iTitleUpdate=FALSE;
+    TIME_MOOD="";
+    llSetTimerEvent(0.0);
+    
+    iMood=0;sTitle_Value_Mood="OOC";iTitle_Offset_Inmate=0; vMood=<0.66,0.66,0.66>;fAlpha=1.0;
+    DoVisivility();
+    
+}
+display_elements_settext(list ELEMENTS, string TEXT, vector COLOR, float ALPHA, string sName){
+    integer index=0;
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"CHARACTER_TITLES,settext,"+sName+","+TEXT+","+(string)COLOR+","+(string)ALPHA);
+        llSetLinkPrimitiveParamsFast(link, [PRIM_TEXT, TEXT, COLOR, ALPHA]);
+        ++index;
+    }
+}
+UserCommand(integer iNum, string sStr, key kID) { 
+   
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,character_titles(d),17,10,16,119");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu)||llToLower(sStr) == llToLower(g_sSubMenu))
+        CharacterMenu(kID, iNum);
+    else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        CharacterCommand(iNum,sStr, kID);
+    }
+    
+    
+}
+
+TitleUpdate(string sSave){
+    if(sSave=="2"){
+        CharacterSave();
+    }else 
+    if(sSave=="1"){
+        DoVisivility();CharacterSave();
+    }else{
+        DoVisivility();
+    }
+}
+TitleMenu(key kID, integer iAuth, string i) {
+    
+    string sPrompt = "Character Title "+i;
+    sPrompt+="\n•IMPORTANT:Please dont make a rainbow color titles, try using the designated colors, aka Mood colors.";
+    list lMyButtons; 
+    i=llToLower(i);
+    if(i=="id"){
+        if(iTitle_Show_Inmate){
+        lMyButtons=["☒ ID"];
+        }else{
+            lMyButtons=["☐ ID"];
+        }
+        lMyButtons+=["Up ⬆","Central ►","Down ⬇"];
+    }else{
+        if(i=="1"){
+            if(iTitle_Show_1){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="2"){
+            if(iTitle_Show_2){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="3"){
+            if(iTitle_Show_3){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="4"){
+            if(iTitle_Show_4){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="5"){
+            if(iTitle_Show_5){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }else
+        if(i=="6"){
+            if(iTitle_Show_6){
+                lMyButtons=["☒ Show"];
+            }else{
+                lMyButtons=["☐ Show"];
+            }
+        }
+        lMyButtons+=["Text","Color","Alpha"];
+        lMyButtons+=["Up ⬆","Central ►","Down ⬇"];
+    }
+    
+   
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iAuth, "Title_"+i);
+}
+
+integer TitleIsText(string sText){
+    sText=llStringTrim(sText, STRING_TRIM );
+    return llStringLength(sText);
+}
+vector TitleGetColor(vector v){
+    if(v==ZERO_VECTOR){
+        return vMood;
+    }
+    return v;
+}
+
+float TitleGetAlpha(float f){
+    if(f==0.0){
+        return fAlpha;
+    }
+    return f;
+}
+string TitleAddSpace(string sText, integer iOffset){
+    integer i=0;
+    while(i<iTitleAddSpace){
+        sText+="\n ";
+        ++i;
+    }
+    ++iTitleAddSpace;
+    
+    if(0<iOffset){
+        i=0;
+        while(i<iOffset){
+            sText+="\n ";
+            ++i;
+        }
+    }
+    if(iOffset<0){
+        i=iOffset;
+        while(i<0){
+            sText="\n "+sText;
+            ++i;
+        }
+    }
+    
+    return sText;
+}
+SetTitleText(string sTitle, string sText,integer iNum, key kID){
+    sText=llStringTrim(sText, STRING_TRIM );
+    if(sText=="refresh"||sText==""){
+    
+    }else{
+        if(sTitle=="1"){
+            sTitle_Value_1=sText;
+            iTitle_Show_1=1;
+        }else
+        if(sTitle=="2"){
+            sTitle_Value_2=sText;
+            iTitle_Show_2=1;
+        }else
+        if(sTitle=="3"){
+            sTitle_Value_3=sText;
+            iTitle_Show_3=1;
+        }else
+        if(sTitle=="4"){
+            sTitle_Value_4=sText;
+            iTitle_Show_4=1;
+        }else
+        if(sTitle=="5"){
+            sTitle_Value_5=sText;
+            iTitle_Show_5=1;
+        }else
+        if(sTitle=="6"){
+            sTitle_Value_6=sText;
+            iTitle_Show_6=1;
+        }       
+    }
+}
+SetTitleShow(string sTitle, string sText,integer iNum, key kID){
+    sText=llToLower(llStringTrim(sText, STRING_TRIM ));
+    list lParams=llParseString2List(sText, [" "], []);
+    sText="";
+    
+    string sValue = llToLower(llList2String(lParams, 0));
+    integer iValue=-1;
+    
+    if(sValue=="☐"){
+        iValue=1;
+    }else
+    if(sValue=="☒"){
+        iValue=0;
+    }else
+    if(sValue=="1"||sValue=="0"){
+        iValue=(integer)sValue;
+    }
+        
+    if(iValue==1||iValue==0){
+        if(sTitle=="id"){
+            iTitle_Show_Inmate=iValue;
+        }else
+        if(sTitle=="1"){
+            iTitle_Show_1=iValue;
+        }else
+        if(sTitle=="2"){
+            iTitle_Show_2=iValue;
+        }else
+        if(sTitle=="3"){
+            iTitle_Show_3=iValue;
+        }else
+        if(sTitle=="4"){
+            iTitle_Show_4=iValue;
+        }else
+        if(sTitle=="5"){
+            iTitle_Show_5=iValue;
+        }else
+        if(sTitle=="6"){
+            iTitle_Show_6=iValue;
+        }       
+    }
+}
+SetTitleOffsett(string sTitle, string sText,integer iNum, key kID){
+    sText=llStringTrim(sText, STRING_TRIM );
+    list lParams=llParseString2List(sText, [" "], []);
+    sText="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    integer iValue=-2;
+    if(sCommand=="up"){
+        iValue=1;
+    }else
+    if(sCommand=="central"){
+        iValue=0;
+    }else
+    if(sCommand=="down"){
+        iValue=-1;
+    }
+    
+    if(iValue==1||iValue==-1||iValue==0){
+        if(sTitle=="id"){
+            iTitle_Offset_Inmate=SetOffset(iTitle_Offset_Inmate,iValue,kID);
+        }else
+        if(sTitle=="1"){
+            iTitle_Offset_1=SetOffset(iTitle_Offset_1,iValue,kID);
+        }else
+        if(sTitle=="2"){
+            iTitle_Offset_2=SetOffset(iTitle_Offset_2,iValue,kID);
+        }else
+        if(sTitle=="3"){
+            iTitle_Offset_3=SetOffset(iTitle_Offset_3,iValue,kID);
+        }else
+        if(sTitle=="4"){
+            iTitle_Offset_4=SetOffset(iTitle_Offset_4,iValue,kID);
+        }else
+        if(sTitle=="5"){
+            iTitle_Offset_5=SetOffset(iTitle_Offset_5,iValue,kID);
+        }else
+        if(sTitle=="6"){
+            iTitle_Offset_6=SetOffset(iTitle_Offset_6,iValue,kID);
+        }       
+    }
+}
+SetTitleColorClear(string sTitle){
+    if(sTitle=="1"){
+        vTitle_Color_1=ZERO_VECTOR;
+    }else
+    if(sTitle=="2"){
+        vTitle_Color_2=ZERO_VECTOR;
+    }else
+    if(sTitle=="3"){
+        vTitle_Color_3=ZERO_VECTOR;
+    }else
+    if(sTitle=="4"){
+        vTitle_Color_4=ZERO_VECTOR;
+    }else
+    if(sTitle=="5"){
+        vTitle_Color_5=ZERO_VECTOR;
+    }else
+    if(sTitle=="6"){
+        vTitle_Color_6=ZERO_VECTOR;
+    }    
+}
+SetTitleColor(string sTitle, string sColor,integer iNum, key kID){
+    sColor=llToLower(llStringTrim(sColor, STRING_TRIM ));
+    
+    if(sColor=="refresh"||sColor==""){
+        SetTitleColorClear(sTitle);
+    }else{
+        list lParams = llParseString2List(sColor, [","], []);
+        sColor="";
+        integer iParams = llGetListLength(lParams);
+        if(iParams==3){
+            string sValue = llList2String(lParams, 0);
+            string sValue2 = llList2String(lParams, 1);
+            string sValue3 = llList2String(lParams, 2);
+            float color_r=GetLSLColor(sValue);float color_g=GetLSLColor(sValue2);float color_b=GetLSLColor(sValue3);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                vector color=(vector)str_Colors;
+                
+                if(sTitle=="1"){
+                    vTitle_Color_1=color;
+                }else
+                if(sTitle=="2"){
+                    vTitle_Color_2=color;
+                }else
+                if(sTitle=="3"){
+                    vTitle_Color_3=color;
+                }else
+                if(sTitle=="4"){
+                    vTitle_Color_4=color;
+                }else
+                if(sTitle=="5"){
+                    vTitle_Color_5=color;
+                }else
+                if(sTitle=="6"){
+                    vTitle_Color_6=color;
+                }
+            }else{
+                SetTitleColorClear(sTitle);
+            }
+        }
+    }
+}
+SetTitleAlphaClear(string sTitle){
+    if(sTitle=="1"){
+        fTitle_Alpha_1=0.0;
+    }else
+    if(sTitle=="2"){
+        fTitle_Alpha_2=0.0;
+    }else
+    if(sTitle=="3"){
+        fTitle_Alpha_3=0.0;
+    }else
+    if(sTitle=="4"){
+        fTitle_Alpha_4=0.0;
+    }else
+    if(sTitle=="5"){
+        fTitle_Alpha_5=0.0;
+    }else
+    if(sTitle=="6"){
+        fTitle_Alpha_6=0.0;
+    }     
+}
+SetTitleAlpha(string sTitle, string sAlpha,integer iNum, key kID){
+    sAlpha=llToLower(llStringTrim(sAlpha, STRING_TRIM ));
+
+    if(sAlpha=="refresh"||sAlpha==""){
+        SetTitleAlphaClear(sTitle);
+    }else{
+        float alpha=(float)sAlpha;
+        if(0.0<=alpha&&alpha<=1.0){
+            if(sTitle=="1"){
+                fTitle_Alpha_1=alpha;
+            }else
+            if(sTitle=="2"){
+                fTitle_Alpha_2=alpha;
+            }else
+            if(sTitle=="3"){
+                fTitle_Alpha_3=alpha;
+            }else
+            if(sTitle=="4"){
+                fTitle_Alpha_4=alpha;
+            }else
+            if(sTitle=="5"){
+                fTitle_Alpha_5=alpha;
+            }else
+            if(sTitle=="6"){
+                fTitle_Alpha_6=alpha;
+            }
+        }else{
+            SetTitleAlphaClear(sTitle);
+        }
+    }
+}
+Querry_TitleUpdate(){
+    if(iTitleUpdate){
+        llSetTimerEvent(2.0);  
+        TIME_MOOD="character_update";
+    }
+}
+InputManage(string sType, key kID, integer iNum, string sTitle){
+    if(sType=="alpha"){
+         Dialog(kID, "Type in alpha between 0.0-1.0 in the box and click Submit. Submitting an empty box will resets it.", [], [], 0, iNum, "InputAlpha_"+sTitle);
+    }else
+    if(sType=="color"){
+        Dialog(kID, "Type in color between 0-255 in RGB formate in the box and click Submit. Example 255,0,255 \nSubmitting an empty box will resets it. Remember, keep it to the theme.", [], [], 0, iNum, "InputColor_"+sTitle);
+    }else
+    if(sType=="text"){
+        Dialog(kID, "Type in text value for in the box and click Submit. Submitting an empty box will resets it.", [], [], 0, iNum, "InputText_"+sTitle);
+    }
+}
+GetTitleText(string sTitle,integer iNum, key kID){
+    string tmp;
+    if(sTitle=="1"){
+        tmp=sTitle_Value_1;
+    }else
+    if(sTitle=="2"){
+        tmp=sTitle_Value_2;
+    }else
+    if(sTitle=="3"){
+        tmp=sTitle_Value_3;
+    }else
+    if(sTitle=="4"){
+        tmp=sTitle_Value_4;
+    }else
+    if(sTitle=="5"){
+        tmp=sTitle_Value_5;
+    }else
+    if(sTitle=="6"){
+        tmp=sTitle_Value_6;
+    } 
+    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Title "+sTitle+" text is:"+tmp, kID);
+}
+
+DoVisivility(){
+    display_elements_settext(g_lElementsInmateTitleID,"",ZERO_VECTOR,0.0,"Title_ID"); 
+    display_elements_settext(g_lElementsInmateTitleCrime,"",ZERO_VECTOR,0.0,"Title_CRIME"); 
+    display_elements_settext(g_lElementsInmateTitleMood,"",ZERO_VECTOR,0.0,"Title_MOOD"); 
+    display_elements_settext(g_lElementsInmateTitle1,"",ZERO_VECTOR,0.0,"Title_1"); 
+    display_elements_settext(g_lElementsInmateTitle2,"",ZERO_VECTOR,0.0,"Title_2"); 
+    display_elements_settext(g_lElementsInmateTitle3,"",ZERO_VECTOR,0.0,"Title_3"); 
+    display_elements_settext(g_lElementsInmateTitle4,"",ZERO_VECTOR,0.0,"Title_4"); 
+    display_elements_settext(g_lElementsInmateTitle5,"",ZERO_VECTOR,0.0,"Title_5"); 
+    display_elements_settext(g_lElementsInmateTitle6,"",ZERO_VECTOR,0.0,"Title_6"); 
+    iTitleAddSpace=0;
+    if(iTitleVisibility){
+        if(0<iMood){
+            
+
+            if(iTitle_Show_6&&TitleIsText(sTitle_Value_6)){
+                display_elements_settext(g_lElementsInmateTitle6,TitleAddSpace(sTitle_Value_6,iTitle_Offset_6),TitleGetColor(vTitle_Color_6),TitleGetAlpha(fTitle_Alpha_6),"Title_6"); 
+            }
+            if(iTitle_Show_5&&TitleIsText(sTitle_Value_5)){
+                display_elements_settext(g_lElementsInmateTitle5,TitleAddSpace(sTitle_Value_5,iTitle_Offset_5),TitleGetColor(vTitle_Color_5),TitleGetAlpha(fTitle_Alpha_5),"Title_5"); 
+            }
+            if(iTitle_Show_4&&TitleIsText(sTitle_Value_4)){
+                display_elements_settext(g_lElementsInmateTitle4,TitleAddSpace(sTitle_Value_4,iTitle_Offset_4),TitleGetColor(vTitle_Color_4),TitleGetAlpha(fTitle_Alpha_4),"Title_4"); 
+            }
+            if(iTitle_Show_3&&TitleIsText(sTitle_Value_3)){
+                display_elements_settext(g_lElementsInmateTitle3, TitleAddSpace(sTitle_Value_3,iTitle_Offset_3),TitleGetColor(vTitle_Color_3),TitleGetAlpha(fTitle_Alpha_3),"Title_3"); 
+            }
+            if(iTitle_Show_2&&TitleIsText(sTitle_Value_2)){
+                display_elements_settext(g_lElementsInmateTitle2,TitleAddSpace(sTitle_Value_2,iTitle_Offset_2),TitleGetColor(vTitle_Color_2),TitleGetAlpha(fTitle_Alpha_2),"Title_2"); 
+            }
+            if(iTitle_Show_1&&TitleIsText(sTitle_Value_1)){
+                display_elements_settext(g_lElementsInmateTitle1,TitleAddSpace(sTitle_Value_1,iTitle_Offset_1),TitleGetColor(vTitle_Color_1),TitleGetAlpha(fTitle_Alpha_1),"Title_1"); 
+            }
+            if(iTitle_Show_Inmate){
+                display_elements_settext(g_lElementsInmateTitleMood,TitleAddSpace(sTitle_Value_Mood,iTitle_Offset_Inmate),vMood,fAlpha,"Title_MOOD"); 
+                display_elements_settext(g_lElementsInmateTitleCrime,TitleAddSpace(sTitle_Value_Crime,iTitle_Offset_Inmate),vMood,fAlpha,"Title_CRIME"); 
+                display_elements_settext(g_lElementsInmateTitleID,TitleAddSpace(sTitle_Value_ID,iTitle_Offset_Inmate),vMood,fAlpha,"Title_ID");     
+            }
+        }else{
+            display_elements_settext(g_lElementsInmateTitleMood,TitleAddSpace(sTitle_Value_Mood,iTitle_Offset_Inmate),vMood,fAlpha,"Title_MOOD"); 
+        }
+    }
+    
+}
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string sMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, sMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, sMenuType];
+}
+
+
+ClearValues(){
+    iTitle_Show_Inmate=1;
+    
+    sTitle_Value_1="";
+    sTitle_Value_2="";
+    sTitle_Value_3="";
+    sTitle_Value_4="";
+    sTitle_Value_5="";
+    sTitle_Value_6="";
+
+    iTitle_Show_1=0;
+    iTitle_Show_2=0;
+    iTitle_Show_3=0;
+    iTitle_Show_4=0;
+    iTitle_Show_5=0;
+    iTitle_Show_6=0;
+    
+    iTitle_Offset_Inmate=0;
+    iTitle_Offset_1=0;
+    iTitle_Offset_2=0;
+    iTitle_Offset_3=0;
+    iTitle_Offset_4=0;
+    iTitle_Offset_5=0;
+    iTitle_Offset_6=0;
+
+    vTit

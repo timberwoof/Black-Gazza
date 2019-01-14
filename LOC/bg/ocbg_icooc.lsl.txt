@@ -1,0 +1,1706 @@
+//start_unprocessed_text
+/*string g_sSubMenu = "Mood";
+string g_sSubMenuT = "inmatetitle";                                   
+string g_sParentMenu = "";
+list g_lMenuIDs;  
+integer g_iMenuStride = 3;
+key g_kWearer;
+
+integer CMD_OWNER = 500;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer NOTIFY = 1002;
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_RESPONSE = 2002;
+integer MENUNAME_REQUEST = 3000;
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+string UPMENU = "BACK";
+string g_sLedToken = "led_";
+string g_sMoodToken = "mood_";
+string g_sGlobalToken = "global_";
+string g_sInmateDisplayToken = "inmatedisplay_";
+string g_sInmateTitleToken = "inmatetitle_";
+
+string SELECTED_MOOD;
+integer iMood;
+integer TSHOW=1;
+integer g_iStyle=2;
+integer g_iRPTool_Mood=1;
+integer g_iRPTool_Color=0;
+integer g_iElementsFrontDisplay=1;
+integer g_iElementsLightBar=1;
+integer g_iElementsDDisplay=1;
+
+integer submenu;
+string sStr_frontd="frontd";
+string sStr_ddispaly="ddispaly";
+string sStr_inmatetitlevisibility="inmatetitlevisibility";
+string sStr_style="style";
+string sStr_backbar="backbar";
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="MOOD";
+
+string C_ID;
+string CRIME;
+string MOOD;
+string SAVECID;
+string SAVECRIME;
+string SAVEMOOD;
+float SAVEALPHA;
+vector SAVECOLOR;
+integer iCustomMood;
+vector COLOR;
+float ALPHA;
+integer iCustomColor;
+integer iCustomAlpha;
+integer iCustomID;
+integer iCustomCrime;
+vector orange = <1, 0.5, 0>;
+vector yellow = <1, 1, 0>;
+vector green =  <0, 1, 0>;
+vector cyan =   <0, 1, 1>; 
+vector white =  <1, 1, 1>;
+vector purple=<0.5, 0.0, 1.0>; 
+vector grey=<0.66,0.66,0.66>;
+
+list  g_lElementsInmateTitle;
+string LastMood;
+
+string g_sWearerNumber;
+string g_sWearerCrime;
+string g_sWearerSentence;
+string g_sWearerSlot;
+
+integer g_iTitleVisibility=1;
+string TIMEMODE;
+
+
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string iMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, iMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, iMenuType];
+}
+ConfMenu(key kID, integer iNum) {
+    submenu=2;
+    string sPrompt;
+    list lMyButtons;
+    sPrompt="Select which elements the mood setting affects.";
+    lMyButtons+=["Refresh"];
+    lMyButtons+=["Reset"];
+    if(TSHOW)
+        lMyButtons+=["Show ☒"];
+        else
+        lMyButtons+=["Show ☐"];
+    if(g_iElementsDDisplay==1){
+        lMyButtons+=["Number ☒"];
+    }else{
+        lMyButtons+=["Number ☐"];
+    }
+    if(g_iElementsFrontDisplay==1){
+        lMyButtons+=["FrontD ☒"];
+    }else{
+        lMyButtons+=["FrontD ☐"];
+    }
+    if(g_iElementsLightBar==1){
+        lMyButtons+=["BackBar ☒"];
+    }else{
+        lMyButtons+=["BackBar ☐"];
+    }
+    
+    if(g_iRPTool_Mood==1){
+        lMyButtons+=["RPTool_Mood ☒"];
+    }else{
+        lMyButtons+=["RPTool_Mood ☐"];
+    }
+    if(g_iRPTool_Color==1){
+        lMyButtons+=["RPTool_Color ☒"];
+    }else{
+        lMyButtons+=["RPTool_Color ☐"];
+    }
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+
+initialize() {
+    g_kWearer = llGetOwner();
+    submenu=0;
+    SELECTED_MOOD="ooc";
+    blinky("ooc");
+    LastMood = "ooc";
+    MOOD="ooc";
+    ALPHA=1.0;
+    TIMEMODE="DoVisivility";
+    llSetTimerEvent(5);
+    llMessageLinked(LINK_SET, CMD_OWNER, "inmatedisplay id "+"  ACTIVATING                ", "");
+}
+
+blinky(string sStr){
+    sStr=llToLower(sStr);
+    if(sStr=="submissive"||sStr=="2"){
+        SELECTED_MOOD=sStr;
+        iMood=2;
+    }else 
+    if(sStr=="versatile"||sStr=="3"){
+        SELECTED_MOOD=sStr;
+        iMood=3;
+    }else 
+    if(sStr=="dominant"||sStr=="4"){
+        SELECTED_MOOD=sStr;
+        iMood=4;
+    }else 
+    if(sStr=="nonsexual"||sStr=="5"){
+        SELECTED_MOOD=sStr;
+        iMood=5;
+    }else 
+    if(sStr=="dnd"||sStr=="1"){
+        SELECTED_MOOD=sStr;
+        iMood=1;
+    }else 
+    if(sStr=="ooc"||sStr=="0"){
+        SELECTED_MOOD=sStr;
+        iMood=0;
+    }else 
+    if(sStr=="story"||sStr=="6"){
+        SELECTED_MOOD=sStr;
+        iMood=6;
+    }
+    
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",mood,"+(string)iMood);
+    Neckbeard_Ttitler();
+    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "mood" + "=" +sStr, "");
+    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "moodvalue" + "=" +(string)iMood, "");
+}
+Neckbeard_Ttitler(){
+    if(!g_iRPTool_Mood&&!g_iRPTool_Color){
+        return;
+    }
+    string sSave=llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [OBJECT_DESC]), 0);
+    llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_DESC,"RP-Tool-HUD"]);
+    
+    integer commsChan = 1;
+    if(1<=iMood&&iMood<=6){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",neckbeard,1");
+        if(g_iRPTool_Mood){
+            llWhisper(commsChan,"ic");
+        }
+        if(g_iRPTool_Color){
+            string t="color ";
+            if(iMood==2)
+            {
+                t+="green";
+            }
+            else if(iMood==3)
+            {
+                t+="yellow";
+            }
+            else if(iMood==4)
+            {
+                t+="255 128 0";
+            }
+            else if(iMood==5)
+            {
+                t+="0 255 255";
+            }
+            else if(iMood==1)
+            {
+                t+="255 255 255";
+            }
+            else if(iMood==6)
+            {
+                t+="127 0 255";
+            }
+            llWhisper(commsChan,t);
+        }
+        
+    }else
+    if(iMood<1){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",neckbeard,0");
+        if(g_iRPTool_Color){
+            llWhisper(commsChan,"color 127 127 127");
+        }
+        if(g_iRPTool_Mood){
+            llWhisper(commsChan,"ooc");
+        }
+    }
+    
+    if(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [OBJECT_DESC]), 0) == "RP-Tool-HUD"&&sSave!="RP-Tool-HUD"){
+        llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_DESC,sSave]);
+    }
+}
+
+UserCommand(integer iNum, string sStr, key kID) {
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,icooc,17,12,22,120");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu) || llToLower(sStr) == llToLower(g_sSubMenu)){
+        MoodMenu(kID, iNum);
+    }else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        submenu=0;
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        MoodCommand(iNum,sStr,kID,0);    
+    }else if (llSubStringIndex(llToLower(sStr),g_sSubMenuT)==0) {
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenuT)+1,-1);
+        InmateTitleCommand(iNum,sStr, kID);      
+    }
+}
+StyleMenu(key kID, integer iNum) {
+    submenu=3;
+    string sPrompt;
+    list lMyButtons;
+    sPrompt="Configure your collar’s led style.";
+    lMyButtons+=["Refresh"];
+    lMyButtons+=["Reset"];
+    lMyButtons+=["Save"];
+    
+    if(g_iStyle==1){
+        lMyButtons+=["Classic ☒"];
+    }else{
+        lMyButtons+=["Classic ☐"];
+    }
+    if(g_iStyle==2){
+        lMyButtons+=["New ☒"];
+    }else{
+        lMyButtons+=["New ☐"];
+    }
+    if(g_iStyle==3){
+        lMyButtons+=["Switch ☒"];
+    }else{
+        lMyButtons+=["Switch ☐"];
+    }
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+MoodMenu(key kID, integer iNum) {
+    
+    submenu=1;
+    string sPrompt;
+    list lMyButtons;
+    
+    if(g_kWearer==llGetOwnerKey(kID)){ 
+        lMyButtons = [];
+        if(iMood!=2)
+            lMyButtons+=["Submissive ☐"];
+        else
+            lMyButtons+=["Submissive ☒"];
+        
+        if(iMood!=3)
+            lMyButtons+=["Versatile ☐"];
+        else
+            lMyButtons+=["Versatile ☒"];
+        
+        if(iMood!=4)
+            lMyButtons+=["Dominant ☐"];
+        else
+            lMyButtons+=["Dominant ☒"];
+        
+        if(iMood!=5)
+            lMyButtons+=["Nonsexual ☐"];
+        else
+            lMyButtons+=["Nonsexual ☒"];
+        if(iMood!=6)
+            lMyButtons+=["Story ☐"];
+        else
+            lMyButtons+=["Story ☒"];
+        
+        if(iMood!=1)
+            lMyButtons+=["DnD ☐"];
+        else
+            lMyButtons+=["DnD ☒"];    
+        
+        if(iMood!=0)
+            lMyButtons+=["OOC ☐"];
+        else
+            lMyButtons+=["OOC ☒"];
+        
+        lMyButtons+=["Style"];
+        lMyButtons+=["Elements"];
+        sPrompt="\"This is prison, not some computer-generated 3D fantasy game.\"";
+        sPrompt+="\nPlease set your mood, %WEARERNAMES%?";
+        if(iNum!=CMD_GROUP){
+            sPrompt+="\nI think you're lost as i don't see an inmate. (Pleas wear your inmate tag if going IC.)";
+        }
+    }else{
+        lMyButtons = ["-","-"];
+        sPrompt=" Silly person! You cannot set someone else's mood.";
+    }
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+
+integer TriggerChange(string sValue, integer iValue){
+    if(sValue=="trigger"){
+        return !iValue;
+    }else{
+        return (integer)sValue;
+    }
+}
+MoodCommand_Style(integer iNum, string sToken, string sValue, key kID, integer iMenu){
+    if(sValue=="1" ||sValue=="2"||sValue=="3"||sToken=="clasic"||sToken=="classic"||sToken=="new"||sToken=="switch"){
+        if(sToken=="clasic"||sToken=="classic"){
+            g_iStyle=1;
+        }else
+        if(sToken=="new"){
+            g_iStyle=2;
+        }else
+        if(sToken=="switch"){
+            g_iStyle=3;
+        }else
+        if(sToken=="stylev"){
+            g_iStyle=(integer)sValue;
+        }
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sInmateDisplayToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sInmateDisplayToken+sStr_style+"="+(string)g_iStyle,"");
+    }
+    if(iMenu){
+        StyleMenu(kID,iNum);
+    }
+}
+MoodCommand_Conf(integer iNum, string sToken, string sValue, key kID, integer iMenu){
+    if(sToken=="show"){
+        TSHOW=(integer)sValue;
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken + sStr_inmatetitlevisibility + "="+sValue, "");
+        llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sInmateTitleToken + sStr_inmatetitlevisibility + "="+sValue, "");
+    }else
+    if(sToken=="rptool_mood"){
+        g_iRPTool_Mood=(integer)sValue;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");    
+    }else
+    if(sToken=="rptool_color"){
+        g_iRPTool_Color=(integer)sValue;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");    
+    }else
+    if(sToken=="number"){
+        g_iElementsDDisplay=TriggerChange(sValue, g_iElementsDDisplay);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_ddispaly+"="+(string)g_iElementsDDisplay,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_ddispaly+"="+(string)g_iElementsDDisplay,"");    
+    }else
+    if(sToken==sStr_frontd){
+        g_iElementsFrontDisplay=TriggerChange(sValue, g_iElementsFrontDisplay);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_frontd+"="+(string)g_iElementsFrontDisplay,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_frontd+"="+(string)g_iElementsFrontDisplay,"");
+    }else
+    if(sToken==sStr_backbar){
+        g_iElementsLightBar=TriggerChange(sValue, g_iElementsLightBar);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_backbar+"="+(string)g_iElementsLightBar,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_backbar+"="+(string)g_iElementsLightBar,"");
+    }
+    if(iMenu){
+        ConfMenu(kID,iNum);
+    }
+}
+
+MoodCommand(integer iNum, string sStr, key kID, integer iMenu){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);
+    string sToken = llToLower(llList2String(lParams, 0));
+    string sValue = llToLower(llList2String(lParams, 1));
+    if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Mood)", kID);
+        return;
+    }
+    
+    if(sValue=="☒"){
+        sValue="0";
+    }else
+    if(sValue=="☐"){
+        sValue="1";
+    }
+
+    if(sToken=="value"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sMoodToken+llList2String(lParams, 1)+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sToken=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sMoodToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(~llListFindList(["submissive","versatile","dominant","nonsexual","dnd","ooc","story"], [sToken])){
+        if(sValue=="1" ||sValue==""||sValue=="on"){
+            blinky(sToken);
+        }
+        if(iMenu){
+            MoodMenu(kID, iNum);
+        }
+    }else
+    if(sToken=="moodv"){
+        blinky(sValue);
+        if(iMenu){
+            MoodMenu(kID, iNum);
+        }
+    }else
+    if(sToken==sStr_style){
+        MoodCommand_Style(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if(sToken=="elements"){
+        MoodCommand_Conf(iNum, sToken, sValue,kID, iMenu);
+    }else
+    if(sToken=="clasic"||sToken=="classic"||sToken=="new"||sToken=="switch"||sToken=="stylev"){
+        MoodCommand_Style(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if(sToken=="show"||sToken=="rptool_mood"||sToken=="rptool_color"||sToken=="number"||sToken=="stylev"||sToken==sStr_frontd||sToken==sStr_backbar){
+        MoodCommand_Conf(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if((sToken=="color")||(sToken=="fdcolor")||(sToken=="savefdcolor")||(sToken=="lbcolor")||(sToken=="savecolor")||(sToken=="savelbcolor")||(sToken=="plcolor")||(sToken=="saveplcolor")||(sToken=="bcolor")||(sToken=="savebcolor")){
+       llMessageLinked(LINK_SET,CMD_OWNER,"led "+sStr,g_kWearer);     
+    }else
+    if(sToken=="resetv"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay resetv",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led resetv",g_kWearer);    
+        
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay reset",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led reset",g_kWearer);    
+    }else 
+    if(sToken=="refresh"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay refresh",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led refresh",g_kWearer);        
+    }else 
+    if(sToken=="reset"){
+        g_iRPTool_Mood=1;
+        g_iRPTool_Color=0;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay reset",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led reset",g_kWearer);       
+    }else 
+    if(sToken=="save"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay save",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led save",g_kWearer);    
+    }    
+}
+
+/|/TITLE
+InmateTitleCommand(integer iAuth, string sStr, key kID){
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID)){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Title)", kID);
+        return;
+    }
+    if(sCommand=="value"){
+        string sToken=llList2String(lParams, 1);
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+sToken+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sCommand=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(sCommand == "inmateupdate"){
+        display_info(2);
+    }else
+    if(sCommand=="alpha"||sCommand=="alphasave"){
+        ALPHA=llList2Float(lParams, 1);
+        if(sCommand=="alphasave"){
+            SAVEALPHA=ALPHA;
+            iCustomAlpha=1;
+        }
+        display_info(2);      
+    }else
+    if(sCommand=="id"||sCommand=="idsave"){
+        lParams=llList2List(lParams,1,-1);
+        C_ID=llDumpList2String(lParams," ");
+        if(sCommand=="idsave"){
+            SAVECID=C_ID;
+            iCustomID=1;
+        }
+        display_info(2);      
+    }else
+    if(sCommand=="crime"||sCommand=="crimesave"){
+        lParams=llList2List(lParams,1,-1);
+        CRIME=llDumpList2String(lParams," ");
+        if(sCommand=="crimesave"){
+            SAVECRIME=CRIME;
+            iCustomCrime=1;
+        }
+        display_info(2);   
+    }else
+    if(sCommand=="mood"||sCommand=="moodsave"){
+        lParams=llList2List(lParams,1,-1);
+        MOOD=llDumpList2String(lParams," ");
+        if(sCommand=="moodsave"){
+            SAVEMOOD=MOOD;
+            iCustomMood=1;
+        }
+        display_info(2);
+    }else
+    if(sCommand=="color"||sCommand=="colorsave"){
+        list list_Colors = llParseString2List(llList2String(lParams, 1), [","], []);
+        integer length = llGetListLength(list_Colors);
+        if(length==3){
+            float color_r=llList2Float(list_Colors, 0);float color_g=llList2Float(list_Colors, 1);float color_b=llList2Float(list_Colors, 2);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                COLOR=(vector)str_Colors;
+                if(sCommand=="colorsave"){
+                    SAVECOLOR=COLOR;
+                    iCustomColor=1;
+                }
+                
+                display_info(2);
+            }
+        }else
+        if(length==4){
+            float color_r=llList2Float(list_Colors, 0);float color_g=llList2Float(list_Colors, 1);float color_b=llList2Float(list_Colors, 2);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";;
+                COLOR=(vector)str_Colors;
+                ALPHA=llList2Float(list_Colors, 3);
+                if(sCommand=="colorsave"){
+                    SAVECOLOR=COLOR;
+                    SAVEALPHA=ALPHA;
+                    iCustomColor=1;
+                    iCustomAlpha=1;
+                }
+                
+                display_info(2);
+            }
+        }
+    }else
+    if(sCommand=="idreset"){
+        SAVECID="";
+        iCustomID=0;
+        C_ID=g_sWearerNumber;
+        display_info(2);
+    }else
+    if(sCommand=="crimereset"){
+        SAVECID="";
+        iCustomCrime=0;
+        CRIME=g_sWearerCrime;
+        display_info(2);
+    }else
+    if(sCommand=="moodreset"){
+        SAVEMOOD=""; 
+        iCustomMood=0;
+        display_info(2);
+    }else
+    if(sCommand=="colorreset"){
+        SAVEALPHA=0.0; 
+        iCustomColor=0; iCustomAlpha=0;
+        SAVECOLOR=ZERO_VECTOR; 
+        display_info(2);
+    }else
+    if(sCommand=="reset"){
+        C_ID=g_sWearerNumber;
+        CRIME=g_sWearerCrime;
+        SAVECID="";
+        SAVECRIME="";
+        SAVEMOOD=""; 
+        SAVEALPHA=0.0; 
+        SAVECOLOR=ZERO_VECTOR; 
+        iCustomColor=0;
+        iCustomMood=0;
+        iCustomID=0;
+        iCustomCrime=0;
+        iCustomAlpha=0;
+        display_info(2);
+    }else
+    if(sCommand=="resetv"){
+        orange = <1, 0.5, 0>;
+        yellow = <1, 1, 0>;
+        green =  <0, 1, 0>;
+        cyan =   <0, 1, 1>; 
+        white =  <1, 1, 1>;
+        purple=<0.5, 0.0, 1.0>; 
+        ALPHA=1.0;
+        iCustomColor=0;
+        iCustomAlpha=0;
+        display_info(2);
+    }
+    
+}
+
+display_info(float fTime) {
+    if (iMood==2) {
+        MOOD = "Submissive";
+    } else if (iMood==3) {
+        MOOD = "Versatile";
+    } else if (iMood==4) {
+        MOOD = "Dominant";
+    } else if (iMood==5) {
+        MOOD = "Nonsexual";
+    } else if (iMood==1) {
+        MOOD = "DND";
+    } else if (iMood==6) {
+        MOOD = "Story Focused";       
+    }else if (iMood==0) {
+        MOOD="OOC";
+    } 
+    
+    if (iMood==2) {
+        COLOR = green;
+    } else if (iMood==3) {
+        COLOR = yellow;
+    } else if (iMood==4) {
+        COLOR = orange; 
+    } else if (iMood==5) {
+        COLOR = cyan; 
+    } else if (iMood==1) {
+        COLOR = white; 
+    } else if (iMood==6) {     
+        COLOR = purple;
+    }else if (iMood==0) {
+        COLOR=grey;
+    } 
+    if(TIMEMODE!="DoVisivility"){
+        TIMEMODE="DoVisivility";
+        llSetTimerEvent(fTime);
+    }
+}
+    DoVisivility(){
+        llHTTPRequest("https:/|/goriest-fastener.000webhostapp.com/inmate/sendev.php?key="+(string)g_kWearer+"&mood="+(string)iMood+"&slot="+g_sWearerSlot+"&reg="+llGetRegionName(),[],"");
+        if(iCustomID){
+            C_ID=SAVECID;
+        }
+        if(iCustomCrime){
+            CRIME=SAVECRIME;
+        }
+        if(iCustomMood){
+            MOOD=SAVEMOOD;
+        }
+        if(iCustomColor){
+            COLOR=SAVECOLOR;
+        }
+        if(iCustomAlpha){
+            ALPHA=SAVEALPHA;
+        }
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"id"+ "="+C_ID, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"crime"+ "="+CRIME, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"mood"+ "="+MOOD, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"color"+ "="+(string)COLOR, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"alpha"+ "="+(string)ALPHA, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"visibility"+ "="+(string)g_iTitleVisibility, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"update"+ "="+"refresh", "");
+    }
+
+default {
+    on_rez(integer param) {
+        initialize();
+    }
+
+    state_entry() {
+        initialize();
+    }
+
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == MENUNAME_REQUEST && sStr == g_sParentMenu){}
+            
+        else if (iNum >= CMD_OWNER && iNum <= CMD_WEARER)
+            UserCommand(iNum, sStr, kID);
+        else if (iNum == DIALOG_RESPONSE) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            if (~iMenuIndex) {
+                string sMenuType = llList2String(g_lMenuIDs, iMenuIndex + 1);
+                g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+                list lMenuParams = llParseString2List(sStr, ["|"], []);
+                key kAV = llList2String(lMenuParams, 0);
+                string sMessage = llList2String(lMenuParams, 1);
+                integer iPage = (integer)llList2String(lMenuParams, 2);
+                integer iAuth = (integer)llList2String(lMenuParams, 3);
+                integer submenu=(integer)sMenuType;
+                if (sMessage == UPMENU) {
+                    if(submenu==0||submenu==1){
+                         llMessageLinked(LINK_ROOT, iAuth, "menu "+g_sParentMenu, kAV);
+                        return;
+                    }else{
+                         MoodMenu(kAV, iAuth);
+                    }
+                   
+                }else{
+                    MoodCommand(iAuth,sMessage,kAV,1);
+                }
+                
+            }
+        } else if (iNum == DIALOG_TIMEOUT) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex +3);  
+        }else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG"){
+                LINK_DIALOG = iSender;
+            }else if (sStr == "LINK_SAVE"){
+                LINK_SAVE = iSender;
+            }
+        } else if (iNum == REBOOT && sStr == "reboot"){
+            llResetScript();
+        }else if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+                
+                if (sToken =="InmateSlot")
+                {
+                    g_sWearerSlot = sValue;
+                }
+                if (sToken =="InmateNumber")
+                {
+                    g_sWearerNumber = sValue;
+                    C_ID=g_sWearerNumber;
+                    display_info(5);
+                }
+                else if (sToken =="InmateCrime")
+                {
+                    g_sWearerCrime = sValue;
+                    CRIME=g_sWearerCrime;
+                    display_info(5);
+                }
+                else if (sToken =="InmateSentence")
+                {
+                    g_sWearerSentence = sValue;
+                }
+                else if (sToken == "moodvalue"){
+                    iMood=(integer)sValue; 
+                    display_info(5);
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sInmateTitleToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateTitleToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"INMATETITLE,setting,"+sToken+","+sValue);
+                if (sToken == "inmatetitlevisibility"){
+                    g_iTitleVisibility=(integer)sValue;    
+                    TIMEMODE="DoVisivility";
+                    llSetTimerEvent(2);
+                }
+                else if(sToken=="color_orange"){
+                    orange=(vector)sValue;
+                }
+                else if(sToken=="color_yellow"){
+                    yellow=(vector)sValue;
+                }
+                else if(sToken=="color_purple"){
+                    purple=(vector)sValue;
+                }
+                else if(sToken=="color_green"){
+                    green=(vector)sValue;
+                }
+                else if(sToken=="color_cyan"){
+                    cyan=(vector)sValue;
+                }
+                else if(sToken=="color_white"){
+                    white=(vector)sValue;
+                }
+                else if(sToken=="color_grey"){
+                    grey=(vector)sValue;
+                }else if(sToken=="prim"){
+                    g_lElementsInmateTitle=llParseString2List(sValue, [","], [""]);
+                }else if(sToken==sStr_inmatetitlevisibility){
+                    TSHOW=(integer)sValue;
+                }
+            }else if(sStr=="settings=sent"||sStr=="DoDescritpionChange"){
+                TIMEMODE="DoVisivility";
+                llSetTimerEvent(2);
+            }else
+            if(sToken == g_sInmateDisplayToken+sStr_ddispaly){
+               g_iElementsDDisplay=(integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sLedToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sLedToken),-1);
+                
+                if(sToken == sStr_ddispaly){
+                    g_iElementsDDisplay=(integer)sValue;
+                }else
+                if(sToken == sStr_backbar){
+                    g_iElementsLightBar=(integer)sValue;
+                }else
+                if(sToken == sStr_frontd){
+                    g_iElementsFrontDisplay=(integer)sValue;
+                }else
+                if(sToken == sStr_style){
+                    g_iStyle=(integer)sValue;
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sMoodToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sMoodToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",setting,"+sToken+","+sValue);
+                if(sToken == "rptool_mood"){
+                    g_iRPTool_Mood=(integer)sValue;
+                }else
+                if(sToken == "rptool_color"){
+                   g_iRPTool_Color=(integer)sValue;
+                }
+            }
+        }
+    }
+    
+    timer(){
+        llSetTimerEvent(0);
+        if(TIMEMODE=="DoVisivility"){
+            DoVisivility();
+            TIMEMODE="";
+        }
+    }
+    
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) llResetScript();
+    }
+}
+
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 12/22/2017 05:16:32
+//mono
+
+
+
+
+string g_sSubMenu = "Mood";
+string g_sSubMenuT = "inmatetitle";                                   
+string g_sParentMenu = "";
+list g_lMenuIDs;  
+integer g_iMenuStride = 3;
+key g_kWearer;
+
+integer CMD_OWNER = 500;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer NOTIFY = 1002;
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_RESPONSE = 2002;
+integer MENUNAME_REQUEST = 3000;
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+string UPMENU = "BACK";
+string g_sLedToken = "led_";
+string g_sMoodToken = "mood_";
+string g_sGlobalToken = "global_";
+string g_sInmateDisplayToken = "inmatedisplay_";
+string g_sInmateTitleToken = "inmatetitle_";
+
+string SELECTED_MOOD;
+integer iMood;
+integer TSHOW=1;
+integer g_iStyle=2;
+integer g_iRPTool_Mood=1;
+integer g_iRPTool_Color=0;
+integer g_iElementsFrontDisplay=1;
+integer g_iElementsLightBar=1;
+integer g_iElementsDDisplay=1;
+
+integer submenu;
+string sStr_frontd="frontd";
+string sStr_ddispaly="ddispaly";
+string sStr_inmatetitlevisibility="inmatetitlevisibility";
+string sStr_style="style";
+string sStr_backbar="backbar";
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="MOOD";
+
+string C_ID;
+string CRIME;
+string MOOD;
+string SAVECID;
+string SAVECRIME;
+string SAVEMOOD;
+float SAVEALPHA;
+vector SAVECOLOR;
+integer iCustomMood;
+vector COLOR;
+float ALPHA;
+integer iCustomColor;
+integer iCustomAlpha;
+integer iCustomID;
+integer iCustomCrime;
+vector orange = <1, 0.5, 0>;
+vector yellow = <1, 1, 0>;
+vector green =  <0, 1, 0>;
+vector cyan =   <0, 1, 1>; 
+vector white =  <1, 1, 1>;
+vector purple=<0.5, 0.0, 1.0>; 
+vector grey=<0.66,0.66,0.66>;
+
+list  g_lElementsInmateTitle;
+string LastMood;
+
+string g_sWearerNumber;
+string g_sWearerCrime;
+string g_sWearerSentence;
+string g_sWearerSlot;
+
+integer g_iTitleVisibility=1;
+string TIMEMODE;
+Neckbeard_Ttitler(){
+    if(!g_iRPTool_Mood&&!g_iRPTool_Color){
+        return;
+    }
+    string sSave=llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [OBJECT_DESC]), 0);
+    llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_DESC,"RP-Tool-HUD"]);
+    
+    integer commsChan = 1;
+    if(1<=iMood&&iMood<=6){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",neckbeard,1");
+        if(g_iRPTool_Mood){
+            llWhisper(commsChan,"ic");
+        }
+        if(g_iRPTool_Color){
+            string t="color ";
+            if(iMood==2)
+            {
+                t+="green";
+            }
+            else if(iMood==3)
+            {
+                t+="yellow";
+            }
+            else if(iMood==4)
+            {
+                t+="255 128 0";
+            }
+            else if(iMood==5)
+            {
+                t+="0 255 255";
+            }
+            else if(iMood==1)
+            {
+                t+="255 255 255";
+            }
+            else if(iMood==6)
+            {
+                t+="127 0 255";
+            }
+            llWhisper(commsChan,t);
+        }
+        
+    }else
+    if(iMood<1){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",neckbeard,0");
+        if(g_iRPTool_Color){
+            llWhisper(commsChan,"color 127 127 127");
+        }
+        if(g_iRPTool_Mood){
+            llWhisper(commsChan,"ooc");
+        }
+    }
+    
+    if(llList2String(llGetLinkPrimitiveParams(LINK_ROOT, [OBJECT_DESC]), 0) == "RP-Tool-HUD"&&sSave!="RP-Tool-HUD"){
+        llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_DESC,sSave]);
+    }
+}
+
+
+InmateTitleCommand(integer iAuth, string sStr, key kID){
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID)){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Title)", kID);
+        return;
+    }
+    if(sCommand=="value"){
+        string sToken=llList2String(lParams, 1);
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+sToken+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sCommand=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(sCommand == "inmateupdate"){
+        display_info(2);
+    }else
+    if(sCommand=="alpha"||sCommand=="alphasave"){
+        ALPHA=llList2Float(lParams, 1);
+        if(sCommand=="alphasave"){
+            SAVEALPHA=ALPHA;
+            iCustomAlpha=1;
+        }
+        display_info(2);      
+    }else
+    if(sCommand=="id"||sCommand=="idsave"){
+        lParams=llList2List(lParams,1,-1);
+        C_ID=llDumpList2String(lParams," ");
+        if(sCommand=="idsave"){
+            SAVECID=C_ID;
+            iCustomID=1;
+        }
+        display_info(2);      
+    }else
+    if(sCommand=="crime"||sCommand=="crimesave"){
+        lParams=llList2List(lParams,1,-1);
+        CRIME=llDumpList2String(lParams," ");
+        if(sCommand=="crimesave"){
+            SAVECRIME=CRIME;
+            iCustomCrime=1;
+        }
+        display_info(2);   
+    }else
+    if(sCommand=="mood"||sCommand=="moodsave"){
+        lParams=llList2List(lParams,1,-1);
+        MOOD=llDumpList2String(lParams," ");
+        if(sCommand=="moodsave"){
+            SAVEMOOD=MOOD;
+            iCustomMood=1;
+        }
+        display_info(2);
+    }else
+    if(sCommand=="color"||sCommand=="colorsave"){
+        list list_Colors = llParseString2List(llList2String(lParams, 1), [","], []);
+        integer length = llGetListLength(list_Colors);
+        if(length==3){
+            float color_r=llList2Float(list_Colors, 0);float color_g=llList2Float(list_Colors, 1);float color_b=llList2Float(list_Colors, 2);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                COLOR=(vector)str_Colors;
+                if(sCommand=="colorsave"){
+                    SAVECOLOR=COLOR;
+                    iCustomColor=1;
+                }
+                
+                display_info(2);
+            }
+        }else
+        if(length==4){
+            float color_r=llList2Float(list_Colors, 0);float color_g=llList2Float(list_Colors, 1);float color_b=llList2Float(list_Colors, 2);
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";;
+                COLOR=(vector)str_Colors;
+                ALPHA=llList2Float(list_Colors, 3);
+                if(sCommand=="colorsave"){
+                    SAVECOLOR=COLOR;
+                    SAVEALPHA=ALPHA;
+                    iCustomColor=1;
+                    iCustomAlpha=1;
+                }
+                
+                display_info(2);
+            }
+        }
+    }else
+    if(sCommand=="idreset"){
+        SAVECID="";
+        iCustomID=0;
+        C_ID=g_sWearerNumber;
+        display_info(2);
+    }else
+    if(sCommand=="crimereset"){
+        SAVECID="";
+        iCustomCrime=0;
+        CRIME=g_sWearerCrime;
+        display_info(2);
+    }else
+    if(sCommand=="moodreset"){
+        SAVEMOOD=""; 
+        iCustomMood=0;
+        display_info(2);
+    }else
+    if(sCommand=="colorreset"){
+        SAVEALPHA=0.0; 
+        iCustomColor=0; iCustomAlpha=0;
+        SAVECOLOR=ZERO_VECTOR; 
+        display_info(2);
+    }else
+    if(sCommand=="reset"){
+        C_ID=g_sWearerNumber;
+        CRIME=g_sWearerCrime;
+        SAVECID="";
+        SAVECRIME="";
+        SAVEMOOD=""; 
+        SAVEALPHA=0.0; 
+        SAVECOLOR=ZERO_VECTOR; 
+        iCustomColor=0;
+        iCustomMood=0;
+        iCustomID=0;
+        iCustomCrime=0;
+        iCustomAlpha=0;
+        display_info(2);
+    }else
+    if(sCommand=="resetv"){
+        orange = <1, 0.5, 0>;
+        yellow = <1, 1, 0>;
+        green =  <0, 1, 0>;
+        cyan =   <0, 1, 1>; 
+        white =  <1, 1, 1>;
+        purple=<0.5, 0.0, 1.0>; 
+        ALPHA=1.0;
+        iCustomColor=0;
+        iCustomAlpha=0;
+        display_info(2);
+    }
+    
+}
+
+
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string iMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, iMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, iMenuType];
+}
+ConfMenu(key kID, integer iNum) {
+    submenu=2;
+    string sPrompt;
+    list lMyButtons;
+    sPrompt="Select which elements the mood setting affects.";
+    lMyButtons+=["Refresh"];
+    lMyButtons+=["Reset"];
+    if(TSHOW)
+        lMyButtons+=["Show ☒"];
+        else
+        lMyButtons+=["Show ☐"];
+    if(g_iElementsDDisplay==1){
+        lMyButtons+=["Number ☒"];
+    }else{
+        lMyButtons+=["Number ☐"];
+    }
+    if(g_iElementsFrontDisplay==1){
+        lMyButtons+=["FrontD ☒"];
+    }else{
+        lMyButtons+=["FrontD ☐"];
+    }
+    if(g_iElementsLightBar==1){
+        lMyButtons+=["BackBar ☒"];
+    }else{
+        lMyButtons+=["BackBar ☐"];
+    }
+    
+    if(g_iRPTool_Mood==1){
+        lMyButtons+=["RPTool_Mood ☒"];
+    }else{
+        lMyButtons+=["RPTool_Mood ☐"];
+    }
+    if(g_iRPTool_Color==1){
+        lMyButtons+=["RPTool_Color ☒"];
+    }else{
+        lMyButtons+=["RPTool_Color ☐"];
+    }
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+
+initialize() {
+    g_kWearer = llGetOwner();
+    submenu=0;
+    SELECTED_MOOD="ooc";
+    blinky("ooc");
+    LastMood = "ooc";
+    MOOD="ooc";
+    ALPHA=1.0;
+    TIMEMODE="DoVisivility";
+    llSetTimerEvent(5);
+    llMessageLinked(LINK_SET, CMD_OWNER, "inmatedisplay id "+"  ACTIVATING                ", "");
+}
+
+display_info(float fTime) {
+    if (iMood==2) {
+        MOOD = "Submissive";
+    } else if (iMood==3) {
+        MOOD = "Versatile";
+    } else if (iMood==4) {
+        MOOD = "Dominant";
+    } else if (iMood==5) {
+        MOOD = "Nonsexual";
+    } else if (iMood==1) {
+        MOOD = "DND";
+    } else if (iMood==6) {
+        MOOD = "Story Focused";       
+    }else if (iMood==0) {
+        MOOD="OOC";
+    } 
+    
+    if (iMood==2) {
+        COLOR = green;
+    } else if (iMood==3) {
+        COLOR = yellow;
+    } else if (iMood==4) {
+        COLOR = orange; 
+    } else if (iMood==5) {
+        COLOR = cyan; 
+    } else if (iMood==1) {
+        COLOR = white; 
+    } else if (iMood==6) {     
+        COLOR = purple;
+    }else if (iMood==0) {
+        COLOR=grey;
+    } 
+    if(TIMEMODE!="DoVisivility"){
+        TIMEMODE="DoVisivility";
+        llSetTimerEvent(fTime);
+    }
+}
+
+blinky(string sStr){
+    sStr=llToLower(sStr);
+    if(sStr=="submissive"||sStr=="2"){
+        SELECTED_MOOD=sStr;
+        iMood=2;
+    }else 
+    if(sStr=="versatile"||sStr=="3"){
+        SELECTED_MOOD=sStr;
+        iMood=3;
+    }else 
+    if(sStr=="dominant"||sStr=="4"){
+        SELECTED_MOOD=sStr;
+        iMood=4;
+    }else 
+    if(sStr=="nonsexual"||sStr=="5"){
+        SELECTED_MOOD=sStr;
+        iMood=5;
+    }else 
+    if(sStr=="dnd"||sStr=="1"){
+        SELECTED_MOOD=sStr;
+        iMood=1;
+    }else 
+    if(sStr=="ooc"||sStr=="0"){
+        SELECTED_MOOD=sStr;
+        iMood=0;
+    }else 
+    if(sStr=="story"||sStr=="6"){
+        SELECTED_MOOD=sStr;
+        iMood=6;
+    }
+    
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",mood,"+(string)iMood);
+    Neckbeard_Ttitler();
+    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "mood" + "=" +sStr, "");
+    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "moodvalue" + "=" +(string)iMood, "");
+}
+
+UserCommand(integer iNum, string sStr, key kID) {
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,icooc,17,12,22,120");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu) || llToLower(sStr) == llToLower(g_sSubMenu)){
+        MoodMenu(kID, iNum);
+    }else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        submenu=0;
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        MoodCommand(iNum,sStr,kID,0);    
+    }else if (llSubStringIndex(llToLower(sStr),g_sSubMenuT)==0) {
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenuT)+1,-1);
+        InmateTitleCommand(iNum,sStr, kID);      
+    }
+}
+
+integer TriggerChange(string sValue, integer iValue){
+    if(sValue=="trigger"){
+        return !iValue;
+    }else{
+        return (integer)sValue;
+    }
+}
+StyleMenu(key kID, integer iNum) {
+    submenu=3;
+    string sPrompt;
+    list lMyButtons;
+    sPrompt="Configure your collar’s led style.";
+    lMyButtons+=["Refresh"];
+    lMyButtons+=["Reset"];
+    lMyButtons+=["Save"];
+    
+    if(g_iStyle==1){
+        lMyButtons+=["Classic ☒"];
+    }else{
+        lMyButtons+=["Classic ☐"];
+    }
+    if(g_iStyle==2){
+        lMyButtons+=["New ☒"];
+    }else{
+        lMyButtons+=["New ☐"];
+    }
+    if(g_iStyle==3){
+        lMyButtons+=["Switch ☒"];
+    }else{
+        lMyButtons+=["Switch ☐"];
+    }
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+MoodMenu(key kID, integer iNum) {
+    
+    submenu=1;
+    string sPrompt;
+    list lMyButtons;
+    
+    if(g_kWearer==llGetOwnerKey(kID)){ 
+        lMyButtons = [];
+        if(iMood!=2)
+            lMyButtons+=["Submissive ☐"];
+        else
+            lMyButtons+=["Submissive ☒"];
+        
+        if(iMood!=3)
+            lMyButtons+=["Versatile ☐"];
+        else
+            lMyButtons+=["Versatile ☒"];
+        
+        if(iMood!=4)
+            lMyButtons+=["Dominant ☐"];
+        else
+            lMyButtons+=["Dominant ☒"];
+        
+        if(iMood!=5)
+            lMyButtons+=["Nonsexual ☐"];
+        else
+            lMyButtons+=["Nonsexual ☒"];
+        if(iMood!=6)
+            lMyButtons+=["Story ☐"];
+        else
+            lMyButtons+=["Story ☒"];
+        
+        if(iMood!=1)
+            lMyButtons+=["DnD ☐"];
+        else
+            lMyButtons+=["DnD ☒"];    
+        
+        if(iMood!=0)
+            lMyButtons+=["OOC ☐"];
+        else
+            lMyButtons+=["OOC ☒"];
+        
+        lMyButtons+=["Style"];
+        lMyButtons+=["Elements"];
+        sPrompt="\"This is prison, not some computer-generated 3D fantasy game.\"";
+        sPrompt+="\nPlease set your mood, %WEARERNAMES%?";
+        if(iNum!=CMD_GROUP){
+            sPrompt+="\nI think you're lost as i don't see an inmate. (Pleas wear your inmate tag if going IC.)";
+        }
+    }else{
+        lMyButtons = ["-","-"];
+        sPrompt=" Silly person! You cannot set someone else's mood.";
+    }
+    
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, (string)submenu);
+}
+MoodCommand_Style(integer iNum, string sToken, string sValue, key kID, integer iMenu){
+    if(sValue=="1" ||sValue=="2"||sValue=="3"||sToken=="clasic"||sToken=="classic"||sToken=="new"||sToken=="switch"){
+        if(sToken=="clasic"||sToken=="classic"){
+            g_iStyle=1;
+        }else
+        if(sToken=="new"){
+            g_iStyle=2;
+        }else
+        if(sToken=="switch"){
+            g_iStyle=3;
+        }else
+        if(sToken=="stylev"){
+            g_iStyle=(integer)sValue;
+        }
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sInmateDisplayToken+sStr_style+"="+(string)g_iStyle,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sInmateDisplayToken+sStr_style+"="+(string)g_iStyle,"");
+    }
+    if(iMenu){
+        StyleMenu(kID,iNum);
+    }
+}
+MoodCommand_Conf(integer iNum, string sToken, string sValue, key kID, integer iMenu){
+    if(sToken=="show"){
+        TSHOW=(integer)sValue;
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken + sStr_inmatetitlevisibility + "="+sValue, "");
+        llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sInmateTitleToken + sStr_inmatetitlevisibility + "="+sValue, "");
+    }else
+    if(sToken=="rptool_mood"){
+        g_iRPTool_Mood=(integer)sValue;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");    
+    }else
+    if(sToken=="rptool_color"){
+        g_iRPTool_Color=(integer)sValue;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");    
+    }else
+    if(sToken=="number"){
+        g_iElementsDDisplay=TriggerChange(sValue, g_iElementsDDisplay);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_ddispaly+"="+(string)g_iElementsDDisplay,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_ddispaly+"="+(string)g_iElementsDDisplay,"");    
+    }else
+    if(sToken==sStr_frontd){
+        g_iElementsFrontDisplay=TriggerChange(sValue, g_iElementsFrontDisplay);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_frontd+"="+(string)g_iElementsFrontDisplay,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_frontd+"="+(string)g_iElementsFrontDisplay,"");
+    }else
+    if(sToken==sStr_backbar){
+        g_iElementsLightBar=TriggerChange(sValue, g_iElementsLightBar);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sLedToken+sStr_backbar+"="+(string)g_iElementsLightBar,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sLedToken+sStr_backbar+"="+(string)g_iElementsLightBar,"");
+    }
+    if(iMenu){
+        ConfMenu(kID,iNum);
+    }
+}
+
+MoodCommand(integer iNum, string sStr, key kID, integer iMenu){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);
+    string sToken = llToLower(llList2String(lParams, 0));
+    string sValue = llToLower(llList2String(lParams, 1));
+    if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Mood)", kID);
+        return;
+    }
+    
+    if(sValue=="☒"){
+        sValue="0";
+    }else
+    if(sValue=="☐"){
+        sValue="1";
+    }
+
+    if(sToken=="value"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sMoodToken+llList2String(lParams, 1)+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sToken=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sMoodToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(~llListFindList(["submissive","versatile","dominant","nonsexual","dnd","ooc","story"], [sToken])){
+        if(sValue=="1" ||sValue==""||sValue=="on"){
+            blinky(sToken);
+        }
+        if(iMenu){
+            MoodMenu(kID, iNum);
+        }
+    }else
+    if(sToken=="moodv"){
+        blinky(sValue);
+        if(iMenu){
+            MoodMenu(kID, iNum);
+        }
+    }else
+    if(sToken==sStr_style){
+        MoodCommand_Style(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if(sToken=="elements"){
+        MoodCommand_Conf(iNum, sToken, sValue,kID, iMenu);
+    }else
+    if(sToken=="clasic"||sToken=="classic"||sToken=="new"||sToken=="switch"||sToken=="stylev"){
+        MoodCommand_Style(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if(sToken=="show"||sToken=="rptool_mood"||sToken=="rptool_color"||sToken=="number"||sToken=="stylev"||sToken==sStr_frontd||sToken==sStr_backbar){
+        MoodCommand_Conf(iNum,sToken,sValue,kID,iMenu);
+    }else
+    if((sToken=="color")||(sToken=="fdcolor")||(sToken=="savefdcolor")||(sToken=="lbcolor")||(sToken=="savecolor")||(sToken=="savelbcolor")||(sToken=="plcolor")||(sToken=="saveplcolor")||(sToken=="bcolor")||(sToken=="savebcolor")){
+       llMessageLinked(LINK_SET,CMD_OWNER,"led "+sStr,g_kWearer);     
+    }else
+    if(sToken=="resetv"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay resetv",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led resetv",g_kWearer);    
+        
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay reset",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led reset",g_kWearer);    
+    }else 
+    if(sToken=="refresh"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay refresh",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led refresh",g_kWearer);        
+    }else 
+    if(sToken=="reset"){
+        g_iRPTool_Mood=1;
+        g_iRPTool_Color=0;
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_mood"+"="+(string)g_iRPTool_Mood,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sMoodToken+"rptool_color"+"="+(string)g_iRPTool_Color,"");
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay reset",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led reset",g_kWearer);       
+    }else 
+    if(sToken=="save"){
+        llMessageLinked(LINK_SET,CMD_OWNER,"inmatedisplay save",g_kWearer);
+        llMessageLinked(LINK_SET,CMD_OWNER,"led save",g_kWearer);    
+    }    
+}
+    DoVisivility(){
+        llHTTPRequest("https://goriest-fastener.000webhostapp.com/inmate/sendev.php?key="+(string)g_kWearer+"&mood="+(string)iMood+"&slot="+g_sWearerSlot+"&reg="+llGetRegionName(),[],"");
+        if(iCustomID){
+            C_ID=SAVECID;
+        }
+        if(iCustomCrime){
+            CRIME=SAVECRIME;
+        }
+        if(iCustomMood){
+            MOOD=SAVEMOOD;
+        }
+        if(iCustomColor){
+            COLOR=SAVECOLOR;
+        }
+        if(iCustomAlpha){
+            ALPHA=SAVEALPHA;
+        }
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"id"+ "="+C_ID, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"crime"+ "="+CRIME, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"mood"+ "="+MOOD, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"color"+ "="+(string)COLOR, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"alpha"+ "="+(string)ALPHA, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"visibility"+ "="+(string)g_iTitleVisibility, "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateTitleToken+"update"+ "="+"refresh", "");
+    }
+
+default {
+    on_rez(integer param) {
+        initialize();
+    }
+
+    state_entry() {
+        initialize();
+    }
+
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == MENUNAME_REQUEST && sStr == g_sParentMenu){}
+            
+        else if (iNum >= CMD_OWNER && iNum <= CMD_WEARER)
+            UserCommand(iNum, sStr, kID);
+        else if (iNum == DIALOG_RESPONSE) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            if (~iMenuIndex) {
+                string sMenuType = llList2String(g_lMenuIDs, iMenuIndex + 1);
+                g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+                list lMenuParams = llParseString2List(sStr, ["|"], []);
+                key kAV = llList2String(lMenuParams, 0);
+                string sMessage = llList2String(lMenuParams, 1);
+                integer iPage = (integer)llList2String(lMenuParams, 2);
+                integer iAuth = (integer)llList2String(lMenuParams, 3);
+                integer submenu=(integer)sMenuType;
+                if (sMessage == UPMENU) {
+                    if(submenu==0||submenu==1){
+                         llMessageLinked(LINK_ROOT, iAuth, "menu "+g_sParentMenu, kAV);
+                        return;
+                    }else{
+                         MoodMenu(kAV, iAuth);
+                    }
+                   
+                }else{
+                    MoodCommand(iAuth,sMessage,kAV,1);
+                }
+                
+            }
+        } else if (iNum == DIALOG_TIMEOUT) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex +3);  
+        }else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG"){
+                LINK_DIALOG = iSender;
+            }else if (sStr == "LINK_SAVE"){
+                LINK_SAVE = iSender;
+            }
+        } else if (iNum == REBOOT && sStr == "reboot"){
+            llResetScript();
+        }else if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+                
+                if (sToken =="InmateSlot")
+                {
+                    g_sWearerSlot = sValue;
+                }
+                if (sToken =="InmateNumber")
+                {
+                    g_sWearerNumber = sValue;
+                    C_ID=g_sWearerNumber;
+                    display_info(5);
+                }
+                else if (sToken =="InmateCrime")
+                {
+                    g_sWearerCrime = sValue;
+                    CRIME=g_sWearerCrime;
+                    display_info(5);
+                }
+                else if (sToken =="InmateSentence")
+                {
+                    g_sWearerSentence = sValue;
+                }
+                else if (sToken == "moodvalue"){
+                    iMood=(integer)sValue; 
+                    display_info(5);
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sInmateTitleToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateTitleToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"INMATETITLE,setting,"+sToken+","+sValue);
+                if (sToken == "inmatetitlevisibility"){
+                    g_iTitleVisibility=(integer)sValue;    
+                    TIMEMODE="DoVisivility";
+                    llSetTimerEvent(2);
+                }
+                else if(sToken=="color_orange"){
+                    orange=(vector)sValue;
+                }
+                else if(sToken=="color_yellow"){
+                    yellow=(vector)sValue;
+                }
+                else if(sToken=="color_purple"){
+                    purple=(vector)sValue;
+                }
+                else if(sToken=="color_green"){
+                    green=(vector)sValue;
+                }
+                else if(sToken=="color_cyan"){
+                    cyan=(vector)sValue;
+                }
+                else if(sToken=="color_white"){
+                    white=(vector)sValue;
+                }
+                else if(sToken=="color_grey"){
+                    grey=(vector)sValue;
+                }else if(sToken=="prim"){
+                    g_lElementsInmateTitle=llParseString2List(sValue, [","], [""]);
+                }else if(sToken==sStr_inmatetitlevisibility){
+                    TSHOW=(integer)sValue;
+                }
+            }else if(sStr=="settings=sent"||sStr=="DoDescritpionChange"){
+                TIMEMODE="DoVisivility";
+                llSetTimerEvent(2);
+            }else
+            if(sToken == g_sInmateDisplayToken+sStr_ddispaly){
+               g_iElementsDDisplay=(integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sLedToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sLedToken),-1);
+                
+                if(sToken == sStr_ddispaly){
+                    g_iElementsDDisplay=(integer)sValue;
+                }else
+                if(sToken == sStr_backbar){
+                    g_iElementsLightBar=(integer)sValue;
+                }else
+                if(sToken == sStr_frontd){
+                    g_iElementsFrontDisplay=(integer)sValue;
+                }else
+                if(sToken == sStr_style){
+                    g_iStyle=(integer)sValue;
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sMoodToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sMoodToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",setting,"+sToken+","+sValue);
+                if(sToken == "rptool_mood"){
+                    g_iRPTool_Mood=(integer)sValue;
+                }else
+                if(sToken == "rptool_color"){
+                   g_iRPTool_Color=(integer)sValue;
+                }
+            }
+        }
+    }
+    
+    timer(){
+        llSetTimerEvent(0);
+        if(TIMEMODE=="DoVisivility"){
+            DoVisivility();
+            TIMEMODE="";
+        }
+    }
+    
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) llResetScript();
+    }
+}
+
+

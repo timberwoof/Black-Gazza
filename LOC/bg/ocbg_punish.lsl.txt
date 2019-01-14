@@ -1,0 +1,1773 @@
+//start_unprocessed_text
+/*string g_sSubMenu = "Punish";
+string g_sParentMenu = "";
+list g_lMenuIDs;  
+integer g_iMenuStride = 3;
+
+
+key g_kWearer;
+integer g_Attached;
+integer SPECIAL_NOTIFY = 1005;
+integer SPECIAL_SAY = 1007;
+
+integer CMD_ZERO = 0;
+integer CMD_OWNER = 500;
+integer CMD_TRUSTED = 501;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer CMD_EVERYONE = 504;
+
+integer NOTIFY = 1002;
+integer SAY = 1004;
+
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_RLV;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LINK_AUTH=0;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_REQUEST = 2001;
+integer LM_SETTING_RESPONSE = 2002;
+integer LM_SETTING_DELETE = 2003;
+
+
+integer MENUNAME_REQUEST = 3000;
+
+
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+integer RLV_CMD = 6000;
+
+string UPMENU = "BACK";
+string g_sPunishToken = "punish_";
+string g_sGlobalToken = "global_";
+
+integer RECOVER_MODE=1;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="PUNISH";
+
+integer ZAP_CHANNEL = -106969;
+integer ZAP_CHANNEL_HANDLE;
+
+integer COUNT_ZAP_CURRENT;
+integer COUNT_PUNISH_CURRENT;
+integer COUNT_STUN_CURRENT;
+integer COUNT_ZAP_TOTALL;
+integer COUNT_PUNISH_TOTALL;
+integer COUNT_STUN_TOTALL;
+
+
+integer PUNISH_TIME;
+integer ZAP_TIME;
+integer STUN_TIME;
+integer STUN_PHASE;
+integer BREAK_TIME;
+
+integer iMood;
+integer g_iInmateSlot;
+
+
+integer g_iBlinded=1;
+integer g_iOveride;
+integer g_iSilentSec;
+float fVolum=0.5;
+
+integer g_iEnable=1;
+integer g_iSound=1;
+integer g_iText=1;
+integer g_iNPCZap=1;
+
+
+key g_kElectricshock="27a18333-a425-30b1-1ab6-c9a3a3554903";
+key g_kElectricshockEnd="a4602ead-96f3-ee86-5e0f-63faeb1ed7cf";
+
+
+string sStr_enable="enable";
+string sStr_blind="blind";
+string sStr_sound="sound";
+string sStr_text="text";
+string sStr_zap="zap";
+string sStr_punish="punish";
+string sStr_overide="overide";
+string sStr_stun="stun";
+string sStr_Zap="Zap";
+string sStr_ZapRecover="ZapRecover";
+string sStr_Stungunned="Stungunned";
+string sStr_Punish="Punish";
+string sStr_Stun="Stun";
+
+string sStr_Ledfdcolor="led fdcolor ";
+string sStr_Ledlbcolor="led lbcolor ";
+string sStr_Ledplcolor="led plcolor ";
+
+integer g_RlvBlind_used=0; 
+
+string sStr_BlankButton="-";
+
+float fTimer=1.0;
+integer GetCharacter(key kID){
+    if(llGetOwnerKey(kID)==g_kWearer){
+        return 0;
+    }
+    list AttachedUUIDs = llGetAttachedList(kID);
+    integer numOfAttachments = llGetListLength(AttachedUUIDs);
+    integer index=0;
+    while(index<numOfAttachments){
+        string creator=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index) ,[OBJECT_CREATOR]);
+        if(creator=="937996d5-654e-4aee-92ef-7375970f1249"){/|/beta;
+            creator="";
+            string desc=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index),[OBJECT_DESC]);
+            list lParams = llParseString2List(desc, [","], []); desc="";
+            /|/0sVersion+","+(string)1mood+","+(string)2g_iWearerTypeValue+","+(string)3g_iWearerThreatValue+","+(string)4g_iWearerCredit+","+(string)5g_iEnviroment+","+(string)6g_iCharacterSlot_Save
+            integer iParams=llGetListLength(lParams);
+            if(6<=iParams){
+                string sVersion=llList2String(lParams, 0);
+                if(llSubStringIndex(sVersion, "1s")==0){
+                    return llList2Integer(lParams, 6);
+                }
+            }
+        }
+        index++;
+    }
+    return 0;
+}
+SendUpdate(integer i, string j, string z){
+    key kObject=(key)j;
+    key kOwner=llGetOwnerKey(kObject);
+    integer CSlot;
+    if(kOwner){
+        if((kOwner!=kObject&&0<llList2Integer(llGetObjectDetails(kObject,[OBJECT_ATTACHED_POINT]),0))||(kOwner==kObject)){
+            CSlot=GetCharacter(kOwner);
+        }
+    }
+    /|/llOwnerSay("https:/|/goriest-fastener.000webhostapp.com/inmate/punishset2.php?key="+(string)g_kWearer+"&slot="+(string)g_iInmateSlot+"&zap="+(string)COUNT_ZAP_TOTALL+"&punish="+(string)COUNT_PUNISH_TOTALL+"&stun="+(string)COUNT_STUN_TOTALL+"&mod="+(string)i+"&ok="+llEscapeURL(j)+"&on="+llEscapeURL(z)+"&uk="+(string)kOwner+"&un="+llEscapeURL(llKey2Name((string)kOwner))+"&uc="+(string)CSlot);
+    llHTTPRequest( "https:/|/goriest-fastener.000webhostapp.com/inmate/punishset2.php?key="+(string)g_kWearer+"&slot="+(string)g_iInmateSlot+"&zap="+(string)COUNT_ZAP_TOTALL+"&punish="+(string)COUNT_PUNISH_TOTALL+"&stun="+(string)COUNT_STUN_TOTALL+"&mod="+(string)i+"&ok="+llEscapeURL(j)+"&on="+llEscapeURL(z)+"&uk="+(string)kOwner+"&un="+llEscapeURL(llKey2Name((string)kOwner))+"&uc="+(string)CSlot,[],"");
+}
+string NameURI(key kID){
+    if (llGetAgentSize(kID))
+        return "[secondlife:/|/|/app/agent/"+(string)kID+"/inspect "+llGetDisplayName(kID)+"]";
+    else
+        return "secondlife:/|/|/app/objectim/"+(string)kID+"/?name="+llEscapeURL(llKey2Name(kID))+"&owner="+(string)llGetOwnerKey(kID);
+}
+string sStr_WEARERNAMES="%WEARERNAMES%";
+Punish_message(key kID){
+    if(kID==NULL_KEY){
+        return;
+    }
+    if(g_kWearer!=llGetOwnerKey(kID)){
+        if(llGetAgentSize(llGetOwnerKey(kID))==ZERO_VECTOR){
+            return;
+        }
+        llSay(ZAP_CHANNEL,(string)kID);
+    }
+}
+Punish_Lifted(){
+    
+    llSetTimerEvent(fTimer);
+    rlv_blind(-2,"");
+    punish_light("0");
+    if(g_Attached){
+        unfreeze();
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        llStopAnimation(sStr_ZapRecover);
+        llStopAnimation(sStr_Stungunned);
+        llStopAnimation(sStr_Zap);
+    }
+    llStopSound();
+    PUNISH_TIME=0;
+    ZAP_TIME=0;
+    STUN_TIME=0;
+    STUN_PHASE=0;
+}
+string PrintScore(){
+     string sPrompt;
+     sPrompt+="Score for inmate is";
+     sPrompt+="\nZap: "+(string)COUNT_ZAP_CURRENT+"/"+(string)COUNT_ZAP_TOTALL;
+     sPrompt+="\nPunish: "+(string)COUNT_PUNISH_CURRENT+"/"+(string)COUNT_PUNISH_TOTALL;
+     sPrompt+="\nStun: "+(string)COUNT_STUN_CURRENT+"/"+(string)COUNT_STUN_TOTALL;
+     sPrompt+="\n";
+     return sPrompt;
+}
+string NameURIS(key kID){
+    if (llGetAgentSize(kID))
+        return llGetDisplayName(kID);
+    else
+        return llKey2Name(kID);
+}
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string iMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, iMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, iMenuType];
+}
+
+integer iAccess=1;
+string g_sAuthToken = "auth_"; 
+integer iTrustee;
+Objectscan(key kID){
+    list AttachedUUIDs = llGetAttachedList(kID);
+    integer numOfAttachments = llGetListLength(AttachedUUIDs);
+    integer index=0;
+    key kObject;
+    while(index<numOfAttachments){
+        string creator=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index) ,[OBJECT_CREATOR]);
+
+        if(creator=="937996d5-654e-4aee-92ef-7375970f1249"){/|/beta;
+            creator="";
+            kObject=llList2Key(AttachedUUIDs, index);
+            
+            string desc=(string)llGetObjectDetails(kObject,[OBJECT_DESC]);
+            list lParams = llParseString2List(desc, [","], []); desc="";
+            integer iParams=llGetListLength(lParams);
+            string sNumber=(string)llGetObjectDetails(kObject,[OBJECT_NAME]);
+            if (~llSubStringIndex(sNumber, ","))
+                sNumber = llDumpList2String(llParseStringKeepNulls((sNumber = "") + sNumber, [","], []), "");
+        
+            if ((llSubStringIndex(sNumber,"P-6") >= 0&&llStringLength(sNumber)==7)||~llSubStringIndex(sNumber,"L-CON")){
+                if(1<iParams){
+                    string sVersion=llList2String(lParams, 0);
+                    if(llSubStringIndex(sVersion, "3d")==0){
+                        iTrustee=llList2Integer(lParams, 8);
+                    }
+                }
+            }
+        }
+        index++;
+    }
+}
+integer CheckCommandAuth(key kCmdGiver, integer iAuth) {
+    iTrustee=0;
+    if(iAuth==CMD_OWNER||llGetOwnerKey(kCmdGiver)==g_kWearer){
+        return TRUE;
+    }else
+    if (iAuth==CMD_TRUSTED&&0<=iAccess&&~iAccess){
+        return TRUE;
+    }else
+    if (iAuth==CMD_GROUP){
+        Objectscan(llGetOwnerKey(kCmdGiver));
+        if (2<=iAccess||iTrustee){
+            return TRUE;
+        }else{
+            Punish_message(kCmdGiver);
+            return FALSE;
+        }
+    }else
+    if (iAuth==CMD_EVERYONE&&iAccess==3){
+        return TRUE;
+    }
+    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person! You don't have the remote :D", kCmdGiver);
+    return FALSE;
+}
+
+unfreeze() {
+    if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) {
+        llReleaseControls();
+    }
+}
+rlv_blind(integer i, string sRLV_CMD)
+{
+    if (i==6)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=y,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:3=force,setenv_scenegamma:0.7=force,setenv_bluedensityb:5.0=force,setenv_bluedensityr:2.5=force";
+    }else
+    if (i==5)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",shownames=n,showworldmap=n,showminimap=n,showloc=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:999=force,setenv_scenegamma:0.0=force";
+    }else
+    if (i==4)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",shownames=n,showworldmap=n,showminimap=n,showloc=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:64=force,setenv_daytime:-1=force";
+    }else
+    if (i==3&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0)
+    {
+        
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:5=force,setenv_scenegamma:1.5=force,setenv_bluedensityr:10.0=force";
+    }else
+    if (i==2)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:3=force,setenv_scenegamma:1.5=force,setenv_bluedensityr:5.0=force";
+    }
+    
+    if (i!=0&&i!=-2&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0&&sRLV_CMD!="")
+    {
+        g_RlvBlind_used=1;
+        StatusUpdater("rlv,"+(string)i+","+sRLV_CMD);
+        llMessageLinked(LINK_RLV, RLV_CMD, sRLV_CMD, sStr_Punish);
+    }else
+    if ((i==0&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0)||i==-2)
+    {
+
+        sRLV_CMD="clear";
+        if(g_RlvBlind_used){
+            sRLV_CMD+=",setdebug_RenderResolutionDivisor:0=force,setenv_daytime:-1=force";
+            g_RlvBlind_used=0;
+        }
+        StatusUpdater("rlv,"+(string)i+","+sRLV_CMD);
+        llMessageLinked(LINK_RLV, RLV_CMD, sRLV_CMD, sStr_Punish); 
+    }
+}
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+punish_light(string sStr){
+
+        if(g_iOveride==1){
+            return;
+        }
+
+        if(sStr=="2")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"2",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"2",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+           
+        }
+        else if(sStr=="1")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"3",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"3",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+        }
+        else if(sStr=="3")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"1",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"1",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+        }
+        else if(sStr=="4")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"7",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"7",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+        else if(sStr=="5")
+        {
+           `llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"9",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"9",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+        else if(sStr=="0")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"refresh",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"refresh",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+}
+initialize() {
+    g_kWearer = llGetOwner();
+    if(g_Attached){
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        unfreeze();
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        llStopAnimation(sStr_ZapRecover);
+        llStopAnimation(sStr_Stungunned);
+        llStopAnimation(sStr_Zap);
+    } 
+    llStopSound();
+    ZAP_CHANNEL=-106969;
+    llListenRemove(ZAP_CHANNEL_HANDLE);
+    
+    COUNT_ZAP_CURRENT=0;
+    COUNT_PUNISH_CURRENT=0;
+    COUNT_STUN_CURRENT=0;
+    
+    PUNISH_TIME=0;
+    ZAP_TIME=0;
+    STUN_TIME=0;
+    STUN_PHASE=0;
+    BREAK_TIME=0;
+    
+    llSetTimerEvent(fTimer);
+    
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_zap,"");
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_stun,"");
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_punish,"");
+}
+ListenControl(){
+    llListenRemove(ZAP_CHANNEL_HANDLE);
+    if(2<=iMood){
+        ZAP_CHANNEL_HANDLE = llListen(ZAP_CHANNEL,"",NULL_KEY,"");
+        SendUpdate(0,"","");
+    }
+}
+freeze() {
+    llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
+}
+
+UserCommand(integer iNum, string sStr, key kID) { 
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,punish,17,12,22,125");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu) || llToLower(sStr) == llToLower(g_sSubMenu)){
+        /|/llOwnerSay("menu");
+        PunishMenu(kID, iNum);
+    }else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        /|/llOwnerSay("command");
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        PunishCommand(iNum,sStr, kID,FALSE);      
+    }
+}
+
+Punish_Stop(){
+    Punish_Lifted();
+    StatusUpdater("stop");
+    llSetTimerEvent(0.0);
+    BREAK_TIME=0;
+}
+Punish_Recover(){
+        punish_light("5");
+        llStopSound();
+        if(g_Attached){
+            if(g_iSilentSec==0&&g_iText){
+                llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" starts to recover from the shock.",g_kWearer);
+            }
+            unfreeze();
+            llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+            rlv_blind(6,"");
+            llStopAnimation(sStr_Stungunned);
+            llStartAnimation(sStr_ZapRecover);
+        }
+        STUN_TIME=10;
+        STUN_PHASE=3;
+        StatusUpdater("recover");
+        llSetTimerEvent(fTimer);
+        
+}
+
+PunishMenu(key kID, integer iNum) {
+    string sPrompt;
+    list lMyButtons;
+    if(g_kWearer==llGetOwnerKey(kID)){
+        if(g_iEnable==0){
+            lMyButtons = ["Enable ☐",sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Turned off for "+sStr_WEARERNAMES+"\nKeeping it turned off while IC as an inmate is powergaming!";
+        }else{
+            sPrompt+=PrintScore();
+            if (ZAP_TIME==0&&PUNISH_TIME==0) 
+            {
+                if(iMood==0||iNum==CMD_OWNER||iNum==CMD_TRUSTED){
+                    lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+                }else{
+                    lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+                }
+                if(1<=iMood){
+                    sPrompt+="\n(From rp speaking, unauthorized persons (inmates, non prison staffs) should not be able to zap the inmate.)";
+                }
+            }else{
+                lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+                sPrompt+="Punishment Module Already Running for you. Thats what you get "+sStr_WEARERNAMES+".";
+            }
+            if (STUN_PHASE == 2){
+                lMyButtons+=["Recover"] ;
+            }else{
+                lMyButtons+=[sStr_BlankButton] ;
+            }
+            if(RECOVER_MODE==1){
+                 lMyButtons+= ["Recover ☒"];    
+            }else{
+                lMyButtons+=["Recover ☐"];
+            }
+            if(g_iBlinded==1){
+                 lMyButtons+= ["Blind ☒"];    
+            }else{
+                lMyButtons+=["Blind ☐"];
+            }
+            
+            lMyButtons+= ["Enable ☒"];    
+            
+            if(g_iSound==1){
+                 lMyButtons+= ["Sound ☒"];    
+            }else{
+                lMyButtons+=["Sound ☐"];
+            }
+            if(g_iText==1){
+                 lMyButtons+= ["Text ☒"];    
+            }else{
+                lMyButtons+=["Text ☐"];
+            }
+            if(g_iNPCZap==1){
+                 lMyButtons+= ["NPCZap ☒"];    
+            }else{
+                lMyButtons+=["NPCZap ☐"];
+            }
+            lMyButtons+=["Reset"];
+        }
+    }else 
+    if(CheckCommandAuth(kID,iNum)){
+        if(ZAP_TIME!=0||PUNISH_TIME!=0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+=PrintScore();
+            sPrompt+="Punishment Module Already Running for "+sStr_WEARERNAMES+".";
+        }else
+        if(g_iEnable==0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Turned off.";
+        }else
+        if(iMood==0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Mood is OOC.";
+        }else
+        if(iNum==CMD_OWNER||iNum==CMD_TRUSTED){
+            lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+            sPrompt+=PrintScore();
+            sPrompt+="Please Select Punishment for "+sStr_WEARERNAMES+".";
+        }else if(iNum==CMD_GROUP||iNum==CMD_WEARER||iNum==CMD_EVERYONE){
+            Objectscan(llGetOwnerKey(kID));
+            sPrompt+=PrintScore();
+            sPrompt="Try it, go for it. Zap inmate "+sStr_WEARERNAMES+" as hard as you can.";
+            lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+            if(iTrustee){
+                sPrompt="As Inmate Trustee, you have very limited actions if allowed by your handler.";
+                lMyButtons = [sStr_Zap];
+            }else{
+                if(1<=iMood){
+                    sPrompt+="\n(From rp speaking, unauthorized persons (inmates, non prison staffs) should not be able to zap the inmate.)";
+                }
+            }
+        }
+    }else{
+        lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+        sPrompt+="DENIED silly person. (Punish)";
+    }
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, "PunishMenu");
+}
+PunishCommand(integer iNum, string sStr, key kID, integer iFromMenu){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);  
+    sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    string sValue = llToLower(llList2String(lParams, 1));
+   
+    if(~llListFindList([sStr_overide,sStr_blind,sStr_enable,sStr_text,sStr_sound,"npczap","reset","recover"], [llToLower(sCommand)])){
+        if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Punish)", kID);
+            return;
+        }
+        if(sStr_overide==sCommand){
+            g_iOveride=(integer)sValue;
+        }else
+        if(sStr_blind==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iBlinded=!g_iBlinded;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iBlinded=(integer)sValue;
+            }
+            if(g_iBlinded==0){
+                rlv_blind(-2,"");
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_blind+"="+(string)g_iBlinded,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+            
+        }else 
+        if(sStr_enable==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iEnable=!g_iEnable;
+                
+            }else if(sValue=="1"||sValue=="0"){
+                g_iEnable=(integer)sValue;
+            }
+            if(g_iEnable==0){
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Keeping it turned off while IC as an inmate is powergaming!",kID);
+                Punish_Stop();
+                
+            }else if(g_iEnable==1){
+                
+                llSetTimerEvent(fTimer);
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_enable+"="+(string)g_iEnable,"");
+            ListenControl();
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else 
+        if(sStr_sound==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iSound=!g_iSound;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iSound=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_sound+"="+(string)g_iSound,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else
+        if(sStr_text==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iText=!g_iText;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iText=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_text+"="+(string)g_iText,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else 
+        if("npczap"==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iNPCZap=!g_iNPCZap;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iNPCZap=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + "npc"+"="+(string)g_iNPCZap,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+       
+        }else if (sCommand == "reset") 
+        {
+            Punish_Stop();
+            g_iSilentSec=0;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"1"+"Score and configurations reset",kID);
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_zap,"");
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_stun,"");
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_punish,"");
+            COUNT_ZAP_CURRENT=0;
+            COUNT_PUNISH_CURRENT=0;
+            COUNT_STUN_CURRENT=0;
+            COUNT_ZAP_TOTALL=0;
+            COUNT_PUNISH_TOTALL=0;
+            COUNT_STUN_TOTALL=0;
+            g_iEnable=1;
+            g_iSound=1;
+            g_iText=1;
+            g_iNPCZap=1;
+            fVolum=0.5;
+            SendUpdate(-1,"","");
+        }
+        else 
+        if (sCommand == "recover") {
+            if("☒"==sValue||"0"==sValue){
+                RECOVER_MODE=0;
+                if(STUN_PHASE==2){
+                    STUN_TIME=0;
+                }
+                if(iFromMenu)
+                    PunishMenu(kID, iNum);
+            } 
+            else if("☐"==sValue||"1"==sValue){
+                RECOVER_MODE=1;
+                if(STUN_PHASE==2){
+                    STUN_TIME=300+1;
+                    
+                    llSetTimerEvent(fTimer);
+                }
+                if(iFromMenu)
+                    PunishMenu(kID, iNum);
+            }else{
+                if(g_iEnable==0){
+                    return;
+                }
+                Punish_Recover();
+                llSetTimerEvent(fTimer);
+            }
+        }
+    }else
+    if(~llListFindList(["freeze","unfreeze",sStr_punish,sStr_zap,sStr_stun,"module","silence","0","1","2"], [llToLower(sCommand)])){
+        if(!CheckCommandAuth(llGetOwnerKey(kID), iNum)){
+            return;
+        }
+        if(g_iEnable==0){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Inmate has turned off the Punishment module", kID);
+            StatusUpdater("off");
+            return;
+        }
+        if(iMood<=1){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Cannot punish "+sStr_WEARERNAMES+" as their mood is set to OOC or DND",kID);
+            StatusUpdater("invalid_mood");
+            return;
+        }
+        if("freeze"==sCommand){
+            freeze();
+        }
+        else if("unfreeze"==sCommand){
+            unfreeze();
+        }
+        else if((sCommand == sStr_punish || sCommand == "1"||((sCommand=="module" ||sCommand=="silence")&&sValue=="1"))) 
+        {
+                if((PUNISH_TIME!=0||BREAK_TIME!=0)){
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Cannot shock "+sStr_WEARERNAMES+". Please wait the break time.",kID);
+                    return;
+                }
+                g_iSilentSec=0;
+                llStopSound();
+                if(STUN_TIME==0&&STUN_PHASE==0){
+                    punish_light("2");  
+                }
+                
+                if(g_Attached){
+                    ++COUNT_PUNISH_CURRENT;
+                    ++COUNT_PUNISH_TOTALL;
+                    StatusUpdater("punish,"+(string)COUNT_PUNISH_CURRENT+","+(string)COUNT_PUNISH_TOTALL+","+(string)kID);
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_punish+"="+(string)COUNT_PUNISH_TOTALL,"");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sPunishToken + sStr_punish+"="+(string)COUNT_PUNISH_TOTALL,"");
+                    SendUpdate(2,kID,NameURIS(kID));
+                    if(sCommand=="module"&&g_iText){
+                        llMessageLinked(LINK_DIALOG,SPECIAL_SAY,"0"+llDumpList2String( llList2List(lParams, 2, -1)," " ),kID);sStr="";
+                    }else if(sCommand=="security"||sCommand=="silence"){
+                        g_iSilentSec=1;
+                    }else if(g_iText){
+                         llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" is shocked by "+NameURIS(kID)+" as punishment.",kID);
+                    }
+                    if(STUN_TIME==0&&STUN_PHASE==0){
+                        rlv_blind(2,"");
+                        llStartAnimation(sStr_Zap);
+                    }
+                }
+                if(g_iSound){
+                    llLoopSound(g_kElectricshock,fVolum);
+                }
+                PUNISH_TIME=10+1;
+                
+                llSetTimerEvent(fTimer);
+        }else
+        if ((sCommand == sStr_zap || sCommand == "0"||((sCommand=="module" ||sCommand=="silence")&&sValue=="0"))) 
+        {
+                if((ZAP_TIME!=0||BREAK_TIME!=0)){
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Cannot jolt "+sStr_WEARERNAMES+". Please wait the break time.",kID);
+                    return;
+                }
+                if(STUN_TIME==0&&STUN_PHASE==0){
+                    punish_light("1");
+                }
+                g_iSilentSec=0;
+                llStopSound();
+                if(g_Attached){
+                    ++COUNT_ZAP_CURRENT;
+                    ++COUNT_ZAP_TOTALL;
+                    StatusUpdater("zap,"+(string)COUNT_PUNISH_CURRENT+","+(string)COUNT_PUNISH_TOTALL+","+(string)kID);
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_zap+"="+(string)COUNT_ZAP_TOTALL,"");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sPunishToken + sStr_zap+"="+(string)COUNT_ZAP_TOTALL,"");
+                    SendUpdate(1,kID,NameURIS(kID));
+                    if(sCommand=="module"&&g_iText){
+                        llMessageLinked(LINK_DIALOG,SPECIAL_SAY,"0"+llDumpList2String( llList2List(lParams, 2, -1)," " ),kID);sStr="";
+                    }else if(sCommand=="security"||sCommand=="silence"){
+                        g_iSilentSec=1;
+                    }else if(g_iText){
+                        llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" is given a slight jolt by "+NameURIS(kID)+".",kID);
+                    } 
+                    if(STUN_TIME==0&&STUN_PHASE==0){
+                        rlv_blind(2,"");
+                        llStartAnimation(sStr_Zap);
+                    }
+                }
+                if(g_iSound){
+                    llPlaySound(g_kElectricshockEnd,fVolum);
+                }
+                ZAP_TIME=1+1;
+                
+                llSetTimerEvent(fTimer);
+
+        }else
+        if ((sCommand == sStr_stun || sCommand == "2"||((sCommand=="module" ||sCommand=="silence")&&sValue=="2"))) 
+        {
+                if((STUN_TIME!=0||STUN_PHASE!=0||BREAK_TIME!=0)){
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Cannot stun "+sStr_WEARERNAMES+". Please wait the break time.",kID);
+                    return;
+                }
+                llStopSound();
+                punish_light("3");
+                g_iSilentSec=0;
+                if(g_Attached){
+                    ++COUNT_STUN_CURRENT;
+                    ++COUNT_STUN_TOTALL;
+                    StatusUpdater("stun,"+(string)COUNT_PUNISH_CURRENT+","+(string)COUNT_PUNISH_TOTALL+","+(string)kID);
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_stun+"="+(string)COUNT_STUN_TOTALL,"");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sPunishToken + sStr_stun+"="+(string)COUNT_STUN_TOTALL,"");
+                    SendUpdate(3,kID,NameURIS(kID));
+                    if(sCommand=="module"&&g_iText){
+                        llMessageLinked(LINK_DIALOG,SPECIAL_SAY,"0"+llDumpList2String( llList2List(lParams, 2, -1)," " ),kID);sStr="";
+                    }else if(sCommand=="security"||sCommand=="silence"){            
+                         g_iSilentSec=1;
+                    }else if(g_iText){
+                        llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" is shocked by "+NameURIS(kID)+" as punishment.",kID);
+                    }
+                    rlv_blind(3,"");
+                    llStartAnimation(sStr_Zap);
+                }
+                if(g_iSound){
+                     llLoopSound(g_kElectricshock,fVolum);
+                }
+                STUN_TIME=10+1;
+                STUN_PHASE=1;
+                
+                llSetTimerEvent(fTimer);
+        }else
+        if(sCommand=="module"&&sValue == "recover"){
+            
+            punish_light("5");            
+            llStopSound();
+            if(g_Attached){
+                if(g_iText){
+                    llMessageLinked(LINK_DIALOG,SPECIAL_SAY,"0"+llDumpList2String( llList2List(lParams, 2, -1)," " ),kID);
+                }
+                StatusUpdater("recover");
+                unfreeze();
+                llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+                llStopAnimation(sStr_Stungunned);
+                llStartAnimation(sStr_ZapRecover);
+                rlv_blind(0,""); 
+            } 
+            STUN_TIME=10;
+            STUN_PHASE=3;
+            
+            llSetTimerEvent(fTimer);
+        }else if(sCommand=="module"&&sValue == "sleep"){
+            
+            llStopSound();
+            if(g_Attached){
+                if(g_iText){
+                    llMessageLinked(LINK_DIALOG,SPECIAL_SAY,"0"+llDumpList2String( llList2List(lParams, 2, -1)," " ),kID);
+                }
+                StatusUpdater("sleep");
+                llStopAnimation(sStr_Zap);
+                llStartAnimation(sStr_Stungunned);
+                freeze();
+            }
+            punish_light("4");
+            STUN_TIME=300;
+            STUN_PHASE=2;
+            
+            llSetTimerEvent(fTimer);
+        }else if(sCommand=="module"&&sValue == "rlv"){
+            if(g_iEnable==0){
+                return;
+            }
+            
+            if(g_Attached){
+                rlv_blind(-1,llDumpList2String( llList2List(lParams, 2, -1)," " )); 
+                sStr="";
+            }
+        }
+    }
+    
+}
+
+default {
+    on_rez(integer param) {
+        if(llGetAttached() != 0) 
+            g_Attached=1;
+        else
+            g_Attached=0;
+        initialize();  
+    }
+    attach(key id) {
+        
+    }
+    state_entry() {
+        
+         if(llGetAttached() != 0) 
+            g_Attached=1;
+        else
+            g_Attached=0;
+        initialize();
+    }
+
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == MENUNAME_REQUEST && sStr == g_sParentMenu){
+              
+        }
+        else if (iNum >= CMD_OWNER && iNum <= CMD_EVERYONE)
+            UserCommand(iNum, sStr, kID);
+        else if (iNum == DIALOG_RESPONSE) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            if (~iMenuIndex) {
+                string sMenuType = llList2String(g_lMenuIDs, iMenuIndex + 1);
+                g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+                list lMenuParams = llParseString2List(sStr, ["|"], []);
+                key kAV = llList2String(lMenuParams, 0);
+                string sMessage = llList2String(lMenuParams, 1);
+                integer iPage = (integer)llList2String(lMenuParams, 2);
+                integer iAuth = (integer)llList2String(lMenuParams, 3);                
+                if (sMessage == UPMENU) {
+                    llMessageLinked(LINK_ROOT, iAuth, "menu "+g_sParentMenu, kAV);
+                    return;
+                }else{
+                    sMessage=llToLower(sMessage);
+                    PunishCommand(iAuth,sMessage,kAV,TRUE);
+                }
+            }
+        } else if (iNum == DIALOG_TIMEOUT) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex +3);  
+        } else if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (sToken == g_sAuthToken+"iaccess") {
+                iAccess = (integer)sValue;
+            }else if (sToken == g_sGlobalToken+"moodvalue"){
+                iMood=(integer)sValue;
+                if(iMood<=0){
+                    Punish_Stop();
+                }else{
+                    llSetTimerEvent(fTimer);
+                }
+                ListenControl();
+            }else
+            if (sToken == g_sGlobalToken+"InmateSlot"){
+                g_iInmateSlot=(integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sPunishToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sPunishToken),-1);
+                
+                if(sToken==sStr_enable){
+                    g_iEnable=(integer)sValue;
+                    ListenControl();
+                }
+                else if(sToken==sStr_blind){
+                    g_iBlinded=(integer)sValue;
+                }
+                else if(sToken==sStr_sound){
+                    g_iSound=(integer)sValue;
+                }
+                else if(sToken==sStr_text){
+                    g_iText=(integer)sValue;
+                }
+                else if(sToken==sStr_zap){
+                    COUNT_ZAP_TOTALL=(integer)sValue;
+                }
+                else if(sToken==sStr_punish){
+                    COUNT_PUNISH_TOTALL=(integer)sValue;
+                }
+                else if(sToken==sStr_overide){
+                    g_iOveride=(integer)sValue;
+                }
+                else if(sToken==sStr_stun){
+                    COUNT_STUN_TOTALL=(integer)sValue;
+                } 
+                else if(sToken=="electricshock"){
+                   g_kElectricshock=(key)sValue;
+                }
+                else if(sToken=="electricshockend"){
+                   g_kElectricshockEnd=(key)sValue;
+                }else if(sToken=="volume"){
+                   fVolum=(float)sValue;
+                }
+            }
+        }else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender;
+            else if (sStr == "LINK_RLV") LINK_RLV = iSender;
+            else if (sStr == "LINK_AUTH") LINK_AUTH = iSender;
+        } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
+    }
+
+    run_time_permissions(integer perms) {
+        integer desired_controls =
+                CONTROL_FWD |
+                CONTROL_BACK |
+                CONTROL_LEFT |
+                CONTROL_RIGHT |
+                CONTROL_ROT_LEFT |
+                CONTROL_ROT_RIGHT |
+                CONTROL_UP |
+                CONTROL_DOWN |
+                CONTROL_LBUTTON |
+                CONTROL_ML_LBUTTON
+        ;
+
+        if (perms & PERMISSION_TAKE_CONTROLS) {
+            llTakeControls(1, 1, 0); 
+            llTakeControls(desired_controls, 1, 0);
+        }
+
+
+    }
+
+    listen(integer incoming_channel, string incoming_name, key id, string incoming_message) {
+        if(incoming_channel == ZAP_CHANNEL){
+            if(g_iEnable==FALSE||iMood<=1){
+                return;
+            }
+            incoming_message= llStringTrim( incoming_message, STRING_TRIM );
+            list lParams=llGetObjectDetails(id,[OBJECT_OWNER,OBJECT_ATTACHED_POINT]);
+            if(llList2Key(lParams, 0)==id||llList2Integer(lParams, 1)>0||g_iNPCZap==1){
+                if((key)incoming_message == g_kWearer){
+                    llMessageLinked(LINK_AUTH,CMD_ZERO,"punish punish",id);
+                }else if(llSubStringIndex(llToLower(incoming_message),(string)g_kWearer)==0){
+                    incoming_message=llStringTrim(llGetSubString(incoming_message,llStringLength((string)g_kWearer),-1),STRING_TRIM);
+                    if(llSubStringIndex(llToLower(incoming_message),sStr_punish)==0){
+                        llMessageLinked(LINK_AUTH,CMD_ZERO,incoming_message,id);
+                    }
+                }else if(llSubStringIndex(llToLower(incoming_message),"EVERYONE")==0){
+                    incoming_message=llStringTrim(llGetSubString(incoming_message,llStringLength("EVERYONE"),-1),STRING_TRIM);
+                    if(llSubStringIndex(llToLower(incoming_message),sStr_punish)==0){
+                        llMessageLinked(LINK_AUTH,CMD_ZERO,incoming_message,id);
+                    }
+                }
+            }
+        }        
+    }
+    
+    timer() {
+        if(g_iEnable==0){
+            return;
+        }
+        
+        if (ZAP_TIME == 1) {
+            if(STUN_TIME==0&&STUN_PHASE==0){
+                if(g_Attached){
+                    llStopAnimation(sStr_Zap);
+                    rlv_blind(0,"");
+                }
+                StatusUpdater("stop");
+                punish_light("0");
+            }
+            llStopSound();
+            BREAK_TIME=5+1;
+        } 
+        if (PUNISH_TIME==1) {
+            if(STUN_TIME==0&&STUN_PHASE==0){
+                if(g_Attached){
+                    llStopAnimation(sStr_Zap);
+                    rlv_blind(0,"");
+                }
+                StatusUpdater("stop");
+                punish_light("0");
+            }
+            llStopSound();
+            if(g_iSound){
+                llPlaySound(g_kElectricshockEnd,fVolum);
+            }
+            
+            BREAK_TIME=5+1;
+            
+        } 
+        if (BREAK_TIME==1) {
+           
+        }
+        
+        
+        if (STUN_TIME==1&&STUN_PHASE==1) {
+            llStopSound();
+            if(g_Attached){
+                if(g_iSilentSec==0&&g_iText){
+                    llMessageLinked(LINK_DIALOG,SAY,"0"+"The shock renders "+sStr_WEARERNAMES+" unconscious.",g_kWearer);
+                }
+                rlv_blind(4,"");
+                llStopAnimation(sStr_Zap);
+                llStartAnimation(sStr_Stungunned);
+                freeze();
+                rlv_blind(5,"");
+            }
+            if(g_iSound){
+                llPlaySound(g_kElectricshockEnd,fVolum);
+            }
+            punish_light("4");
+            STUN_TIME=0;
+            STUN_PHASE=2;
+            if(RECOVER_MODE==1)
+                STUN_TIME=300+1;
+            StatusUpdater("sleep");
+        } else if (STUN_TIME==1&&STUN_PHASE==2) {
+            Punish_Recover();
+        } else if (STUN_TIME==1&&STUN_PHASE==3) {
+            punish_light("0");
+            if(g_Attached){
+                llStopAnimation(sStr_ZapRecover);
+                if(g_iSilentSec==0&&g_iText){
+                    llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" fully recovers from the shock.",g_kWearer);
+                }
+                rlv_blind(0,"");
+            }
+            StatusUpdater("stop");
+            STUN_TIME=0;
+            STUN_PHASE=0;
+            BREAK_TIME=5+1;
+        }
+        
+        
+        if(ZAP_TIME>0)ZAP_TIME--;
+        if(PUNISH_TIME>0)PUNISH_TIME--;
+        if(STUN_TIME>0)STUN_TIME--;
+        if(BREAK_TIME>0)BREAK_TIME--;
+        if(ZAP_TIME<=0&&PUNISH_TIME<=0&&STUN_TIME<=0&&STUN_PHASE<=0&&BREAK_TIME<=0){
+            Punish_Stop();
+        }
+    }
+
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) llResetScript();
+    }
+}
+
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 12/22/2017 05:17:18
+//mono
+
+
+
+
+string g_sSubMenu = "Punish";
+string g_sParentMenu = "";
+list g_lMenuIDs;  
+integer g_iMenuStride = 3;
+
+
+key g_kWearer;
+integer g_Attached;
+integer SPECIAL_SAY = 1007;
+
+integer CMD_ZERO = 0;
+integer CMD_OWNER = 500;
+integer CMD_TRUSTED = 501;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer CMD_EVERYONE = 504;
+
+integer NOTIFY = 1002;
+integer SAY = 1004;
+
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_RLV;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LINK_AUTH=0;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_REQUEST = 2001;
+integer LM_SETTING_RESPONSE = 2002;
+integer LM_SETTING_DELETE = 2003;
+
+
+integer MENUNAME_REQUEST = 3000;
+
+
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+integer RLV_CMD = 6000;
+
+string UPMENU = "BACK";
+string g_sPunishToken = "punish_";
+string g_sGlobalToken = "global_";
+
+integer RECOVER_MODE=1;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="PUNISH";
+
+integer ZAP_CHANNEL = -106969;
+integer ZAP_CHANNEL_HANDLE;
+
+integer COUNT_ZAP_CURRENT;
+integer COUNT_PUNISH_CURRENT;
+integer COUNT_STUN_CURRENT;
+integer COUNT_ZAP_TOTALL;
+integer COUNT_PUNISH_TOTALL;
+integer COUNT_STUN_TOTALL;
+
+
+integer PUNISH_TIME;
+integer ZAP_TIME;
+integer STUN_TIME;
+integer STUN_PHASE;
+integer BREAK_TIME;
+
+integer iMood;
+integer g_iInmateSlot;
+
+
+integer g_iBlinded=1;
+integer g_iOveride;
+integer g_iSilentSec;
+float fVolum=0.5;
+
+integer g_iEnable=1;
+integer g_iSound=1;
+integer g_iText=1;
+integer g_iNPCZap=1;
+
+
+key g_kElectricshock="27a18333-a425-30b1-1ab6-c9a3a3554903";
+key g_kElectricshockEnd="a4602ead-96f3-ee86-5e0f-63faeb1ed7cf";
+
+
+string sStr_enable="enable";
+string sStr_blind="blind";
+string sStr_sound="sound";
+string sStr_text="text";
+string sStr_zap="zap";
+string sStr_punish="punish";
+string sStr_overide="overide";
+string sStr_stun="stun";
+string sStr_Zap="Zap";
+string sStr_ZapRecover="ZapRecover";
+string sStr_Stungunned="Stungunned";
+string sStr_Punish="Punish";
+string sStr_Stun="Stun";
+
+string sStr_Ledfdcolor="led fdcolor ";
+string sStr_Ledlbcolor="led lbcolor ";
+string sStr_Ledplcolor="led plcolor ";
+
+integer g_RlvBlind_used=0; 
+
+string sStr_BlankButton="-";
+
+float fTimer=1.0;
+string sStr_WEARERNAMES="%WEARERNAMES%";
+
+integer iAccess=1;
+string g_sAuthToken = "auth_"; 
+integer iTrustee;
+Punish_message(key kID){
+    if(kID==NULL_KEY){
+        return;
+    }
+    if(g_kWearer!=llGetOwnerKey(kID)){
+        if(llGetAgentSize(llGetOwnerKey(kID))==ZERO_VECTOR){
+            return;
+        }
+        llSay(ZAP_CHANNEL,(string)kID);
+    }
+}
+Punish_Lifted(){
+    
+    llSetTimerEvent(fTimer);
+    rlv_blind(-2,"");
+    punish_light("0");
+    if(g_Attached){
+        unfreeze();
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        llStopAnimation(sStr_ZapRecover);
+        llStopAnimation(sStr_Stungunned);
+        llStopAnimation(sStr_Zap);
+    }
+    llStopSound();
+    PUNISH_TIME=0;
+    ZAP_TIME=0;
+    STUN_TIME=0;
+    STUN_PHASE=0;
+}
+string PrintScore(){
+     string sPrompt;
+     sPrompt+="Score for inmate is";
+     sPrompt+="\nZap: "+(string)COUNT_ZAP_CURRENT+"/"+(string)COUNT_ZAP_TOTALL;
+     sPrompt+="\nPunish: "+(string)COUNT_PUNISH_CURRENT+"/"+(string)COUNT_PUNISH_TOTALL;
+     sPrompt+="\nStun: "+(string)COUNT_STUN_CURRENT+"/"+(string)COUNT_STUN_TOTALL;
+     sPrompt+="\n";
+     return sPrompt;
+}
+Objectscan(key kID){
+    list AttachedUUIDs = llGetAttachedList(kID);
+    integer numOfAttachments = llGetListLength(AttachedUUIDs);
+    integer index=0;
+    key kObject;
+    while(index<numOfAttachments){
+        string creator=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index) ,[OBJECT_CREATOR]);
+
+        if(creator=="937996d5-654e-4aee-92ef-7375970f1249"){
+            creator="";
+            kObject=llList2Key(AttachedUUIDs, index);
+            
+            string desc=(string)llGetObjectDetails(kObject,[OBJECT_DESC]);
+            list lParams = llParseString2List(desc, [","], []); desc="";
+            integer iParams=llGetListLength(lParams);
+            string sNumber=(string)llGetObjectDetails(kObject,[OBJECT_NAME]);
+            if (~llSubStringIndex(sNumber, ","))
+                sNumber = llDumpList2String(llParseStringKeepNulls((sNumber = "") + sNumber, [","], []), "");
+        
+            if ((llSubStringIndex(sNumber,"P-6") >= 0&&llStringLength(sNumber)==7)||~llSubStringIndex(sNumber,"L-CON")){
+                if(1<iParams){
+                    string sVersion=llList2String(lParams, 0);
+                    if(llSubStringIndex(sVersion, "3d")==0){
+                        iTrustee=llList2Integer(lParams, 8);
+                    }
+                }
+            }
+        }
+        index++;
+    }
+}
+string NameURIS(key kID){
+    if (llGetAgentSize(kID))
+        return llGetDisplayName(kID);
+    else
+        return llKey2Name(kID);
+}
+integer GetCharacter(key kID){
+    if(llGetOwnerKey(kID)==g_kWearer){
+        return 0;
+    }
+    list AttachedUUIDs = llGetAttachedList(kID);
+    integer numOfAttachments = llGetListLength(AttachedUUIDs);
+    integer index=0;
+    while(index<numOfAttachments){
+        string creator=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index) ,[OBJECT_CREATOR]);
+        if(creator=="937996d5-654e-4aee-92ef-7375970f1249"){
+            creator="";
+            string desc=(string)llGetObjectDetails(llList2Key(AttachedUUIDs, index),[OBJECT_DESC]);
+            list lParams = llParseString2List(desc, [","], []); desc="";
+            
+            integer iParams=llGetListLength(lParams);
+            if(6<=iParams){
+                string sVersion=llList2String(lParams, 0);
+                if(llSubStringIndex(sVersion, "1s")==0){
+                    return llList2Integer(lParams, 6);
+                }
+            }
+        }
+        index++;
+    }
+    return 0;
+}
+Dialog(key kRCPT, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string iMenuType) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kRCPT + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+    integer iIndex = llListFindList(g_lMenuIDs, [kRCPT]);
+    if (~iIndex) g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kRCPT, kMenuID, iMenuType], iIndex, iIndex + g_iMenuStride - 1);
+    else g_lMenuIDs += [kRCPT, kMenuID, iMenuType];
+}
+integer CheckCommandAuth(key kCmdGiver, integer iAuth) {
+    iTrustee=0;
+    if(iAuth==CMD_OWNER||llGetOwnerKey(kCmdGiver)==g_kWearer){
+        return TRUE;
+    }else
+    if (iAuth==CMD_TRUSTED&&0<=iAccess&&~iAccess){
+        return TRUE;
+    }else
+    if (iAuth==CMD_GROUP){
+        Objectscan(llGetOwnerKey(kCmdGiver));
+        if (2<=iAccess||iTrustee){
+            return TRUE;
+        }else{
+            Punish_message(kCmdGiver);
+            return FALSE;
+        }
+    }else
+    if (iAuth==CMD_EVERYONE&&iAccess==3){
+        return TRUE;
+    }
+    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person! You don't have the remote :D", kCmdGiver);
+    return FALSE;
+}
+
+unfreeze() {
+    if (llGetPermissions() & PERMISSION_TAKE_CONTROLS) {
+        llReleaseControls();
+    }
+}
+rlv_blind(integer i, string sRLV_CMD)
+{
+    if (i==6)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=y,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:3=force,setenv_scenegamma:0.7=force,setenv_bluedensityb:5.0=force,setenv_bluedensityr:2.5=force";
+    }else
+    if (i==5)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",shownames=n,showworldmap=n,showminimap=n,showloc=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:999=force,setenv_scenegamma:0.0=force";
+    }else
+    if (i==4)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",shownames=n,showworldmap=n,showminimap=n,showloc=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:64=force,setenv_daytime:-1=force";
+    }else
+    if (i==3&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0)
+    {
+        
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_textures=n,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:5=force,setenv_scenegamma:1.5=force,setenv_bluedensityr:10.0=force";
+    }else
+    if (i==2)
+    {
+        sRLV_CMD="alwaysrun=n,temprun=n,fartouch:0=n,setcam=n,setcam_fovmin:0.261799=n,setcam_fovmax:0.261799=n,setcam_unlock=n";
+        sRLV_CMD+=",setdebug_RenderResolutionDivisor:3=force,setenv_scenegamma:1.5=force,setenv_bluedensityr:5.0=force";
+    }
+    
+    if (i!=0&&i!=-2&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0&&sRLV_CMD!="")
+    {
+        g_RlvBlind_used=1;
+        StatusUpdater("rlv,"+(string)i+","+sRLV_CMD);
+        llMessageLinked(LINK_RLV, RLV_CMD, sRLV_CMD, sStr_Punish);
+    }else
+    if ((i==0&&g_iBlinded==1&&llGetAttached() != 0&&iMood>0)||i==-2)
+    {
+
+        sRLV_CMD="clear";
+        if(g_RlvBlind_used){
+            sRLV_CMD+=",setdebug_RenderResolutionDivisor:0=force,setenv_daytime:-1=force";
+            g_RlvBlind_used=0;
+        }
+        StatusUpdater("rlv,"+(string)i+","+sRLV_CMD);
+        llMessageLinked(LINK_RLV, RLV_CMD, sRLV_CMD, sStr_Punish); 
+    }
+}
+punish_light(string sStr){
+
+        if(g_iOveride==1){
+            return;
+        }
+
+        if(sStr=="2")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"2",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"2",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+           
+        }
+        else if(sStr=="1")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"3",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"3",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+        }
+        else if(sStr=="3")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"1",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"1",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"2",g_kWearer);
+        }
+        else if(sStr=="4")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"7",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"7",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+        else if(sStr=="5")
+        {
+           `llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"9",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"9",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+        else if(sStr=="0")
+        {
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledfdcolor+"refresh",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledlbcolor+"refresh",g_kWearer);
+            llMessageLinked(LINK_SET,CMD_OWNER,sStr_Ledplcolor+"refresh",g_kWearer);
+        }
+}
+initialize() {
+    g_kWearer = llGetOwner();
+    if(g_Attached){
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        unfreeze();
+        llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+        llStopAnimation(sStr_ZapRecover);
+        llStopAnimation(sStr_Stungunned);
+        llStopAnimation(sStr_Zap);
+    } 
+    llStopSound();
+    ZAP_CHANNEL=-106969;
+    llListenRemove(ZAP_CHANNEL_HANDLE);
+    
+    COUNT_ZAP_CURRENT=0;
+    COUNT_PUNISH_CURRENT=0;
+    COUNT_STUN_CURRENT=0;
+    
+    PUNISH_TIME=0;
+    ZAP_TIME=0;
+    STUN_TIME=0;
+    STUN_PHASE=0;
+    BREAK_TIME=0;
+    
+    llSetTimerEvent(fTimer);
+    
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_zap,"");
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_stun,"");
+    llMessageLinked(LINK_SET, LM_SETTING_REQUEST, g_sPunishToken + sStr_punish,"");
+}
+freeze() {
+    llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
+}
+
+UserCommand(integer iNum, string sStr, key kID) { 
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,punish,17,12,22,125");
+    }else
+    if (llToLower(sStr) == "menu "+llToLower(g_sSubMenu) || llToLower(sStr) == llToLower(g_sSubMenu)){
+        
+        PunishMenu(kID, iNum);
+    }else if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0) {
+        
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        PunishCommand(iNum,sStr, kID,FALSE);      
+    }
+}
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+SendUpdate(integer i, string j, string z){
+    key kObject=(key)j;
+    key kOwner=llGetOwnerKey(kObject);
+    integer CSlot;
+    if(kOwner){
+        if((kOwner!=kObject&&0<llList2Integer(llGetObjectDetails(kObject,[OBJECT_ATTACHED_POINT]),0))||(kOwner==kObject)){
+            CSlot=GetCharacter(kOwner);
+        }
+    }
+    
+    llHTTPRequest( "https://goriest-fastener.000webhostapp.com/inmate/punishset2.php?key="+(string)g_kWearer+"&slot="+(string)g_iInmateSlot+"&zap="+(string)COUNT_ZAP_TOTALL+"&punish="+(string)COUNT_PUNISH_TOTALL+"&stun="+(string)COUNT_STUN_TOTALL+"&mod="+(string)i+"&ok="+llEscapeURL(j)+"&on="+llEscapeURL(z)+"&uk="+(string)kOwner+"&un="+llEscapeURL(llKey2Name((string)kOwner))+"&uc="+(string)CSlot,[],"");
+}
+
+Punish_Stop(){
+    Punish_Lifted();
+    StatusUpdater("stop");
+    llSetTimerEvent(0.0);
+    BREAK_TIME=0;
+}
+Punish_Recover(){
+        punish_light("5");
+        llStopSound();
+        if(g_Attached){
+            if(g_iSilentSec==0&&g_iText){
+                llMessageLinked(LINK_DIALOG,SAY,"0"+sStr_WEARERNAMES+" starts to recover from the shock.",g_kWearer);
+            }
+            unfreeze();
+            llRequestPermissions(llGetOwner(),PERMISSION_TRIGGER_ANIMATION);
+            rlv_blind(6,"");
+            llStopAnimation(sStr_Stungunned);
+            llStartAnimation(sStr_ZapRecover);
+        }
+        STUN_TIME=10;
+        STUN_PHASE=3;
+        StatusUpdater("recover");
+        llSetTimerEvent(fTimer);
+        
+}
+
+PunishMenu(key kID, integer iNum) {
+    string sPrompt;
+    list lMyButtons;
+    if(g_kWearer==llGetOwnerKey(kID)){
+        if(g_iEnable==0){
+            lMyButtons = ["Enable ☐",sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Turned off for "+sStr_WEARERNAMES+"\nKeeping it turned off while IC as an inmate is powergaming!";
+        }else{
+            sPrompt+=PrintScore();
+            if (ZAP_TIME==0&&PUNISH_TIME==0) 
+            {
+                if(iMood==0||iNum==CMD_OWNER||iNum==CMD_TRUSTED){
+                    lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+                }else{
+                    lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+                }
+                if(1<=iMood){
+                    sPrompt+="\n(From rp speaking, unauthorized persons (inmates, non prison staffs) should not be able to zap the inmate.)";
+                }
+            }else{
+                lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+                sPrompt+="Punishment Module Already Running for you. Thats what you get "+sStr_WEARERNAMES+".";
+            }
+            if (STUN_PHASE == 2){
+                lMyButtons+=["Recover"] ;
+            }else{
+                lMyButtons+=[sStr_BlankButton] ;
+            }
+            if(RECOVER_MODE==1){
+                 lMyButtons+= ["Recover ☒"];    
+            }else{
+                lMyButtons+=["Recover ☐"];
+            }
+            if(g_iBlinded==1){
+                 lMyButtons+= ["Blind ☒"];    
+            }else{
+                lMyButtons+=["Blind ☐"];
+            }
+            
+            lMyButtons+= ["Enable ☒"];    
+            
+            if(g_iSound==1){
+                 lMyButtons+= ["Sound ☒"];    
+            }else{
+                lMyButtons+=["Sound ☐"];
+            }
+            if(g_iText==1){
+                 lMyButtons+= ["Text ☒"];    
+            }else{
+                lMyButtons+=["Text ☐"];
+            }
+            if(g_iNPCZap==1){
+                 lMyButtons+= ["NPCZap ☒"];    
+            }else{
+                lMyButtons+=["NPCZap ☐"];
+            }
+            lMyButtons+=["Reset"];
+        }
+    }else 
+    if(CheckCommandAuth(kID,iNum)){
+        if(ZAP_TIME!=0||PUNISH_TIME!=0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+=PrintScore();
+            sPrompt+="Punishment Module Already Running for "+sStr_WEARERNAMES+".";
+        }else
+        if(g_iEnable==0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Turned off.";
+        }else
+        if(iMood==0){
+            lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+            sPrompt+="Punishment Module Mood is OOC.";
+        }else
+        if(iNum==CMD_OWNER||iNum==CMD_TRUSTED){
+            lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+            sPrompt+=PrintScore();
+            sPrompt+="Please Select Punishment for "+sStr_WEARERNAMES+".";
+        }else if(iNum==CMD_GROUP||iNum==CMD_WEARER||iNum==CMD_EVERYONE){
+            Objectscan(llGetOwnerKey(kID));
+            sPrompt+=PrintScore();
+            sPrompt="Try it, go for it. Zap inmate "+sStr_WEARERNAMES+" as hard as you can.";
+            lMyButtons = [sStr_Zap,sStr_Punish,sStr_Stun];
+            if(iTrustee){
+                sPrompt="As Inmate Trustee, you have very limited actions if allowed by your handler.";
+                lMyButtons = [sStr_Zap];
+            }else{
+                if(1<=iMood){
+                    sPrompt+="\n(From rp speaking, unauthorized persons (inmates, non prison staffs) should not be able to zap the inmate.)";
+                }
+            }
+        }
+    }else{
+        lMyButtons = [sStr_BlankButton,sStr_BlankButton,sStr_BlankButton];
+        sPrompt+="DENIED silly person. (Punish)";
+    }
+    Dialog(kID, sPrompt, lMyButtons, [UPMENU], 0, iNum, "PunishMenu");
+}
+PunishCommand(integer iNum, string sStr, key kID, integer iFromMenu){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);  
+    sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    string sValue = llToLower(llList2String(lParams, 1));
+   
+    if(~llListFindList([sStr_overide,sStr_blind,sStr_enable,sStr_text,sStr_sound,"npczap","reset","recover"], [llToLower(sCommand)])){
+        if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Punish)", kID);
+            return;
+        }
+        if(sStr_overide==sCommand){
+            g_iOveride=(integer)sValue;
+        }else
+        if(sStr_blind==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iBlinded=!g_iBlinded;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iBlinded=(integer)sValue;
+            }
+            if(g_iBlinded==0){
+                rlv_blind(-2,"");
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_blind+"="+(string)g_iBlinded,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+            
+        }else 
+        if(sStr_enable==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iEnable=!g_iEnable;
+                
+            }else if(sValue=="1"||sValue=="0"){
+                g_iEnable=(integer)sValue;
+            }
+            if(g_iEnable==0){
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Keeping it turned off while IC as an inmate is powergaming!",kID);
+                Punish_Stop();
+                
+            }else if(g_iEnable==1){
+                
+                llSetTimerEvent(fTimer);
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_enable+"="+(string)g_iEnable,"");
+            ListenControl();
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else 
+        if(sStr_sound==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iSound=!g_iSound;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iSound=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_sound+"="+(string)g_iSound,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else
+        if(sStr_text==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iText=!g_iText;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iText=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + sStr_text+"="+(string)g_iText,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+        }else 
+        if("npczap"==sCommand){
+            if(sValue=="☒"||sValue=="☐"){
+                g_iNPCZap=!g_iNPCZap;
+            }else if(sValue=="1"||sValue=="0"){
+                g_iNPCZap=(integer)sValue;
+            }
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sPunishToken + "npc"+"="+(string)g_iNPCZap,"");
+            if(iFromMenu)
+                PunishMenu(kID, iNum);
+       
+        }else if (sCommand == "reset") 
+        {
+            Punish_Stop();
+            g_iSilentSec=0;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"1"+"Score and configurations reset",kID);
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_zap,"");
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_stun,"");
+            llMessageLinked(LINK_SAVE, LM_SETTING_DELETE, g_sPunishToken + sStr_punish,"");
+            COUNT_ZAP_CURRENT=0;
+            COUNT_PUNISH_CURRENT=0;
+            COUNT_STUN_CURRENT=0;
+            COUNT_ZAP_TOTALL=0;
+            COUNT_PUNISH_TOTALL=0;
+            COUNT_STUN_TOTALL=0;
+            g_iEnable=1;
+            g_iSound=1;
+            g_iText=1;
+            g_iNPCZap=1;
+            fVolum=0.5;
+            SendUpdate(-1,"","");
+        }
+        else 
+        if (sCommand == "recover") {
+            if("☒"==sValue||"0"==sValue){
+                RECOVER_MODE=0;
+                if(STUN_PHASE==2){
+                    STUN_TIME=0;
+                }
+                if(iFromMenu)
+                    PunishMenu(kID, iNum);
+            } 
+            else if("☐"==sValue||"1"==sValue){
+                RECOVER_MODE=1;
+                if(STUN_PHASE==2){
+                    STUN_TIME=300+1;
+                    
+                    llSetTimerEvent(fTimer);
+                }
+                if(iFromMenu)
+                    PunishMenu(kID, iNum);
+            }else{
+                if(g_iEnable==0){
+                    return;
+                }
+                Punish_Recover();
+                llSetTimerEvent(fTimer);
+            }
+        }
+    }else
+    if(~llListFindList(["freeze","unfreeze",sStr_punish,sStr_zap,sStr_stun,"module","silence","0","1","2"], [llToLower(sCommand)])){
+        if(!CheckCommandAuth(llGetOwnerKey(kID), iNum)){
+    

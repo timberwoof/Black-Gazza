@@ -1,0 +1,1308 @@
+//start_unprocessed_text
+/*/|/start_unprocessed_text
+
+list g_lElementsDDisplay;
+
+
+vector red =    <1, 0, 0>;
+vector orange = <1, 0.5, 0>;
+vector green =  <0, 1, 0>;
+vector cyan =   <0, 1, 1>; 
+vector white =  <1, 1, 1>;
+vector magenta = <1, 0, 1>; 
+vector black =  <0, 0, 0>;
+vector yellow = <1, 1, 0>;
+vector purple=<0.5, 0.0, 1.0>; 
+vector grey=<0.5, 0.5, 05>;
+vector lime=<0.004, 1.000, 0.439>;
+
+
+
+vector COLOR_SET;
+
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+
+integer LOADPIN = -1904;
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_RESPONSE = 2002;
+
+integer DIALOG = -9000;
+integer NOTIFY = 1002;
+
+string g_sInmateNumber;
+key g_kWearer;
+string g_sGlobalToken = "global_";
+
+string g_sInmateDisplayToken = "inmatedisplay_";
+string g_sLedToken = "led_";
+integer g_iElementsDDisplay=1;
+
+
+integer iCustomColor;
+integer iCustomID;
+vector SAVED_COLOR;
+vector USED_COLOR;
+vector SAVED_LIGHT;
+vector USED_LIGHT;
+
+string ID_SAVED;
+string ID_USED;
+
+float DDisplay_LIGHT_INTENSITY=0.0;
+float DDisplay_LIGHT_RADIUS=0.0;
+float DDisplay_LIGHT_FALLOFF=0.0;
+integer DDisplay_LIGHT_BOOLEAN=0;
+
+
+float DDisplay_COLOR_ALPHA=1.0;
+float DDisplay_GLOW_ITENSITY=0.2;
+integer DDisplay_BRIGHT_BOOLEAN=1;
+
+
+integer g_iWearerTypeValue=1;
+integer g_iMood;
+integer g_iStyle=2;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="INMATEDISPLAY";
+
+float GetLSLColor(string sValue){
+    float fValue=-1.0;
+    if(~llSubStringIndex(sValue,".")){
+        fValue=(float)sValue;
+        if(0.0<=fValue&&fValue<=1.0){
+            return fValue;
+        }
+    }else{
+        integer iValue=(integer)sValue;
+        if(0<=iValue&&iValue<=255){
+            fValue=fValue/255;
+        }
+        if(0.0<=fValue&&fValue<=1.0){
+            return fValue;
+        }
+    }
+    return -1.0;
+}
+SetLinkTextureFast(integer link, string texture, integer face)
+{
+    list Params = llGetLinkPrimitiveParams(link, [PRIM_TEXTURE, face]);
+    integer idx;
+    face *= face > 0; 
+    integer NumSides = llGetListLength(Params) / 4; 
+    for (idx = 0; idx < NumSides; ++idx)
+    {
+        Params = llListReplaceList(Params, [PRIM_TEXTURE, face++, texture], idx*6, idx*6);
+    }
+    llSetLinkPrimitiveParamsFast(link, Params);
+}
+InmateDispayCommand(integer iAuth, string sStr, key kID){
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID))
+    {
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Display)", kID);
+        return;
+    }
+    if(sCommand=="value"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateDisplayToken+llList2String(lParams, 1)+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sCommand=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateDisplayToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(sCommand=="idreset"){
+        ID_SAVED="";
+        iCustomID=0;
+        ID_USED=g_sInmateNumber;
+        display_label(ID_USED);
+    }else
+    if(sCommand=="colorreset"){
+        SAVED_COLOR=ZERO_VECTOR;
+        SAVED_LIGHT=ZERO_VECTOR;
+        iCustomColor=0;
+        USED_COLOR=COLOR_SET;
+        USED_LIGHT=COLOR_SET;
+        display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);  
+        display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT,DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+    }else
+    if(sCommand=="id"||sCommand=="idsave"){
+        lParams=llList2List(lParams,1,-1);
+        sStr=llDumpList2String(lParams," ");
+        integer strlen = llStringLength(sStr);
+        while(strlen<12){
+            sStr+=" ";
+            strlen = llStringLength(sStr);
+        }
+        ID_USED=sStr;   
+        if(sCommand=="idsave"){
+            ID_SAVED=ID_USED;
+            iCustomID=1;
+        }
+        display_label(ID_USED);
+    }else
+    if(sCommand=="color"||sCommand=="savecolor"){
+        list list_Colors = llParseString2List(llList2String(lParams, 1), [","], []);
+        integer length = llGetListLength(list_Colors);
+        if(length==3){
+            float color_r=GetLSLColor(llList2String(list_Colors, 0));float color_g=GetLSLColor(llList2String(list_Colors, 1));float color_b=GetLSLColor(llList2String(list_Colors, 2));
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                vector color=(vector)str_Colors;
+                USED_COLOR=color;USED_LIGHT=color;
+                if(sCommand=="savecolor"){
+                    SAVED_COLOR=USED_COLOR;
+                    SAVED_LIGHT=USED_COLOR;
+                    iCustomColor=1;
+                }
+                display_elements_colorset(g_lElementsDDisplay,color,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);  
+                display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,color,DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+            }
+        }
+    }else
+    if(sCommand=="refresh"){
+        if(iCustomColor){
+            USED_COLOR=SAVED_COLOR;
+            USED_LIGHT=SAVED_LIGHT;
+        }
+        if(iCustomID){
+            ID_USED=ID_SAVED;
+        }
+        if(g_iElementsDDisplay){
+            display_label(ID_USED);
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }
+    }else
+    if(sCommand=="reset"){
+        USED_COLOR=COLOR_SET;
+        SAVED_COLOR=ZERO_VECTOR;
+        USED_LIGHT=COLOR_SET;
+        SAVED_LIGHT=ZERO_VECTOR;
+        ID_SAVED="";
+        ID_USED=g_sInmateNumber;
+        iCustomID=0;
+        iCustomColor=0;
+        if(g_iElementsDDisplay){
+            display_label(ID_USED);
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_COLOR, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }
+    }else
+    if(sCommand=="resetv"){
+        red =    <1, 0, 0>;
+        orange = <1, 0.5, 0>;
+        green =  <0, 1, 0>;
+        cyan =   <0, 1, 1>; 
+        white =  <1, 1, 1>;
+        magenta = <1, 0, 1>; 
+        black =  <0, 0, 0>;
+        DDisplay_LIGHT_INTENSITY=0.0;
+        DDisplay_LIGHT_RADIUS=0.0;
+        DDisplay_LIGHT_FALLOFF=0.0;
+        DDisplay_LIGHT_BOOLEAN=0;
+        DDisplay_COLOR_ALPHA=1.0;
+        DDisplay_GLOW_ITENSITY=0.2;
+        DDisplay_BRIGHT_BOOLEAN=1;
+    }else if(sCommand=="save"){
+        iCustomColor=1;
+        list tmp=[];
+        
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[ PRIM_COLOR, 1 ] );    
+        SAVED_COLOR=llList2Vector(tmp, 0);  DDisplay_COLOR_ALPHA=llList2Float(tmp, 1);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_GLOW, 1  ] ); 
+        DDisplay_GLOW_ITENSITY=llList2Float(tmp, 0);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_FULLBRIGHT, 1]);
+        DDisplay_BRIGHT_BOOLEAN=llList2Integer(tmp, 0);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_POINT_LIGHT]); 
+        DDisplay_LIGHT_BOOLEAN=llList2Integer(tmp, 0);
+        SAVED_LIGHT=llList2Vector(tmp, 1); 
+        DDisplay_LIGHT_INTENSITY=llList2Float(tmp, 2);
+        DDisplay_LIGHT_RADIUS=llList2Float(tmp, 3);
+        DDisplay_LIGHT_FALLOFF=llList2Float(tmp, 4);
+        
+        
+    }
+}
+display_label(string sStr){
+    integer C_DIGIT=0;integer C_DIGIT_MAX=11;integer SIDES=1;
+    sStr=llToUpper(sStr);
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",label,"+sStr);
+    while(C_DIGIT<=C_DIGIT_MAX)
+    {
+        integer link=llList2Integer(g_lElementsDDisplay, C_DIGIT);
+        string c_label = llGetSubString(sStr,C_DIGIT,C_DIGIT);
+        integer found=0;
+        integer index=0;
+        while(found==0&&index<12){
+            link=llList2Integer(g_lElementsDDisplay, index);
+            if(llGetLinkName(link)=="D"+(string)C_DIGIT){
+                found=1;
+                if (c_label==" ") 
+                {
+                    c_label="_blank_";
+                }else
+                if (c_label=="") 
+                {
+                    c_label="_blank_";
+                }else
+                if (c_label=="_") 
+                {
+                    c_label="_blank_";
+                }else
+                if(~llListFindList(["0","1","2","3","4","5","6","7","8","9","q","w","e","r","t","y","u","i","o","p","-","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"], [llToLower(c_label)])){
+                    
+                }else{
+                    c_label="_blank_";
+                }
+                
+                
+                if(link>1)
+                {
+                    
+                    SetLinkTextureFast(link, c_label, SIDES);                         
+                }
+            }else{
+                ++index;    
+            }
+        }
+        ++C_DIGIT;
+    }    
+}
+display_elements_lightset(list ELEMENTS, integer BRIGHT_SIDES, integer BRIGHT_BOOLEAN, integer LIGHT_BOOLEAN, vector LIGHT_COLOR, float LIGHT_INTENSITY, float LIGHT_RADIUS, float LIGHT_FALLOFF ){
+   integer index=0;
+   
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+        llSetLinkPrimitiveParamsFast( link,[
+                PRIM_FULLBRIGHT, BRIGHT_SIDES, BRIGHT_BOOLEAN,
+                PRIM_POINT_LIGHT, LIGHT_BOOLEAN, LIGHT_COLOR, LIGHT_INTENSITY, LIGHT_RADIUS, LIGHT_FALLOFF
+        ]);
+        ++index;
+    }
+}
+display_elements_colorset(list ELEMENTS, vector COLOR, integer COLOR_SIDE,float COLOR_ALPHA, integer GLOW_SIDE, float GLOW_ITENSITY ){
+    integer index=0;
+
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+            llSetLinkPrimitiveParamsFast( link,[ 
+                    PRIM_COLOR, COLOR_SIDE, COLOR,COLOR_ALPHA,
+                    PRIM_GLOW,GLOW_SIDE, GLOW_ITENSITY
+            ]);
+        ++index;
+    }
+}
+display_color(){
+    
+
+    if(g_iStyle==1){
+        COLOR_SET=<0.000, 0.000, 1.000>;
+    }else if(g_iStyle==3){
+        if(g_iMood==2)
+        {
+            COLOR_SET=green;
+        }
+        else if(g_iMood==3)
+        {
+            COLOR_SET=yellow;
+        }
+        else if(g_iMood==4)
+        {
+            COLOR_SET=orange;
+        }
+        else if(g_iMood==5)
+        {
+            COLOR_SET=cyan;
+        }
+        else if(g_iMood==1)
+        {
+            COLOR_SET=white;
+        }
+        else if(g_iMood==0)
+        {
+            COLOR_SET=black;
+        }
+        else if(g_iMood==6)
+        {
+            COLOR_SET=purple;
+        }
+    }else{
+        if(g_iWearerTypeValue==1){
+         COLOR_SET=orange;
+        }else
+        if(g_iWearerTypeValue==2){
+             COLOR_SET=cyan;
+        }else
+        if(g_iWearerTypeValue==3){
+             COLOR_SET=green;
+        }else
+        if(g_iWearerTypeValue==4){
+             COLOR_SET=magenta;
+        }else
+        if(g_iWearerTypeValue==5){
+             COLOR_SET=white;
+        }else
+        if(g_iWearerTypeValue==6){
+             COLOR_SET=red;
+        }
+    }
+    
+    USED_COLOR=COLOR_SET;
+    USED_LIGHT=COLOR_SET;
+    if(iCustomColor){
+        USED_COLOR=SAVED_COLOR;
+        USED_LIGHT=SAVED_LIGHT;
+    }
+    if(g_iMood==0)
+    {    if(g_iElementsDDisplay==1){
+            display_elements_colorset(g_lElementsDDisplay,black,ALL_SIDES,0.0,ALL_SIDES,0.0);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,FALSE,FALSE,black, 0, 0,0 );
+        }      
+    }else{
+        if(g_iElementsDDisplay==1){
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }     
+    } 
+     
+ }
+
+UserCommand(integer iAuth, string sStr, key kID){
+    
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,inmatedisplay,17,12,28,110");
+    }else
+    if (llSubStringIndex(llToLower(sStr),"inmatedisplay")==0){
+        
+        integer strlen = llStringLength("inmatedisplay");
+        sStr=llGetSubString(sStr,strlen+1,-1);
+        InmateDispayCommand(iAuth, sStr,kID);
+    }
+}
+
+BuildElementList() 
+{
+    
+    integer n;
+    integer iLinkCount = llGetNumberOfPrims();
+    
+    string sPrimName;
+    list lParams;
+    g_lElementsDDisplay=[];
+    
+    for (n = 1; n <= iLinkCount; ++n)
+    {
+        sPrimName=llGetLinkName(n); 
+        lParams=llParseString2List((string)llGetObjectDetails(llGetLinkKey(n), [OBJECT_DESC]), ["~"], []);    
+        if(0<llGetListLength(lParams)){
+            if(sPrimName=="D0"||~llListFindList(lParams, ["D0"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D1"||~llListFindList(lParams, ["D1"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D2"||~llListFindList(lParams, ["D2"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D3"||~llListFindList(lParams, ["D3"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D4"||~llListFindList(lParams, ["D4"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D5"||~llListFindList(lParams, ["D5"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D6"||~llListFindList(lParams, ["D6"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D7"||~llListFindList(lParams, ["D7"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D8"||~llListFindList(lParams, ["D8"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D9"||~llListFindList(lParams, ["D9"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D10"||~llListFindList(lParams, ["D10"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D11"||~llListFindList(lParams, ["D11"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }
+        }else{
+            if(sPrimName=="D0")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D1")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D2")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D3")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D4")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D5")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D6")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D7")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D8")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D9")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D10")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D11")
+            {
+                g_lElementsDDisplay+=[n];
+            }
+        }
+        
+    }
+    lParams=[];
+}
+default
+{
+    state_entry()
+    {
+        
+        BuildElementList();
+        if (llGetStartParameter()==825) llSetRemoteScriptAccessPin(0);
+        g_kWearer = llGetOwner();
+    }
+    on_rez(integer iParam)
+    {
+        BuildElementList();
+        if (llGetStartParameter()==825) llSetRemoteScriptAccessPin(0);
+        g_kWearer = llGetOwner();
+    }
+    
+    
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == LOADPIN && sStr == llGetScriptName()) {
+            integer iPin = (integer)llFrand(99999.0)+1;
+            llSetRemoteScriptAccessPin(iPin);
+            llMessageLinked(iSender, LOADPIN, (string)iPin+"@"+llGetScriptName(),llGetKey());
+        }else
+        if (iNum >= CMD_OWNER && iNum <= CMD_WEARER){
+            UserCommand(iNum, sStr, kID);
+        }else 
+        if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (sToken==g_sLedToken+"ddispaly"){
+                g_iElementsDDisplay=(integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+
+                if(sToken == "InmateNumber"){
+                    g_sInmateNumber="  "+sValue;
+                    ID_USED=g_sInmateNumber;
+                    if(iCustomID){
+                        ID_USED=ID_SAVED;
+                    }
+                    display_label(ID_USED);
+                }
+                else if (sToken == "moodvalue"){
+                    g_iMood=(integer)sValue;
+                    if(g_iElementsDDisplay==1){
+                        display_color();
+                    }               
+                }
+                else if (sToken == "InmateTypeV")
+                {
+                    g_iWearerTypeValue = (integer)sValue;
+                    if(g_iElementsDDisplay){
+                        display_color();
+                    }
+                }
+            }
+            else
+            if (llSubStringIndex(sToken,g_sInmateDisplayToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateDisplayToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",setting,"+sToken+","+sValue);
+                
+                if(sToken =="style"){
+                    g_iStyle=(integer)sValue;
+                    if(g_iElementsDDisplay==1){
+                        display_color();
+                    }
+                }
+                else if(sToken =="ddispaly"){
+                   g_iElementsDDisplay=(integer)sValue;
+                }
+                else if(sToken=="color_black"){
+                    
+                    black=(vector)sValue;
+                }
+                else if(sToken=="color_red"){
+                    
+                    red=(vector)sValue;
+                }
+                else if(sToken=="color_orange"){
+                    
+                    orange=(vector)sValue;
+                }
+                else if(sToken=="color_yellow"){
+                    
+                    yellow=(vector)sValue;
+                }
+                else if(sToken=="color_purple"){
+                    
+                    
+                    purple=(vector)sValue;
+                }
+                else if(sToken=="color_lime"){
+                    
+                    lime=(vector)sValue;
+                }
+                else if(sToken=="color_magenta"){
+                    
+                    magenta=(vector)sValue;
+                }
+                else if(sToken=="color_green"){
+                    
+                    green=(vector)sValue;
+                }
+                else if(sToken=="color_cyan"){
+                    
+                    cyan=(vector)sValue;
+                }
+                else if(sToken=="color_white"){
+                    
+                    white=(vector)sValue;
+                }
+                else if(sToken=="color_grey"){
+                    
+                    grey=(vector)sValue;
+                }
+                
+                else if(sToken=="ddisplay_light_intensity"){
+                    
+                    DDisplay_LIGHT_INTENSITY=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_radius"){
+                    
+                    DDisplay_LIGHT_RADIUS=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_falloff"){
+                    
+                   DDisplay_LIGHT_FALLOFF=(float)sValue;
+                }
+                else if(sToken=="ddisplay_alpha"){
+                    
+                    DDisplay_COLOR_ALPHA=(float)sValue;
+                }
+                else if(sToken=="ddisplay_glow"){
+                    
+                    DDisplay_GLOW_ITENSITY=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_boolean"){
+                    
+                    DDisplay_LIGHT_BOOLEAN=(integer)sValue;
+                }
+                else if(sToken=="ddisplay_bright_boolean"){
+                    
+                    DDisplay_BRIGHT_BOOLEAN=(integer)sValue;
+                }
+                
+            }
+            
+            
+        }else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender;
+            else if (sStr == "LINK_REQUEST") llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_INMATEDISPLAY","");
+        } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
+    }
+     changed(integer iChange) {
+        
+        if (iChange & CHANGED_OWNER) {
+            llResetScript();
+        }
+        if (iChange & CHANGED_LINK) {
+            BuildElementList();
+        }
+    }
+}
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 12/27/2017 22:14:04
+//mono
+
+
+
+
+
+
+list g_lElementsDDisplay;
+
+
+vector red =    <1, 0, 0>;
+vector orange = <1, 0.5, 0>;
+vector green =  <0, 1, 0>;
+vector cyan =   <0, 1, 1>; 
+vector white =  <1, 1, 1>;
+vector magenta = <1, 0, 1>; 
+vector black =  <0, 0, 0>;
+vector yellow = <1, 1, 0>;
+vector purple=<0.5, 0.0, 1.0>; 
+vector grey=<0.5, 0.5, 05>;
+vector lime=<0.004, 1.000, 0.439>;
+
+
+
+vector COLOR_SET;
+
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+
+integer LOADPIN = -1904;
+integer REBOOT = -1000;
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_RESPONSE = 2002;
+
+integer DIALOG = -9000;
+integer NOTIFY = 1002;
+
+string g_sInmateNumber;
+key g_kWearer;
+string g_sGlobalToken = "global_";
+
+string g_sInmateDisplayToken = "inmatedisplay_";
+string g_sLedToken = "led_";
+integer g_iElementsDDisplay=1;
+
+
+integer iCustomColor;
+integer iCustomID;
+vector SAVED_COLOR;
+vector USED_COLOR;
+vector SAVED_LIGHT;
+vector USED_LIGHT;
+
+string ID_SAVED;
+string ID_USED;
+
+float DDisplay_LIGHT_INTENSITY=0.0;
+float DDisplay_LIGHT_RADIUS=0.0;
+float DDisplay_LIGHT_FALLOFF=0.0;
+integer DDisplay_LIGHT_BOOLEAN=0;
+
+
+float DDisplay_COLOR_ALPHA=1.0;
+float DDisplay_GLOW_ITENSITY=0.2;
+integer DDisplay_BRIGHT_BOOLEAN=1;
+
+
+integer g_iWearerTypeValue=1;
+integer g_iMood;
+integer g_iStyle=2;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="INMATEDISPLAY";
+
+float GetLSLColor(string sValue){
+    float fValue=-1.0;
+    if(~llSubStringIndex(sValue,".")){
+        fValue=(float)sValue;
+        if(0.0<=fValue&&fValue<=1.0){
+            return fValue;
+        }
+    }else{
+        integer iValue=(integer)sValue;
+        if(0<=iValue&&iValue<=255){
+            fValue=fValue/255;
+        }
+        if(0.0<=fValue&&fValue<=1.0){
+            return fValue;
+        }
+    }
+    return -1.0;
+}
+SetLinkTextureFast(integer link, string texture, integer face)
+{
+    list Params = llGetLinkPrimitiveParams(link, [PRIM_TEXTURE, face]);
+    integer idx;
+    face *= face > 0; 
+    integer NumSides = llGetListLength(Params) / 4; 
+    for (idx = 0; idx < NumSides; ++idx)
+    {
+        Params = llListReplaceList(Params, [PRIM_TEXTURE, face++, texture], idx*6, idx*6);
+    }
+    llSetLinkPrimitiveParamsFast(link, Params);
+}
+InmateDispayCommand(integer iAuth, string sStr, key kID){
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID))
+    {
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Display)", kID);
+        return;
+    }
+    if(sCommand=="value"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateDisplayToken+llList2String(lParams, 1)+ "="+llDumpList2String( llList2List( lParams, 2, -1 ), " " ), "");
+    }else
+    if(sCommand=="valuev"){
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateDisplayToken+llList2String(lParams, 1)+ "="+"<"+llList2String(lParams, 2)+">", "");
+    }else
+    if(sCommand=="idreset"){
+        ID_SAVED="";
+        iCustomID=0;
+        ID_USED=g_sInmateNumber;
+        display_label(ID_USED);
+    }else
+    if(sCommand=="colorreset"){
+        SAVED_COLOR=ZERO_VECTOR;
+        SAVED_LIGHT=ZERO_VECTOR;
+        iCustomColor=0;
+        USED_COLOR=COLOR_SET;
+        USED_LIGHT=COLOR_SET;
+        display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);  
+        display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT,DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+    }else
+    if(sCommand=="id"||sCommand=="idsave"){
+        lParams=llList2List(lParams,1,-1);
+        sStr=llDumpList2String(lParams," ");
+        integer strlen = llStringLength(sStr);
+        while(strlen<12){
+            sStr+=" ";
+            strlen = llStringLength(sStr);
+        }
+        ID_USED=sStr;   
+        if(sCommand=="idsave"){
+            ID_SAVED=ID_USED;
+            iCustomID=1;
+        }
+        display_label(ID_USED);
+    }else
+    if(sCommand=="color"||sCommand=="savecolor"){
+        list list_Colors = llParseString2List(llList2String(lParams, 1), [","], []);
+        integer length = llGetListLength(list_Colors);
+        if(length==3){
+            float color_r=GetLSLColor(llList2String(list_Colors, 0));float color_g=GetLSLColor(llList2String(list_Colors, 1));float color_b=GetLSLColor(llList2String(list_Colors, 2));
+            if(0.0<=color_r&&color_r<=1.0&&0.0<=color_g&&color_g<=1.0&&0.0<=color_b&&color_b<=1.0){
+                string str_Colors="<"+(string)color_r+","+(string)color_g+","+(string)color_b+">";
+                vector color=(vector)str_Colors;
+                USED_COLOR=color;USED_LIGHT=color;
+                if(sCommand=="savecolor"){
+                    SAVED_COLOR=USED_COLOR;
+                    SAVED_LIGHT=USED_COLOR;
+                    iCustomColor=1;
+                }
+                display_elements_colorset(g_lElementsDDisplay,color,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);  
+                display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,color,DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+            }
+        }
+    }else
+    if(sCommand=="refresh"){
+        if(iCustomColor){
+            USED_COLOR=SAVED_COLOR;
+            USED_LIGHT=SAVED_LIGHT;
+        }
+        if(iCustomID){
+            ID_USED=ID_SAVED;
+        }
+        if(g_iElementsDDisplay){
+            display_label(ID_USED);
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }
+    }else
+    if(sCommand=="reset"){
+        USED_COLOR=COLOR_SET;
+        SAVED_COLOR=ZERO_VECTOR;
+        USED_LIGHT=COLOR_SET;
+        SAVED_LIGHT=ZERO_VECTOR;
+        ID_SAVED="";
+        ID_USED=g_sInmateNumber;
+        iCustomID=0;
+        iCustomColor=0;
+        if(g_iElementsDDisplay){
+            display_label(ID_USED);
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_COLOR, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }
+    }else
+    if(sCommand=="resetv"){
+        red =    <1, 0, 0>;
+        orange = <1, 0.5, 0>;
+        green =  <0, 1, 0>;
+        cyan =   <0, 1, 1>; 
+        white =  <1, 1, 1>;
+        magenta = <1, 0, 1>; 
+        black =  <0, 0, 0>;
+        DDisplay_LIGHT_INTENSITY=0.0;
+        DDisplay_LIGHT_RADIUS=0.0;
+        DDisplay_LIGHT_FALLOFF=0.0;
+        DDisplay_LIGHT_BOOLEAN=0;
+        DDisplay_COLOR_ALPHA=1.0;
+        DDisplay_GLOW_ITENSITY=0.2;
+        DDisplay_BRIGHT_BOOLEAN=1;
+    }else if(sCommand=="save"){
+        iCustomColor=1;
+        list tmp=[];
+        
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[ PRIM_COLOR, 1 ] );    
+        SAVED_COLOR=llList2Vector(tmp, 0);  DDisplay_COLOR_ALPHA=llList2Float(tmp, 1);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_GLOW, 1  ] ); 
+        DDisplay_GLOW_ITENSITY=llList2Float(tmp, 0);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_FULLBRIGHT, 1]);
+        DDisplay_BRIGHT_BOOLEAN=llList2Integer(tmp, 0);
+        tmp=llGetLinkPrimitiveParams( llList2Integer(g_lElementsDDisplay, 0),[PRIM_POINT_LIGHT]); 
+        DDisplay_LIGHT_BOOLEAN=llList2Integer(tmp, 0);
+        SAVED_LIGHT=llList2Vector(tmp, 1); 
+        DDisplay_LIGHT_INTENSITY=llList2Float(tmp, 2);
+        DDisplay_LIGHT_RADIUS=llList2Float(tmp, 3);
+        DDisplay_LIGHT_FALLOFF=llList2Float(tmp, 4);
+        
+        
+    }
+}
+display_label(string sStr){
+    integer C_DIGIT=0;integer C_DIGIT_MAX=11;integer SIDES=1;
+    sStr=llToUpper(sStr);
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",label,"+sStr);
+    while(C_DIGIT<=C_DIGIT_MAX)
+    {
+        integer link=llList2Integer(g_lElementsDDisplay, C_DIGIT);
+        string c_label = llGetSubString(sStr,C_DIGIT,C_DIGIT);
+        integer found=0;
+        integer index=0;
+        while(found==0&&index<12){
+            link=llList2Integer(g_lElementsDDisplay, index);
+            if(llGetLinkName(link)=="D"+(string)C_DIGIT){
+                found=1;
+                if (c_label==" ") 
+                {
+                    c_label="_blank_";
+                }else
+                if (c_label=="") 
+                {
+                    c_label="_blank_";
+                }else
+                if (c_label=="_") 
+                {
+                    c_label="_blank_";
+                }else
+                if(~llListFindList(["0","1","2","3","4","5","6","7","8","9","q","w","e","r","t","y","u","i","o","p","-","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"], [llToLower(c_label)])){
+                    
+                }else{
+                    c_label="_blank_";
+                }
+                
+                
+                if(link>1)
+                {
+                    
+                    SetLinkTextureFast(link, c_label, SIDES);                         
+                }
+            }else{
+                ++index;    
+            }
+        }
+        ++C_DIGIT;
+    }    
+}
+display_elements_lightset(list ELEMENTS, integer BRIGHT_SIDES, integer BRIGHT_BOOLEAN, integer LIGHT_BOOLEAN, vector LIGHT_COLOR, float LIGHT_INTENSITY, float LIGHT_RADIUS, float LIGHT_FALLOFF ){
+   integer index=0;
+   
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+        llSetLinkPrimitiveParamsFast( link,[
+                PRIM_FULLBRIGHT, BRIGHT_SIDES, BRIGHT_BOOLEAN,
+                PRIM_POINT_LIGHT, LIGHT_BOOLEAN, LIGHT_COLOR, LIGHT_INTENSITY, LIGHT_RADIUS, LIGHT_FALLOFF
+        ]);
+        ++index;
+    }
+}
+display_elements_colorset(list ELEMENTS, vector COLOR, integer COLOR_SIDE,float COLOR_ALPHA, integer GLOW_SIDE, float GLOW_ITENSITY ){
+    integer index=0;
+
+    while (index < llGetListLength(ELEMENTS))
+    {
+        integer link=llList2Integer(ELEMENTS, index);
+            llSetLinkPrimitiveParamsFast( link,[ 
+                    PRIM_COLOR, COLOR_SIDE, COLOR,COLOR_ALPHA,
+                    PRIM_GLOW,GLOW_SIDE, GLOW_ITENSITY
+            ]);
+        ++index;
+    }
+}
+display_color(){
+    
+
+    if(g_iStyle==1){
+        COLOR_SET=<0.000, 0.000, 1.000>;
+    }else if(g_iStyle==3){
+        if(g_iMood==2)
+        {
+            COLOR_SET=green;
+        }
+        else if(g_iMood==3)
+        {
+            COLOR_SET=yellow;
+        }
+        else if(g_iMood==4)
+        {
+            COLOR_SET=orange;
+        }
+        else if(g_iMood==5)
+        {
+            COLOR_SET=cyan;
+        }
+        else if(g_iMood==1)
+        {
+            COLOR_SET=white;
+        }
+        else if(g_iMood==0)
+        {
+            COLOR_SET=black;
+        }
+        else if(g_iMood==6)
+        {
+            COLOR_SET=purple;
+        }
+    }else{
+        if(g_iWearerTypeValue==1){
+         COLOR_SET=orange;
+        }else
+        if(g_iWearerTypeValue==2){
+             COLOR_SET=cyan;
+        }else
+        if(g_iWearerTypeValue==3){
+             COLOR_SET=green;
+        }else
+        if(g_iWearerTypeValue==4){
+             COLOR_SET=magenta;
+        }else
+        if(g_iWearerTypeValue==5){
+             COLOR_SET=white;
+        }else
+        if(g_iWearerTypeValue==6){
+             COLOR_SET=red;
+        }
+    }
+    
+    USED_COLOR=COLOR_SET;
+    USED_LIGHT=COLOR_SET;
+    if(iCustomColor){
+        USED_COLOR=SAVED_COLOR;
+        USED_LIGHT=SAVED_LIGHT;
+    }
+    if(g_iMood==0)
+    {    if(g_iElementsDDisplay==1){
+            display_elements_colorset(g_lElementsDDisplay,black,ALL_SIDES,0.0,ALL_SIDES,0.0);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,FALSE,FALSE,black, 0, 0,0 );
+        }      
+    }else{
+        if(g_iElementsDDisplay==1){
+            display_elements_colorset(g_lElementsDDisplay,USED_COLOR,1,DDisplay_COLOR_ALPHA,ALL_SIDES,DDisplay_GLOW_ITENSITY);
+            display_elements_lightset(g_lElementsDDisplay,ALL_SIDES,DDisplay_BRIGHT_BOOLEAN,DDisplay_LIGHT_BOOLEAN,USED_LIGHT, DDisplay_LIGHT_INTENSITY, DDisplay_LIGHT_RADIUS,DDisplay_LIGHT_FALLOFF );
+        }     
+    } 
+     
+ }
+
+UserCommand(integer iAuth, string sStr, key kID){
+    
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,inmatedisplay,17,12,28,110");
+    }else
+    if (llSubStringIndex(llToLower(sStr),"inmatedisplay")==0){
+        
+        integer strlen = llStringLength("inmatedisplay");
+        sStr=llGetSubString(sStr,strlen+1,-1);
+        InmateDispayCommand(iAuth, sStr,kID);
+    }
+}
+
+BuildElementList() 
+{
+    
+    integer n;
+    integer iLinkCount = llGetNumberOfPrims();
+    
+    string sPrimName;
+    list lParams;
+    g_lElementsDDisplay=[];
+    
+    for (n = 1; n <= iLinkCount; ++n)
+    {
+        sPrimName=llGetLinkName(n); 
+        lParams=llParseString2List((string)llGetObjectDetails(llGetLinkKey(n), [OBJECT_DESC]), ["~"], []);    
+        if(0<llGetListLength(lParams)){
+            if(sPrimName=="D0"||~llListFindList(lParams, ["D0"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D1"||~llListFindList(lParams, ["D1"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D2"||~llListFindList(lParams, ["D2"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D3"||~llListFindList(lParams, ["D3"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D4"||~llListFindList(lParams, ["D4"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D5"||~llListFindList(lParams, ["D5"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D6"||~llListFindList(lParams, ["D6"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D7"||~llListFindList(lParams, ["D7"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D8"||~llListFindList(lParams, ["D8"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D9"||~llListFindList(lParams, ["D9"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D10"||~llListFindList(lParams, ["D10"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D11"||~llListFindList(lParams, ["D11"]))
+            {
+                g_lElementsDDisplay+=[n];
+            }
+        }else{
+            if(sPrimName=="D0")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D1")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D2")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D3")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D4")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D5")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D6")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D7")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D8")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D9")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D10")
+            {
+                g_lElementsDDisplay+=[n];
+            }else if(sPrimName=="D11")
+            {
+                g_lElementsDDisplay+=[n];
+            }
+        }
+        
+    }
+    lParams=[];
+}
+default
+{
+    state_entry()
+    {
+        
+        BuildElementList();
+        if (llGetStartParameter()==825) llSetRemoteScriptAccessPin(0);
+        g_kWearer = llGetOwner();
+    }
+    on_rez(integer iParam)
+    {
+        BuildElementList();
+        if (llGetStartParameter()==825) llSetRemoteScriptAccessPin(0);
+        g_kWearer = llGetOwner();
+    }
+    
+    
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == LOADPIN && sStr == llGetScriptName()) {
+            integer iPin = (integer)llFrand(99999.0)+1;
+            llSetRemoteScriptAccessPin(iPin);
+            llMessageLinked(iSender, LOADPIN, (string)iPin+"@"+llGetScriptName(),llGetKey());
+        }else
+        if (iNum >= CMD_OWNER && iNum <= CMD_WEARER){
+            UserCommand(iNum, sStr, kID);
+        }else 
+        if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (sToken==g_sLedToken+"ddispaly"){
+                g_iElementsDDisplay=(integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+
+                if(sToken == "InmateNumber"){
+                    g_sInmateNumber="  "+sValue;
+                    ID_USED=g_sInmateNumber;
+                    if(iCustomID){
+                        ID_USED=ID_SAVED;
+                    }
+                    display_label(ID_USED);
+                }
+                else if (sToken == "moodvalue"){
+                    g_iMood=(integer)sValue;
+                    if(g_iElementsDDisplay==1){
+                        display_color();
+                    }               
+                }
+                else if (sToken == "InmateTypeV")
+                {
+                    g_iWearerTypeValue = (integer)sValue;
+                    if(g_iElementsDDisplay){
+                        display_color();
+                    }
+                }
+            }
+            else
+            if (llSubStringIndex(sToken,g_sInmateDisplayToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateDisplayToken),-1);
+                llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+",setting,"+sToken+","+sValue);
+                
+                if(sToken =="style"){
+                    g_iStyle=(integer)sValue;
+                    if(g_iElementsDDisplay==1){
+                        display_color();
+                    }
+                }
+                else if(sToken =="ddispaly"){
+                   g_iElementsDDisplay=(integer)sValue;
+                }
+                else if(sToken=="color_black"){
+                    
+                    black=(vector)sValue;
+                }
+                else if(sToken=="color_red"){
+                    
+                    red=(vector)sValue;
+                }
+                else if(sToken=="color_orange"){
+                    
+                    orange=(vector)sValue;
+                }
+                else if(sToken=="color_yellow"){
+                    
+                    yellow=(vector)sValue;
+                }
+                else if(sToken=="color_purple"){
+                    
+                    
+                    purple=(vector)sValue;
+                }
+                else if(sToken=="color_lime"){
+                    
+                    lime=(vector)sValue;
+                }
+                else if(sToken=="color_magenta"){
+                    
+                    magenta=(vector)sValue;
+                }
+                else if(sToken=="color_green"){
+                    
+                    green=(vector)sValue;
+                }
+                else if(sToken=="color_cyan"){
+                    
+                    cyan=(vector)sValue;
+                }
+                else if(sToken=="color_white"){
+                    
+                    white=(vector)sValue;
+                }
+                else if(sToken=="color_grey"){
+                    
+                    grey=(vector)sValue;
+                }
+                
+                else if(sToken=="ddisplay_light_intensity"){
+                    
+                    DDisplay_LIGHT_INTENSITY=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_radius"){
+                    
+                    DDisplay_LIGHT_RADIUS=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_falloff"){
+                    
+                   DDisplay_LIGHT_FALLOFF=(float)sValue;
+                }
+                else if(sToken=="ddisplay_alpha"){
+                    
+                    DDisplay_COLOR_ALPHA=(float)sValue;
+                }
+                else if(sToken=="ddisplay_glow"){
+                    
+                    DDisplay_GLOW_ITENSITY=(float)sValue;
+                }
+                else if(sToken=="ddisplay_light_boolean"){
+                    
+                    DDisplay_LIGHT_BOOLEAN=(integer)sValue;
+                }
+                else if(sToken=="ddisplay_bright_boolean"){
+                    
+                    DDisplay_BRIGHT_BOOLEAN=(integer)sValue;
+                }
+                
+            }
+            
+            
+        }else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender;
+            else if (sStr == "LINK_REQUEST") llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_INMATEDISPLAY","");
+        } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
+    }
+     changed(integer iChange) {
+        
+        if (iChange & CHANGED_OWNER) {
+            llResetScript();
+        }
+        if (iChange & CHANGED_LINK) {
+            BuildElementList();
+        }
+    }
+}
+

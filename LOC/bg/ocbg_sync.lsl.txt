@@ -1,0 +1,1399 @@
+//start_unprocessed_text
+/*integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_CHARACTER = 5;
+integer LINK_UPDATE = -10;
+integer LINK_AUTH=0;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_RESPONSE = 2002;
+integer CHARACTER_LM_SETTING_SAVE = 2010;
+integer CHARACTER_LM_SETTING_RESPONSE = 2012;
+
+string g_sType="InmateCollarSerialD";
+string g_sGlobalToken = "global_";
+string g_sInmateToken = "inmate_";
+string g_sCharacterToken = "character_";
+
+integer CMD_ZERO = 0;
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+integer BGCOLLAR_AUTORIZATION = 66757190066;
+
+integer NOTIFY = 1002;
+
+key crimeRequest = NULL_KEY;
+list g_lCrimeRequest;
+key g_kWearer;
+string g_sSubMenu = "inmatesync";
+integer SYNC_CHANNEL = -667571901;
+integer SYNC_CHANNEL_HANDLE;
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="SYNC";
+
+
+string URL = "http:/|/sl.blackgazza.com/";
+
+string URL2 = "https:/|/goriest-fastener.000webhostapp.com/inmate/";
+string URL2_Get;
+string URL3_Get;
+string URL2_Set;
+string g_sNewsID;
+
+string g_sWearerNumber;
+string g_sWearerCrime;
+string g_sWearerSentence;
+string g_sWearerInmateName;
+string g_sWearerInmateThreatV;
+string g_sWearerInmateTypeV;
+string g_sWearerInmateMugshot;
+string g_sWearerInmateThreat;
+string g_sWearerInmateType;
+string g_sWearerInmateTrustee;
+string i_sWearerNumber;
+string i_sWearerCrime;
+string i_sWearerSentence;
+
+string g_sFinal_Url;
+integer g_iChangedOwner;
+integer g_iRequest=0;
+integer g_iSilent=0;
+
+integer g_iSlotSave=0;
+integer g_iSlotLoad=0;
+integer g_iInUse=0;
+integer g_iNew=0;
+string TIME_MODE;
+integer new_slot;
+integer g_iGenerated=0;
+integer g_iIndexed=0;
+
+string sLConVersion;
+string sLConBuild;
+integer iMood;
+integer iIgnoreCheckForUpdate=1;
+initialize() {
+   g_kWearer = llGetOwner();
+   llListenRemove(SYNC_CHANNEL_HANDLE);
+   URL2_Get = "get.php?key="+(string)g_kWearer+"&slot=";
+   URL2_Set = "add.php?key="+(string)g_kWearer+"&slot=";
+   URL3_Get = "getextra.php?key="+(string)g_kWearer+"&slot=";
+   RequestClean();
+   SYNC_CHANNEL_HANDLE = llListen(SYNC_CHANNEL,"",NULL_KEY,"");
+}
+indexing(){
+    ++g_iIndexed;
+    TIME_MODE="indexing";
+    llSetTimerEvent(1);
+    
+}
+generate(){
+    g_kWearer = llGetOwner();
+    ++g_iGenerated;
+    
+    TIME_MODE="generate";
+    
+    llSetTimerEvent(1);
+    
+    
+}
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+UserCommand(integer iAuth, string sStr, key kID){
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,sync,17,12,29,120");
+    }else
+    if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0){
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        InmateTitleCommand(iAuth, sStr,kID);
+    }
+}
+RequestDatabase(string text, integer i){
+    
+
+    if(i==1){
+        g_sFinal_Url=text;
+    }
+   if(g_iRequest){
+       g_iInUse=1;
+        g_iRequest=0;
+        StatusUpdater("requestdatabase");
+        crimeRequest= llHTTPRequest(g_sFinal_Url,[],"");    
+   }
+   if(g_iSilent){
+       g_iInUse=1;
+        StatusUpdater("requestdatabase");
+        crimeRequest= llHTTPRequest(g_sFinal_Url,[],"");    
+    }
+    
+    
+}
+InmateTitleCommand(integer iAuth, string sStr, key kID){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    string sValue = llList2String(lParams, 1);
+    lParams=[]; 
+    if (sCommand == "resync"&&((CMD_WEARER<=iAuth&&iAuth<=CMD_OWNER)||g_kWearer==llGetOwnerKey(kID))){
+        g_iSilent=1;
+        g_iRequest=0;
+        g_iNew=0;
+        Database_Read();
+    }else{
+        if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Sync)", kID);
+            return;
+        }
+        
+        if(sCommand == "inmateslot"){
+            if(1<=(integer)sValue&&(integer)sValue<=6){
+                g_iSlotLoad=(integer)sValue;
+                g_iSilent=0;
+                g_iRequest=1;
+                g_iNew=0;
+                Database_Read();
+            }
+        }else
+        if(sCommand == "inmateslotsave"){
+            if(1<=(integer)sValue&&(integer)sValue<=6){
+                g_iSlotSave=(integer)sValue;
+                g_iNew=0;
+                Database_Save();   
+            }
+        }else
+        if(sCommand=="reset"){
+           iIgnoreCheckForUpdate=0;
+           g_iChangedOwner=1;
+           g_iNew=0;
+           g_iGenerated=0;
+           g_iRequest=1;
+           generate();
+        }else
+        if(sCommand=="refresh"){
+            iIgnoreCheckForUpdate=0;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Rebuilding..." ,g_kWearer);
+            g_iIndexed=0;
+            indexing();
+        }else
+        if(sCommand=="clear"){
+            iIgnoreCheckForUpdate=0;
+            g_iChangedOwner=0;
+            g_iNew=0;
+            g_iGenerated=0;
+            g_iIndexed=0;
+            g_iRequest=0;
+            g_iSilent=0;
+            RequestClean();
+        }
+    }
+}
+
+RequestClean(){
+    request_update=NULL_KEY;
+    request_extra=NULL_KEY;
+    request_extra2=NULL_KEY;
+    crimeRequest=NULL_KEY;
+    g_lCrimeRequest=[];
+}
+
+InmateInsert(integer iLink, integer iNum, string inmate_number, string inmate_crime, string inmate_sentence){
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateNumber" + "=" + inmate_number, "");
+    StatusUpdater( "InmateNumber,"+ inmate_number);
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateCrime" + "=" + inmate_crime, "");
+    StatusUpdater( "InmateCrime,"+ inmate_crime);
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateSentence" + "=" +inmate_sentence, "");
+    llMessageLinked(iLink, iNum, g_sInmateToken + "DeviceName" + "=" + inmate_number+"'s collar", "");
+    llMessageLinked(iLink, iNum, g_sInmateToken + "DeviceType" + "=" + "collar", "");
+}
+Database_SaveExtra(){
+/|*
+g_sWearerNumber;
+g_sWearerCrime;
+g_sWearerSentence;
+g_sWearerInmateName;
+g_sWearerInmateThreatV;
+g_sWearerInmateTypeV;
+g_sWearerInmateMugshot;
+g_sWearerInmateThreat;
+g_sWearerInmateType;
+*|/
+    /|/goriest-fastener.000webhostapp.com/inmate/add.php?key=0&slot=1&tyv=2&thv=3&mug=Mug&num=Num&nam=Nam&sen=Life&cr=Crime&ty=Gen&th=None
+    string sMsg="&tyv="+g_sWearerInmateTypeV+"&thv="+g_sWearerInmateThreatV+"&mug="+llEscapeURL(g_sWearerInmateMugshot)+"&tr="+llEscapeURL(g_sWearerInmateTrustee)+"&num="+llEscapeURL(g_sWearerNumber)+"&nam="+llEscapeURL(g_sWearerInmateName)+"&sen="+llEscapeURL(g_sWearerSentence)+"&cr="+llEscapeURL(g_sWearerCrime)+"&ty="+llEscapeURL(g_sWearerInmateType)+"&th="+llEscapeURL(g_sWearerInmateThreat);
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%2C"], []), "!2C");
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%5BTRUSTEE%5D%20"], []), "");
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%5BTRUSTEE%5D"], []), "");
+    /|/llOwnerSay(sMsg);
+    llHTTPRequest(URL2+URL2_Set+(string)g_iSlotSave+sMsg,[],"");
+    /|/llOwnerSay(URL2+URL2_Set+(string)g_iSlotSave+sMsg);
+    llSleep(1);
+    /|/llOwnerSay(URL2+"sendev.php?key="+(string)g_kWearer+"&dev="+(string)llGetKey()+"&type="+g_sType+"&ver="+sLConVersion+"&buid="+sLConBuild+"&mood="+(string)iMood+"&slot="+(string)g_iSlotSave+"&reg="+llGetRegionName()+"&user="+llEscapeURL(llKey2Name(g_kWearer)));
+    llHTTPRequest(URL2+"sendev.php?key="+(string)g_kWearer+"&dev="+(string)llGetKey()+"&type="+g_sType+"&ver="+sLConVersion+"&buid="+sLConBuild+"&mood="+(string)iMood+"&slot="+(string)g_iSlotSave+"&reg="+llGetRegionName()+"&user="+llEscapeURL(llKey2Name(g_kWearer)),[],"");
+}
+Database_Save(){
+    if(g_iSlotSave==1){
+        string sMsg=g_sWearerCrime;
+        sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
+        sMsg=llEscapeURL(sMsg);
+        StatusUpdater( "database,save,"+ (string)g_iSlotSave+","+sMsg);
+        llHTTPRequest(URL+"add_inmate.cgi?key="+(string)g_kWearer+"&name="+llKey2Name(g_kWearer)+"&crime="+sMsg+"&sentence=0",[],"");
+        llSleep(2);Database_SaveExtra();
+    }else
+    if(g_iSlotSave>1&&g_iSlotSave<=6){
+        
+        string character_key=g_kWearer;
+        string after=llGetSubString(character_key,0,22);
+        string before=llGetSubString(character_key,24,-1);
+        character_key="";
+        string sMsg=g_sWearerCrime;
+        sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
+        sMsg=llEscapeURL(sMsg);
+        StatusUpdater( "database,save,"+ (string)g_iSlotSave+","+sMsg);
+        llHTTPRequest(URL+"add_inmate.cgi?key="+after+(string)g_iSlotSave+before+"&name="+llKey2Name(g_kWearer)+"&crime="+sMsg+"&sentence=0",[],"");
+        llSleep(2);Database_SaveExtra();
+    }else{
+        
+    }
+    
+    if(g_iNew==1){
+        llSetTimerEvent(5.0);
+        TIME_MODE="new";
+        g_iNew=2;
+        new_slot=g_iSlotSave;
+    }
+}
+key request_update;
+key request_extra;
+key request_extra2;
+Database_Read(){
+    if(g_iSlotLoad>1&&g_iSlotLoad<=6){
+        string character_key=g_kWearer;
+        string after=llGetSubString(character_key,0,22);
+        string before=llGetSubString(character_key,24,-1);
+        character_key="";
+        string final_url = URL+"read_inmate.cgi?key="+after+(string)g_iSlotLoad+before+"";
+        StatusUpdater( "database,read,"+ (string)g_iSlotLoad);
+        RequestDatabase(final_url,1);
+        
+    }else
+    if(g_iSlotLoad==1){
+        string final_url = URL+"read_inmate.cgi?key="+(string)g_kWearer+"";
+        StatusUpdater( "database,read,"+ (string)g_iSlotLoad);
+        RequestDatabase(final_url,1);
+        
+    }else{
+        g_iSilent=0;
+        g_iRequest=0;
+    }
+}
+
+CharacterInsert(integer iLink, integer iNum, string g_iCharacterSlot_Save, string inmate_number, string inmate_crime, string inmate_sentence){
+    StatusUpdater( "insert");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateTypeV"+(string)g_iCharacterSlot_Save+"="+"1","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateThreatV"+(string)g_iCharacterSlot_Save+"="+"1","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateSentence"+(string)g_iCharacterSlot_Save+"="+inmate_sentence,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateCrime"+(string)g_iCharacterSlot_Save+"="+inmate_crime,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateName"+(string)g_iCharacterSlot_Save+"="+ inmate_number,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"OldName"+(string)g_iCharacterSlot_Save+"="+ "[REDACTED]","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateNumber"+(string)g_iCharacterSlot_Save+"="+inmate_number ,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"DeviceName"+(string)g_iCharacterSlot_Save+"="+inmate_number+"'s collar","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"DeviceType"+(string)g_iCharacterSlot_Save+"="+"collar","");
+}
+
+InformationLinkHandling(integer iType,string sToken,string sValue){
+    if(llStringTrim(sValue, STRING_TRIM )==""||llStringTrim(sValue, STRING_TRIM )=="(0)"){
+        return;
+    }
+    if(sValue=="!0!"){
+        sValue="";
+    }
+    sValue=StringConvert(sValue);
+    
+    if(iType==1){
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,sToken+"="+sValue,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,sToken+"="+sValue,"");
+    }else
+    if(iType==2){
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sGlobalToken+sToken+"="+sValue,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sGlobalToken+sToken+"="+sValue,"");
+    }else
+    if(iType==3){
+        llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+sToken+"="+sValue,"");
+        llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+sToken+"="+sValue,"");    
+    }
+    
+}
+string StringConvert(string sValue){
+    sValue = llDumpList2String(llParseStringKeepNulls((sValue = "") + sValue, ["!2C"], []), "%2C");
+    sValue = llDumpList2String(llParseStringKeepNulls((sValue = "") + sValue, ["!2c"], []), "%2C");
+    return llUnescapeURL( sValue);
+}
+integer getVersion(string sVersion){
+    list lParams = llParseString2List(sVersion, ["."], []);
+    integer iNum1=llList2Integer(lParams, 0);
+    integer iNum2=llList2Integer(lParams, 1);
+    integer iNum3=llList2Integer(lParams, 2);
+    return iNum1*100+iNum2*10+iNum3;
+}
+integer getBuild(string sBuild){
+   float f=(float)sBuild;
+   f=f*10;
+   return (integer)f;
+}
+default
+{
+    state_entry()
+    {
+        initialize();
+    } 
+    
+    on_rez(integer on_rez_value) {
+        initialize();
+        iIgnoreCheckForUpdate=0;
+    }
+    
+    attach (key id) {
+            
+    }
+    
+    http_response(key request_id, integer status, list metadata, string body) {
+        metadata=[];
+        if(request_update==request_id){
+            request_update=NULL_KEY;iIgnoreCheckForUpdate=1;
+            list inmate_data = llCSV2List(body);body="";  
+            request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+            string sUpdateType=llList2String(inmate_data,0);
+            if(sUpdateType==g_sType){
+                string sUpdateVersion=llList2String(inmate_data,1);
+                string sUpdateBuild=llList2String(inmate_data,2);
+                string sUpdateFeatures=llList2String(inmate_data,3);
+                string sUpdateNewsID=llList2String(inmate_data,4);
+                string sUpdateNews=llList2String(inmate_data,5);
+                if(sUpdateNewsID!=g_sNewsID&&sUpdateNewsID!="0"){
+                    g_sNewsID=sUpdateNewsID;
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+StringConvert(sUpdateNews),g_kWearer);
+                }
+                if((sUpdateBuild!="0"&&sUpdateVersion!="0")&&(getBuild(sLConBuild)<getBuild(sUpdateBuild)||getVersion(sLConVersion)<getVersion(sUpdateVersion))){
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+StringConvert(sUpdateFeatures),g_kWearer);
+                }
+            }
+        }else
+        if(request_extra2==request_id){
+            request_extra2=NULL_KEY;
+            /|/llOwnerSay("request_extra2:"+body);
+            list inmate_data = llCSV2List(body);body="";  
+            /|/echo $row["uuid"]. "," . $row["slot"]. ","
+            if(llList2String(inmate_data,0)==(string)g_kWearer&&llList2String(inmate_data,1)==(string)g_iSlotLoad){
+                string sInmateZap=llList2String(inmate_data,2);
+                string sInmatePunish=llList2String(inmate_data,3);
+                string sInmateStun=llList2String(inmate_data,4);
+                string sInmateWords=llList2String(inmate_data,5);
+                string sInmatePenance=llList2String(inmate_data,6);
+                string sInmateContraband=llList2String(inmate_data,7);
+                string g_sPunishToken = "punish_";
+                string g_sBadwordsToken = "badwords_";
+                string g_sContrabandToken = "contraband_";
+                inmate_data=[];
+                InformationLinkHandling(1,g_sPunishToken+"zap",sInmateZap);
+                InformationLinkHandling(1,g_sPunishToken+"punish",sInmatePunish);
+                InformationLinkHandling(1,g_sPunishToken+"stun",sInmateStun);
+                InformationLinkHandling(1,g_sBadwordsToken+"words",sInmateWords);
+                InformationLinkHandling(1,g_sBadwordsToken+"penance",sInmatePenance);
+                InformationLinkHandling(1,g_sContrabandToken+"words",sInmateContraband);
+            }
+        }else
+        if(request_extra==request_id){
+            request_extra=NULL_KEY;
+            /|/llOwnerSay("request_extra:"+body);
+            list inmate_data = llCSV2List(body);body="";  
+            /|/echo $row["uuid"]. "," . $row["slot"]. "," . $row["InmateTypeV"]. "," . $row["InmateThreatV"]. "," . $row["InmateMugshot"]. "," . $row["InmateTrustee"]. "," . $row["InmateName"]. "," . $row["InmateType"]. "," . $row["InmateThreat"].","$row["InmateSentence"];
+            if(llList2String(inmate_data,0)==(string)g_kWearer&&llList2String(inmate_data,1)==(string)g_iSlotLoad){
+                string sInmateTypeV=llList2String(inmate_data,2);
+                string sInmateThreatV=llList2String(inmate_data,3);
+                string sInmateMugshot=llList2String(inmate_data,4);
+                string sInmateTrustee=llList2String(inmate_data,5);
+                string sInmateName=llList2String(inmate_data,6);
+                string sInmateType=llList2String(inmate_data,7);
+                string sInmateThreat=llList2String(inmate_data,8);
+                string sInmateSentence=llList2String(inmate_data,9);
+                inmate_data=[];
+                InformationLinkHandling(2,"InmateType",sInmateType);
+                InformationLinkHandling(2,"InmateTypeV",sInmateTypeV);
+                InformationLinkHandling(2,"InmateThreat",sInmateThreat);
+                InformationLinkHandling(2,"InmateThreatV",sInmateThreatV);
+                InformationLinkHandling(2,"InmateSentence",sInmateSentence);
+                InformationLinkHandling(2,"InmateName",sInmateName);
+                InformationLinkHandling(2,"InmateMugshot", sInmateMugshot);
+                InformationLinkHandling(2,"InmateTrustee", sInmateTrustee);
+                
+                string sStr_InmateSentence="InmateSentence";
+                string sStr_InmateCrime="InmateCrime";
+                string sStr_InmateNumber="InmateNumber";
+                string sStr_InmateName="InmateName";
+                string sStr_OldName="OldName";
+                string sStr_InmateType="InmateType";
+                string sStr_InmateThreat="InmateThreat";
+                string sStr_InmateTypeV="InmateTypeV";
+                string sStr_InmateThreatV="InmateThreatV";
+                string sStr_Trustee="Trustee";
+                string sStr_InmateMugshot="Mugshot";
+                InformationLinkHandling(3,sStr_InmateTypeV+(string)g_iSlotLoad,sInmateTypeV);
+                InformationLinkHandling(3,sStr_InmateThreatV+(string)g_iSlotLoad,sInmateThreatV);
+                InformationLinkHandling(3,sStr_InmateType+(string)g_iSlotLoad,sInmateType);
+                InformationLinkHandling(3,sStr_InmateThreat+(string)g_iSlotLoad,sInmateThreat);
+                InformationLinkHandling(3,sStr_InmateSentence+(string)g_iSlotLoad,sInmateSentence);
+                InformationLinkHandling(3,sStr_InmateName+(string)g_iSlotLoad, sInmateName);
+                InformationLinkHandling(3,sStr_Trustee+(string)g_iSlotLoad,sInmateTrustee);
+                InformationLinkHandling(3,sStr_InmateMugshot+(string)g_iSlotLoad,sInmateMugshot);
+                /|/llOwnerSay("getextra2:"+URL2+URL3_Get+(string)g_iSlotLoad);
+                request_extra2=llHTTPRequest(URL2+URL3_Get+(string)g_iSlotLoad,[],"");
+            }
+        }else
+        if(~llListFindList(g_lCrimeRequest, [request_id]) &&g_iIndexed>=1&&g_iIndexed<=6){
+            list inmate_data = llCSV2List(body);body="";   
+            string inmate_number = llList2String(inmate_data,4);
+            if(inmate_number!=""){
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+inmate_number,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+inmate_number,"");
+                StatusUpdater( "found_inmate,1");
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Found inmate: "+inmate_number+" adding to slot "+(string)g_iIndexed+"." ,g_kWearer);
+            }else{
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+(string)g_iIndexed,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+(string)g_iIndexed,"");
+            }
+            if(g_iIndexed>0&&g_iIndexed<=6){
+                indexing();
+            }else{
+                g_lCrimeRequest=[];
+                g_iIndexed=-1;
+            }
+        }else
+        if(~llListFindList(g_lCrimeRequest, [request_id]) &&g_iGenerated>=1&&g_iGenerated<=6){
+            list inmate_data = llCSV2List(body);body="";   
+            string inmate_number = llList2String(inmate_data,4);
+            string inmate_channel = llGetSubString(inmate_number, 2, -1);
+            string inmate_sentence=llList2String(inmate_data,1);
+            string inmate_crime=llList2String(inmate_data,2);
+            
+            if(inmate_number!="")
+            { 
+                StatusUpdater( "found_inmate,2");
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Found inmate: "+inmate_number+" building character to slot "+(string)g_iGenerated+"." ,g_kWearer);
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+inmate_number,"");
+                llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+inmate_number,"");
+                string g_iCharacterSlot_Save=(string)g_iGenerated;
+                if(g_iGenerated>=1){
+                   CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,inmate_crime,inmate_sentence);
+                }
+                if(g_iGenerated==1){
+                    CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,inmate_crime,inmate_sentence);
+                   
+                    InmateInsert(LINK_SAVE, LM_SETTING_SAVE,inmate_number,inmate_crime, inmate_sentence);
+                    InmateInsert(LINK_SET, LM_SETTING_RESPONSE,inmate_number,inmate_crime, inmate_sentence);
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+                }
+            }else{
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+(string)g_iGenerated,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+(string)g_iGenerated,"");
+            }
+            
+            if(g_iGenerated>=1&&g_iGenerated<=6){
+                generate();
+            }else{
+                g_lCrimeRequest=[];
+                g_iGenerated=-1;
+                llMessageLinked(LINK_SET,CMD_OWNER,"character load 1",g_kWearer);
+            }
+            
+        }else
+        if (request_id == crimeRequest) {
+            crimeRequest=NULL_KEY;
+            list inmate_data = llCSV2List(body); body="";  
+            string inmate_number = llList2String(inmate_data,4);
+            string inmate_channel = llGetSubString(inmate_number, 2, -1);
+            string inmate_sentence=llList2String(inmate_data,1);
+            string inmate_crime=llList2String(inmate_data,2);
+           
+            if(inmate_number!="")
+            { 
+                i_sWearerNumber=inmate_number;
+                i_sWearerCrime=inmate_crime;
+                i_sWearerSentence=inmate_sentence;
+                llRegionSay(-667571900,"SYNC");
+                llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_NAME, inmate_number]);
+                
+                InmateInsert(LINK_SAVE, LM_SETTING_SAVE,inmate_number,inmate_crime, inmate_sentence);
+                InmateInsert(LINK_SET, LM_SETTING_RESPONSE,inmate_number,inmate_crime, inmate_sentence);
+
+                if((g_iNew==2||g_iNew==3)&&g_iSlotLoad==g_iSlotSave){
+                    if(g_iSilent==0){
+                        StatusUpdater( "registering");
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Registering new inmate, inmate number: "+inmate_number+", inmate sentence: <No sentence set, using default time. Sentence till inmate expires>" ,g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Please inmate "+inmate_number+", fill out your form so we can better control you! You're property of Black Gazza." ,g_kWearer);
+                    }
+                    inmate_sentence="0";
+                    string g_iCharacterSlot_Save=(string)g_iSlotSave;
+                    llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llSleep(1.0);
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iCharacterSlot_Save+"="+inmate_number,"");
+                    llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iCharacterSlot_Save+"="+inmate_number,"");
+                    
+                    CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,"N/A",inmate_sentence);
+                    CharacterInsert(LINK_SET, CHARACTER_LM_SETTING_RESPONSE,g_iCharacterSlot_Save,inmate_number,"N/A",inmate_sentence);
+                }else {
+                    StatusUpdater( "found_inmate,3");
+                    if(g_iSilent==0){
+                        if(inmate_sentence=="0"){
+                            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Found inmate record, inmate number: "+inmate_number+", inmate crime: "+inmate_crime+", inmate sentence: Life. No possible release." ,g_kWearer);
+                        }else{
+                            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Found inmate record, inmate number: "+inmate_number+", inmate crime: "+inmate_crime+", inmate sentence:"+inmate_sentence+"." ,g_kWearer);
+                        }
+                    }
+                }
+                if(iIgnoreCheckForUpdate){
+                    request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+                }else{
+                    request_update=llHTTPRequest(URL2+"getupdate.php?type="+g_sType,[],"");
+                }
+                llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+            }else{
+                if(g_iChangedOwner){
+                    StatusUpdater( "failed,new_owner");
+                    i_sWearerNumber="E-9999";
+                    i_sWearerCrime="N/A";
+                    i_sWearerSentence="0";
+                   
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateName" + "=" + "E-9999", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateName" + "=" + "E-9999", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "OldName" + "=" + "[WAREDEN ERROR]", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "OldName" + "=" + "[WAREDEN ERROR]", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "DeviceName" + "=" + "E-9999"+"'s collar", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "DeviceName" + "=" + "E-9999"+"'s collar", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateTypeV" + "=0", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateTypeV" + "=0", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateThreatV" + "=0", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateThreatV" + "=0", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateType" + "=N/A", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateType" + "=N/A", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateThreat" + "=N/A" , "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateThreat" + "=N/A", "");
+                    
+                    string g_iCharacterSlot_Save="-1";
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llSleep(1.0);
+                    
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateType"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateTypeV"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateThreat"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateThreatV"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateSentence"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateCrime"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateName"+(string)g_iCharacterSlot_Save+"="+ "E-9999","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"OldName"+(string)g_iCharacterSlot_Save+"="+ "[WAREDEN ERROR]","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateNumber"+(string)g_iCharacterSlot_Save+"="+"E-9999" ,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"DeviceName"+(string)g_iCharacterSlot_Save+"="+"E-9999"+"'s collar","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"DeviceType"+(string)g_iCharacterSlot_Save+"="+"collar","");
+                    
+                    
+                }else{
+                    StatusUpdater( "failed");
+                }
+                llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=0", "");
+                if(g_iNew==0){
+                    g_iNew=1;
+                    g_iSlotSave=g_iSlotLoad;
+                    Database_Save();
+                }else
+                if(g_iNew==2){
+                    g_iSlotLoad=g_iSlotSave;
+                    g_iNew=3;
+                    g_iRequest=1;
+                    llSleep(1.0);
+                    Database_Read();
+                    
+                }else
+                if(g_iNew==3){
+                     if(g_iSilent==0)
+                     {
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Failed to access Black Gazza Correctional Facilities.", g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"It seams i cant manage to access the Black Gazza database. Please try again later.", g_kWearer);
+                     }
+                    if(iIgnoreCheckForUpdate){
+                        request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+                    }else{
+                        request_update=llHTTPRequest(URL2+"getupdate.php?type="+g_sType,[],"");
+                    }
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+                }else{
+                    if(g_iSilent==0)
+                    {
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Failed to access Black Gazza Correctional Facilities.", g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"It seams i cant manage to access the Black Gazza database. Please try again later.", g_kWearer);
+                    }
+                }
+                
+            }
+            if(g_iSilent){
+             g_iSilent=0;
+            }
+            g_iChangedOwner=0;
+        }
+    }    
+    
+
+    
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum >= CMD_OWNER && iNum <= CMD_WEARER)
+        {
+             UserCommand(iNum,sStr,kID);
+        }  
+        else if (iNum == LM_SETTING_RESPONSE) {
+            
+            
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+                /|*
+                InformationLinkHandling(2,"InmateType="+GetCharacterType());
+                InformationLinkHandling(2,"InmateTypeV="+(string)g_iWearerTypeValue);
+                InformationLinkHandling(2,"InmateThreat="+GetCharacterRisk());
+                InformationLinkHandling(2,"InmateThreatV="+(string)g_iWearerThreatValue);
+                InformationLinkHandling(2,"InmateSentence="+g_sWearerSentence);
+                InformationLinkHandling(2,"DeviceName="+g_sDeviceName);
+                InformationLinkHandling(2,"DeviceType="+g_sDeviceType);
+                InformationLinkHandling(2,"InmateName="+g_sWearerName);
+                InformationLinkHandling(2,"OldName="+g_sWearerOldName);
+                InformationLinkHandling(2,"InmateCrime="+g_sWearerCrime);
+                InformationLinkHandling(2,"InmateNumber" + "=" + g_sWearerNumber);
+                InformationLinkHandling(2,"InmateMugshot" + "=" + g_sWearerMugshot);
+                *|/
+                if (sToken =="BGV1")
+                {
+                    sLConVersion=sValue;
+                }else
+                if (sToken =="BGB")
+                {
+                    sLConBuild=sValue;
+                }else
+                if (sToken =="moodvalue")
+                {
+                    iMood=(integer)sValue;
+                    if(1<=iMood){
+                       Database_SaveExtra();
+                    }else{
+                        llHTTPRequest(URL2+"sendev.php?key="+(string)g_kWearer+"&dev="+(string)llGetKey()+"&type="+g_sType+"&ver="+sLConVersion+"&buid="+sLConBuild+"&mood="+(string)iMood+"&slot="+(string)g_iSlotSave+"&reg="+llGetRegionName()+"&user="+llEscapeURL(llKey2Name(g_kWearer)),[],"");
+                    }
+                }
+                else if (sToken =="InmateNumber")
+                {
+                    g_sWearerNumber = sValue;
+                }
+                else if (sToken == "InmateCrime")
+                {
+                    g_sWearerCrime = sValue;
+                }
+                else if (sToken =="InmateSentence")
+                {
+                    g_sWearerSentence = sValue;
+                }
+                else if (sToken =="InmateTypeV")
+                {
+                    g_sWearerInmateTypeV = sValue;
+                }
+                else if (sToken =="InmateThreatV")
+                {
+                    g_sWearerInmateThreatV = sValue;
+                }
+                else if (sToken =="InmateMugshot")
+                {
+                    g_sWearerInmateMugshot = sValue;
+                }
+                else if (sToken =="InmateType")
+                {
+                    g_sWearerInmateType = sValue;
+                }
+                else if (sToken =="InmateThreat")
+                {
+                    g_sWearerInmateThreat = sValue;
+                }
+                else if (sToken =="InmateName")
+                {
+                    g_sWearerInmateName = sValue;
+                }
+                else if (sToken =="InmateTrustee")
+                {
+                    g_sWearerInmateTrustee = sValue;
+                }
+                else if (sToken =="InmateSlot"){
+                    g_iSlotSave = (integer)sValue;
+                }
+                else if (sToken =="OldName")
+                {
+                    /|/g_sWearerOldName = sValue;
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sInmateToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateToken),-1);
+                
+                if (sToken =="runload")
+                {
+                    if(1<=(integer)sValue&&(integer)sValue<=6){
+                        g_iSlotLoad=(integer)sValue;
+                        g_iSilent=0;
+                        g_iRequest=1;
+                        g_iNew=0;
+                        Database_Read();
+                    }
+                }
+                else if (sToken =="runsave")
+                {
+                     if(1<=(integer)sValue&&(integer)sValue<=6){
+                        g_iSlotSave=(integer)sValue;
+                        g_iNew=0;
+                        Database_Save();
+                    }
+                }
+            }else 
+            if (llSubStringIndex(sToken,g_sCharacterToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sCharacterToken),-1);
+                if (sToken =="slotsave")
+                {
+                    g_iSlotSave = (integer)sValue;
+                }
+            }
+        } else if (iNum == LINK_UPDATE) {
+            
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender; 
+            else if (sStr == "LINK_CHARACTER") LINK_CHARACTER = iSender;
+            else if (sStr == "LINK_AUTH") LINK_AUTH = iSender;
+        } 
+       
+    }
+
+    timer(){
+        llSetTimerEvent(0);
+        if(TIME_MODE=="new"){
+            TIME_MODE="";
+            g_iSlotLoad=new_slot;
+            g_iRequest=1;
+            Database_Read();
+        }else
+        if(TIME_MODE=="build_start"){
+            g_kWearer=llGetOwner();
+            TIME_MODE="";
+            InmateTitleCommand(CMD_OWNER, "reset",g_kWearer);
+        }else
+        if(TIME_MODE=="generate"){
+            string URL = "http:/|/sl.blackgazza.com/read_inmate.cgi?key=";
+            if(g_iGenerated==1){
+                g_lCrimeRequest=[];
+                g_lCrimeRequest+= [llHTTPRequest(URL+(string)g_kWearer+"",[],"")];
+            }else
+            if(g_iGenerated>1&&g_iGenerated<=6){
+                string after=llGetSubString((string)g_kWearer,0,22);
+                string before=llGetSubString((string)g_kWearer,24,-1);
+                g_lCrimeRequest+= [llHTTPRequest(URL+after+(string)g_iGenerated+before+"",[],"")];
+            }
+            else{
+                llMessageLinked(LINK_SET,CMD_OWNER,"character load 1",g_kWearer);
+            }
+        }else
+        if(TIME_MODE=="indexing"){
+            string URL = "http:/|/sl.blackgazza.com/read_inmate.cgi?key=";
+            if(g_iIndexed==1){
+                g_lCrimeRequest=[];
+                g_lCrimeRequest+= [llHTTPRequest(URL+(string)g_kWearer+"",[],"")];
+            }else
+            if(g_iIndexed>1&&g_iIndexed<=6){
+                string after=llGetSubString((string)g_kWearer,0,22);
+                string before=llGetSubString((string)g_kWearer,24,-1);
+                g_lCrimeRequest+= [llHTTPRequest(URL+after+(string)g_iIndexed+before+"",[],"")];
+            }
+            
+        }
+        
+    }
+    
+    listen(integer iChannel, string sName, key kID, string sStr) {
+        if (iChannel == SYNC_CHANNEL) {
+            list sync_message = llCSV2List(sStr);
+            if((llList2String(sync_message,0) == (string)g_kWearer||llList2String(sync_message,0) == "EVERYONE")&&llList2String(sync_message,1) == "BLACK GAZZA"||llList2String(sync_message,1) == "RESYNC"){
+                sync_message=[];
+                llMessageLinked(LINK_SET,BGCOLLAR_AUTORIZATION,"character refresh",g_kWearer);
+            }
+        }
+    }
+    
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) {
+            iIgnoreCheckForUpdate=0;
+            TIME_MODE="build_start";
+            llSetTimerEvent(5);
+        }
+    }
+    
+}
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 12/29/2017 13:51:55
+//mono
+
+
+
+
+integer LINK_DIALOG = 3;
+integer LINK_SAVE = 5;
+integer LINK_CHARACTER = 5;
+integer LINK_UPDATE = -10;
+integer LINK_AUTH=0;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_RESPONSE = 2002;
+integer CHARACTER_LM_SETTING_SAVE = 2010;
+integer CHARACTER_LM_SETTING_RESPONSE = 2012;
+
+string g_sType="InmateCollarSerialD";
+string g_sGlobalToken = "global_";
+string g_sInmateToken = "inmate_";
+string g_sCharacterToken = "character_";
+integer CMD_OWNER = 500;
+integer CMD_WEARER = 503;
+integer BGCOLLAR_AUTORIZATION = 66757190066;
+
+integer NOTIFY = 1002;
+
+key crimeRequest = NULL_KEY;
+list g_lCrimeRequest;
+key g_kWearer;
+string g_sSubMenu = "inmatesync";
+integer SYNC_CHANNEL = -667571901;
+integer SYNC_CHANNEL_HANDLE;
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="SYNC";
+
+
+string URL = "http://sl.blackgazza.com/";
+
+string URL2 = "https://goriest-fastener.000webhostapp.com/inmate/";
+string URL2_Get;
+string URL3_Get;
+string URL2_Set;
+string g_sNewsID;
+
+string g_sWearerNumber;
+string g_sWearerCrime;
+string g_sWearerSentence;
+string g_sWearerInmateName;
+string g_sWearerInmateThreatV;
+string g_sWearerInmateTypeV;
+string g_sWearerInmateMugshot;
+string g_sWearerInmateThreat;
+string g_sWearerInmateType;
+string g_sWearerInmateTrustee;
+string i_sWearerNumber;
+string i_sWearerCrime;
+string i_sWearerSentence;
+
+string g_sFinal_Url;
+integer g_iChangedOwner;
+integer g_iRequest=0;
+integer g_iSilent=0;
+
+integer g_iSlotSave=0;
+integer g_iSlotLoad=0;
+integer g_iInUse=0;
+integer g_iNew=0;
+string TIME_MODE;
+integer new_slot;
+integer g_iGenerated=0;
+integer g_iIndexed=0;
+
+string sLConVersion;
+string sLConBuild;
+integer iMood;
+integer iIgnoreCheckForUpdate=1;
+key request_update;
+key request_extra;
+key request_extra2;
+initialize() {
+   g_kWearer = llGetOwner();
+   llListenRemove(SYNC_CHANNEL_HANDLE);
+   URL2_Get = "get.php?key="+(string)g_kWearer+"&slot=";
+   URL2_Set = "add.php?key="+(string)g_kWearer+"&slot=";
+   URL3_Get = "getextra.php?key="+(string)g_kWearer+"&slot=";
+   RequestClean();
+   SYNC_CHANNEL_HANDLE = llListen(SYNC_CHANNEL,"",NULL_KEY,"");
+}
+indexing(){
+    ++g_iIndexed;
+    TIME_MODE="indexing";
+    llSetTimerEvent(1);
+    
+}
+integer getVersion(string sVersion){
+    list lParams = llParseString2List(sVersion, ["."], []);
+    integer iNum1=llList2Integer(lParams, 0);
+    integer iNum2=llList2Integer(lParams, 1);
+    integer iNum3=llList2Integer(lParams, 2);
+    return iNum1*100+iNum2*10+iNum3;
+}
+integer getBuild(string sBuild){
+   float f=(float)sBuild;
+   f=f*10;
+   return (integer)f;
+}
+generate(){
+    g_kWearer = llGetOwner();
+    ++g_iGenerated;
+    
+    TIME_MODE="generate";
+    
+    llSetTimerEvent(1);
+    
+    
+}
+UserCommand(integer iAuth, string sStr, key kID){
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,sync,17,12,29,120");
+    }else
+    if (llSubStringIndex(llToLower(sStr),llToLower(g_sSubMenu))==0){
+        sStr=llGetSubString(sStr,llStringLength(g_sSubMenu)+1,-1);
+        InmateTitleCommand(iAuth, sStr,kID);
+    }
+}
+string StringConvert(string sValue){
+    sValue = llDumpList2String(llParseStringKeepNulls((sValue = "") + sValue, ["!2C"], []), "%2C");
+    sValue = llDumpList2String(llParseStringKeepNulls((sValue = "") + sValue, ["!2c"], []), "%2C");
+    return llUnescapeURL( sValue);
+}
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+RequestDatabase(string text, integer i){
+    
+
+    if(i==1){
+        g_sFinal_Url=text;
+    }
+   if(g_iRequest){
+       g_iInUse=1;
+        g_iRequest=0;
+        StatusUpdater("requestdatabase");
+        crimeRequest= llHTTPRequest(g_sFinal_Url,[],"");    
+   }
+   if(g_iSilent){
+       g_iInUse=1;
+        StatusUpdater("requestdatabase");
+        crimeRequest= llHTTPRequest(g_sFinal_Url,[],"");    
+    }
+    
+    
+}
+
+RequestClean(){
+    request_update=NULL_KEY;
+    request_extra=NULL_KEY;
+    request_extra2=NULL_KEY;
+    crimeRequest=NULL_KEY;
+    g_lCrimeRequest=[];
+}
+InmateTitleCommand(integer iAuth, string sStr, key kID){
+    sStr=llStringTrim(sStr, STRING_TRIM );
+    list lParams = llParseString2List(sStr, [" "], []);sStr="";
+    string sCommand = llToLower(llList2String(lParams, 0));
+    string sValue = llList2String(lParams, 1);
+    lParams=[]; 
+    if (sCommand == "resync"&&((CMD_WEARER<=iAuth&&iAuth<=CMD_OWNER)||g_kWearer==llGetOwnerKey(kID))){
+        g_iSilent=1;
+        g_iRequest=0;
+        g_iNew=0;
+        Database_Read();
+    }else{
+        if (CMD_OWNER!=iAuth&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"DENIED silly person. (Sync)", kID);
+            return;
+        }
+        
+        if(sCommand == "inmateslot"){
+            if(1<=(integer)sValue&&(integer)sValue<=6){
+                g_iSlotLoad=(integer)sValue;
+                g_iSilent=0;
+                g_iRequest=1;
+                g_iNew=0;
+                Database_Read();
+            }
+        }else
+        if(sCommand == "inmateslotsave"){
+            if(1<=(integer)sValue&&(integer)sValue<=6){
+                g_iSlotSave=(integer)sValue;
+                g_iNew=0;
+                Database_Save();   
+            }
+        }else
+        if(sCommand=="reset"){
+           iIgnoreCheckForUpdate=0;
+           g_iChangedOwner=1;
+           g_iNew=0;
+           g_iGenerated=0;
+           g_iRequest=1;
+           generate();
+        }else
+        if(sCommand=="refresh"){
+            iIgnoreCheckForUpdate=0;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Rebuilding..." ,g_kWearer);
+            g_iIndexed=0;
+            indexing();
+        }else
+        if(sCommand=="clear"){
+            iIgnoreCheckForUpdate=0;
+            g_iChangedOwner=0;
+            g_iNew=0;
+            g_iGenerated=0;
+            g_iIndexed=0;
+            g_iRequest=0;
+            g_iSilent=0;
+            RequestClean();
+        }
+    }
+}
+
+InmateInsert(integer iLink, integer iNum, string inmate_number, string inmate_crime, string inmate_sentence){
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateNumber" + "=" + inmate_number, "");
+    StatusUpdater( "InmateNumber,"+ inmate_number);
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateCrime" + "=" + inmate_crime, "");
+    StatusUpdater( "InmateCrime,"+ inmate_crime);
+    llMessageLinked(iLink, iNum, g_sInmateToken + "InmateSentence" + "=" +inmate_sentence, "");
+    llMessageLinked(iLink, iNum, g_sInmateToken + "DeviceName" + "=" + inmate_number+"'s collar", "");
+    llMessageLinked(iLink, iNum, g_sInmateToken + "DeviceType" + "=" + "collar", "");
+}
+
+InformationLinkHandling(integer iType,string sToken,string sValue){
+    if(llStringTrim(sValue, STRING_TRIM )==""||llStringTrim(sValue, STRING_TRIM )=="(0)"){
+        return;
+    }
+    if(sValue=="!0!"){
+        sValue="";
+    }
+    sValue=StringConvert(sValue);
+    
+    if(iType==1){
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,sToken+"="+sValue,"");
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,sToken+"="+sValue,"");
+    }else
+    if(iType==2){
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sGlobalToken+sToken+"="+sValue,"");
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sGlobalToken+sToken+"="+sValue,"");
+    }else
+    if(iType==3){
+        llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+sToken+"="+sValue,"");
+        llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+sToken+"="+sValue,"");    
+    }
+    
+}
+Database_SaveExtra(){
+
+
+    
+    string sMsg="&tyv="+g_sWearerInmateTypeV+"&thv="+g_sWearerInmateThreatV+"&mug="+llEscapeURL(g_sWearerInmateMugshot)+"&tr="+llEscapeURL(g_sWearerInmateTrustee)+"&num="+llEscapeURL(g_sWearerNumber)+"&nam="+llEscapeURL(g_sWearerInmateName)+"&sen="+llEscapeURL(g_sWearerSentence)+"&cr="+llEscapeURL(g_sWearerCrime)+"&ty="+llEscapeURL(g_sWearerInmateType)+"&th="+llEscapeURL(g_sWearerInmateThreat);
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%2C"], []), "!2C");
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%5BTRUSTEE%5D%20"], []), "");
+    sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, ["%5BTRUSTEE%5D"], []), "");
+    
+    llHTTPRequest(URL2+URL2_Set+(string)g_iSlotSave+sMsg,[],"");
+    
+    llSleep(1);
+    
+    llHTTPRequest(URL2+"sendev.php?key="+(string)g_kWearer+"&dev="+(string)llGetKey()+"&type="+g_sType+"&ver="+sLConVersion+"&buid="+sLConBuild+"&mood="+(string)iMood+"&slot="+(string)g_iSlotSave+"&reg="+llGetRegionName()+"&user="+llEscapeURL(llKey2Name(g_kWearer)),[],"");
+}
+Database_Save(){
+    if(g_iSlotSave==1){
+        string sMsg=g_sWearerCrime;
+        sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
+        sMsg=llEscapeURL(sMsg);
+        StatusUpdater( "database,save,"+ (string)g_iSlotSave+","+sMsg);
+        llHTTPRequest(URL+"add_inmate.cgi?key="+(string)g_kWearer+"&name="+llKey2Name(g_kWearer)+"&crime="+sMsg+"&sentence=0",[],"");
+        llSleep(2);Database_SaveExtra();
+    }else
+    if(g_iSlotSave>1&&g_iSlotSave<=6){
+        
+        string character_key=g_kWearer;
+        string after=llGetSubString(character_key,0,22);
+        string before=llGetSubString(character_key,24,-1);
+        character_key="";
+        string sMsg=g_sWearerCrime;
+        sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
+        sMsg=llEscapeURL(sMsg);
+        StatusUpdater( "database,save,"+ (string)g_iSlotSave+","+sMsg);
+        llHTTPRequest(URL+"add_inmate.cgi?key="+after+(string)g_iSlotSave+before+"&name="+llKey2Name(g_kWearer)+"&crime="+sMsg+"&sentence=0",[],"");
+        llSleep(2);Database_SaveExtra();
+    }else{
+        
+    }
+    
+    if(g_iNew==1){
+        llSetTimerEvent(5.0);
+        TIME_MODE="new";
+        g_iNew=2;
+        new_slot=g_iSlotSave;
+    }
+}
+Database_Read(){
+    if(g_iSlotLoad>1&&g_iSlotLoad<=6){
+        string character_key=g_kWearer;
+        string after=llGetSubString(character_key,0,22);
+        string before=llGetSubString(character_key,24,-1);
+        character_key="";
+        string final_url = URL+"read_inmate.cgi?key="+after+(string)g_iSlotLoad+before+"";
+        StatusUpdater( "database,read,"+ (string)g_iSlotLoad);
+        RequestDatabase(final_url,1);
+        
+    }else
+    if(g_iSlotLoad==1){
+        string final_url = URL+"read_inmate.cgi?key="+(string)g_kWearer+"";
+        StatusUpdater( "database,read,"+ (string)g_iSlotLoad);
+        RequestDatabase(final_url,1);
+        
+    }else{
+        g_iSilent=0;
+        g_iRequest=0;
+    }
+}
+
+CharacterInsert(integer iLink, integer iNum, string g_iCharacterSlot_Save, string inmate_number, string inmate_crime, string inmate_sentence){
+    StatusUpdater( "insert");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateTypeV"+(string)g_iCharacterSlot_Save+"="+"1","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateThreatV"+(string)g_iCharacterSlot_Save+"="+"1","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateSentence"+(string)g_iCharacterSlot_Save+"="+inmate_sentence,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateCrime"+(string)g_iCharacterSlot_Save+"="+inmate_crime,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateName"+(string)g_iCharacterSlot_Save+"="+ inmate_number,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"OldName"+(string)g_iCharacterSlot_Save+"="+ "[REDACTED]","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"InmateNumber"+(string)g_iCharacterSlot_Save+"="+inmate_number ,"");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"DeviceName"+(string)g_iCharacterSlot_Save+"="+inmate_number+"'s collar","");
+    llMessageLinked(iLink, iNum,g_sCharacterToken+"DeviceType"+(string)g_iCharacterSlot_Save+"="+"collar","");
+}
+default
+{
+    state_entry()
+    {
+        initialize();
+    } 
+    
+    on_rez(integer on_rez_value) {
+        initialize();
+        iIgnoreCheckForUpdate=0;
+    }
+    
+    attach (key id) {
+            
+    }
+    
+    http_response(key request_id, integer status, list metadata, string body) {
+        metadata=[];
+        if(request_update==request_id){
+            request_update=NULL_KEY;iIgnoreCheckForUpdate=1;
+            list inmate_data = llCSV2List(body);body="";  
+            request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+            string sUpdateType=llList2String(inmate_data,0);
+            if(sUpdateType==g_sType){
+                string sUpdateVersion=llList2String(inmate_data,1);
+                string sUpdateBuild=llList2String(inmate_data,2);
+                string sUpdateFeatures=llList2String(inmate_data,3);
+                string sUpdateNewsID=llList2String(inmate_data,4);
+                string sUpdateNews=llList2String(inmate_data,5);
+                if(sUpdateNewsID!=g_sNewsID&&sUpdateNewsID!="0"){
+                    g_sNewsID=sUpdateNewsID;
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+StringConvert(sUpdateNews),g_kWearer);
+                }
+                if((sUpdateBuild!="0"&&sUpdateVersion!="0")&&(getBuild(sLConBuild)<getBuild(sUpdateBuild)||getVersion(sLConVersion)<getVersion(sUpdateVersion))){
+                    llMessageLinked(LINK_DIALOG,NOTIFY,"0"+StringConvert(sUpdateFeatures),g_kWearer);
+                }
+            }
+        }else
+        if(request_extra2==request_id){
+            request_extra2=NULL_KEY;
+            
+            list inmate_data = llCSV2List(body);body="";  
+            
+            if(llList2String(inmate_data,0)==(string)g_kWearer&&llList2String(inmate_data,1)==(string)g_iSlotLoad){
+                string sInmateZap=llList2String(inmate_data,2);
+                string sInmatePunish=llList2String(inmate_data,3);
+                string sInmateStun=llList2String(inmate_data,4);
+                string sInmateWords=llList2String(inmate_data,5);
+                string sInmatePenance=llList2String(inmate_data,6);
+                string sInmateContraband=llList2String(inmate_data,7);
+                string g_sPunishToken = "punish_";
+                string g_sBadwordsToken = "badwords_";
+                string g_sContrabandToken = "contraband_";
+                inmate_data=[];
+                InformationLinkHandling(1,g_sPunishToken+"zap",sInmateZap);
+                InformationLinkHandling(1,g_sPunishToken+"punish",sInmatePunish);
+                InformationLinkHandling(1,g_sPunishToken+"stun",sInmateStun);
+                InformationLinkHandling(1,g_sBadwordsToken+"words",sInmateWords);
+                InformationLinkHandling(1,g_sBadwordsToken+"penance",sInmatePenance);
+                InformationLinkHandling(1,g_sContrabandToken+"words",sInmateContraband);
+            }
+        }else
+        if(request_extra==request_id){
+            request_extra=NULL_KEY;
+            
+            list inmate_data = llCSV2List(body);body="";  
+            
+            if(llList2String(inmate_data,0)==(string)g_kWearer&&llList2String(inmate_data,1)==(string)g_iSlotLoad){
+                string sInmateTypeV=llList2String(inmate_data,2);
+                string sInmateThreatV=llList2String(inmate_data,3);
+                string sInmateMugshot=llList2String(inmate_data,4);
+                string sInmateTrustee=llList2String(inmate_data,5);
+                string sInmateName=llList2String(inmate_data,6);
+                string sInmateType=llList2String(inmate_data,7);
+                string sInmateThreat=llList2String(inmate_data,8);
+                string sInmateSentence=llList2String(inmate_data,9);
+                inmate_data=[];
+                InformationLinkHandling(2,"InmateType",sInmateType);
+                InformationLinkHandling(2,"InmateTypeV",sInmateTypeV);
+                InformationLinkHandling(2,"InmateThreat",sInmateThreat);
+                InformationLinkHandling(2,"InmateThreatV",sInmateThreatV);
+                InformationLinkHandling(2,"InmateSentence",sInmateSentence);
+                InformationLinkHandling(2,"InmateName",sInmateName);
+                InformationLinkHandling(2,"InmateMugshot", sInmateMugshot);
+                InformationLinkHandling(2,"InmateTrustee", sInmateTrustee);
+                
+                string sStr_InmateSentence="InmateSentence";
+                string sStr_InmateCrime="InmateCrime";
+                string sStr_InmateNumber="InmateNumber";
+                string sStr_InmateName="InmateName";
+                string sStr_OldName="OldName";
+                string sStr_InmateType="InmateType";
+                string sStr_InmateThreat="InmateThreat";
+                string sStr_InmateTypeV="InmateTypeV";
+                string sStr_InmateThreatV="InmateThreatV";
+                string sStr_Trustee="Trustee";
+                string sStr_InmateMugshot="Mugshot";
+                InformationLinkHandling(3,sStr_InmateTypeV+(string)g_iSlotLoad,sInmateTypeV);
+                InformationLinkHandling(3,sStr_InmateThreatV+(string)g_iSlotLoad,sInmateThreatV);
+                InformationLinkHandling(3,sStr_InmateType+(string)g_iSlotLoad,sInmateType);
+                InformationLinkHandling(3,sStr_InmateThreat+(string)g_iSlotLoad,sInmateThreat);
+                InformationLinkHandling(3,sStr_InmateSentence+(string)g_iSlotLoad,sInmateSentence);
+                InformationLinkHandling(3,sStr_InmateName+(string)g_iSlotLoad, sInmateName);
+                InformationLinkHandling(3,sStr_Trustee+(string)g_iSlotLoad,sInmateTrustee);
+                InformationLinkHandling(3,sStr_InmateMugshot+(string)g_iSlotLoad,sInmateMugshot);
+                
+                request_extra2=llHTTPRequest(URL2+URL3_Get+(string)g_iSlotLoad,[],"");
+            }
+        }else
+        if(~llListFindList(g_lCrimeRequest, [request_id]) &&g_iIndexed>=1&&g_iIndexed<=6){
+            list inmate_data = llCSV2List(body);body="";   
+            string inmate_number = llList2String(inmate_data,4);
+            if(inmate_number!=""){
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+inmate_number,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+inmate_number,"");
+                StatusUpdater( "found_inmate,1");
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Found inmate: "+inmate_number+" adding to slot "+(string)g_iIndexed+"." ,g_kWearer);
+            }else{
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+(string)g_iIndexed,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iIndexed+"="+(string)g_iIndexed,"");
+            }
+            if(g_iIndexed>0&&g_iIndexed<=6){
+                indexing();
+            }else{
+                g_lCrimeRequest=[];
+                g_iIndexed=-1;
+            }
+        }else
+        if(~llListFindList(g_lCrimeRequest, [request_id]) &&g_iGenerated>=1&&g_iGenerated<=6){
+            list inmate_data = llCSV2List(body);body="";   
+            string inmate_number = llList2String(inmate_data,4);
+            string inmate_channel = llGetSubString(inmate_number, 2, -1);
+            string inmate_sentence=llList2String(inmate_data,1);
+            string inmate_crime=llList2String(inmate_data,2);
+            
+            if(inmate_number!="")
+            { 
+                StatusUpdater( "found_inmate,2");
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Found inmate: "+inmate_number+" building character to slot "+(string)g_iGenerated+"." ,g_kWearer);
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+inmate_number,"");
+                llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+inmate_number,"");
+                string g_iCharacterSlot_Save=(string)g_iGenerated;
+                if(g_iGenerated>=1){
+                   CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,inmate_crime,inmate_sentence);
+                }
+                if(g_iGenerated==1){
+                    CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,inmate_crime,inmate_sentence);
+                   
+                    InmateInsert(LINK_SAVE, LM_SETTING_SAVE,inmate_number,inmate_crime, inmate_sentence);
+                    InmateInsert(LINK_SET, LM_SETTING_RESPONSE,inmate_number,inmate_crime, inmate_sentence);
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+                }
+            }else{
+                llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+(string)g_iGenerated,"");
+                llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iGenerated+"="+(string)g_iGenerated,"");
+            }
+            
+            if(g_iGenerated>=1&&g_iGenerated<=6){
+                generate();
+            }else{
+                g_lCrimeRequest=[];
+                g_iGenerated=-1;
+                llMessageLinked(LINK_SET,CMD_OWNER,"character load 1",g_kWearer);
+            }
+            
+        }else
+        if (request_id == crimeRequest) {
+            crimeRequest=NULL_KEY;
+            list inmate_data = llCSV2List(body); body="";  
+            string inmate_number = llList2String(inmate_data,4);
+            string inmate_channel = llGetSubString(inmate_number, 2, -1);
+            string inmate_sentence=llList2String(inmate_data,1);
+            string inmate_crime=llList2String(inmate_data,2);
+           
+            if(inmate_number!="")
+            { 
+                i_sWearerNumber=inmate_number;
+                i_sWearerCrime=inmate_crime;
+                i_sWearerSentence=inmate_sentence;
+                llRegionSay(-667571900,"SYNC");
+                llSetLinkPrimitiveParamsFast(LINK_ROOT,[PRIM_NAME, inmate_number]);
+                
+                InmateInsert(LINK_SAVE, LM_SETTING_SAVE,inmate_number,inmate_crime, inmate_sentence);
+                InmateInsert(LINK_SET, LM_SETTING_RESPONSE,inmate_number,inmate_crime, inmate_sentence);
+
+                if((g_iNew==2||g_iNew==3)&&g_iSlotLoad==g_iSlotSave){
+                    if(g_iSilent==0){
+                        StatusUpdater( "registering");
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Registering new inmate, inmate number: "+inmate_number+", inmate sentence: <No sentence set, using default time. Sentence till inmate expires>" ,g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Please inmate "+inmate_number+", fill out your form so we can better control you! You're property of Black Gazza." ,g_kWearer);
+                    }
+                    inmate_sentence="0";
+                    string g_iCharacterSlot_Save=(string)g_iSlotSave;
+                    llMessageLinked(LINK_SET,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llSleep(1.0);
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotname"+(string)g_iCharacterSlot_Save+"="+inmate_number,"");
+                    llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sCharacterToken+"slotname"+(string)g_iCharacterSlot_Save+"="+inmate_number,"");
+                    
+                    CharacterInsert(LINK_CHARACTER, CHARACTER_LM_SETTING_SAVE,g_iCharacterSlot_Save,inmate_number,"N/A",inmate_sentence);
+                    CharacterInsert(LINK_SET, CHARACTER_LM_SETTING_RESPONSE,g_iCharacterSlot_Save,inmate_number,"N/A",inmate_sentence);
+                }else {
+                    StatusUpdater( "found_inmate,3");
+                    if(g_iSilent==0){
+                        if(inmate_sentence=="0"){
+                            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Found inmate record, inmate number: "+inmate_number+", inmate crime: "+inmate_crime+", inmate sentence: Life. No possible release." ,g_kWearer);
+                        }else{
+                            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Accessing Black Gazza Correctional Facilities. Found inmate record, inmate number: "+inmate_number+", inmate crime: "+inmate_crime+", inmate sentence:"+inmate_sentence+"." ,g_kWearer);
+                        }
+                    }
+                }
+                if(iIgnoreCheckForUpdate){
+                    request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+                }else{
+                    request_update=llHTTPRequest(URL2+"getupdate.php?type="+g_sType,[],"");
+                }
+                llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+            }else{
+                if(g_iChangedOwner){
+        

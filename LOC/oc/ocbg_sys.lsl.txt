@@ -1,0 +1,1627 @@
+//start_unprocessed_text
+/*/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/
+/|/                                                                          /|/
+/|/              ____                   ______      ____                     /|/
+/|/             / __ \____  ___  ____  / ____/___  / / /___ ______           /|/
+/|/            / / / / __ \/ _ \/ __ \/ /   / __ \/ / / __ `/ ___/           /|/
+/|/           / /_/ / /_/ /  __/ / / / /___/ /_/ / / / /_/ / /               /|/
+/|/           \____/ .___/\___/_/ /_/\____/\____/_/_/\__,_/_/                /|/
+/|/               /_/                                                        /|/
+/|/                                                                          /|/
+/|/                        ,^~~~-.         .-~~~"-.                          /|/
+/|/                       :  .--. \       /  .--.  \                         /|/
+/|/                       : (    .-`<^~~~-: :    )  :                        /|/
+/|/                       `. `-,~            ^- '  .'                        /|/
+/|/                         `-:                ,.-~                          /|/
+/|/                          .'                  `.                          /|/
+/|/                         ,'   @   @            |                          /|/
+/|/                         :    __               ;                          /|/
+/|/                      ...{   (__)          ,----.                         /|/
+/|/                     /   `.              ,' ,--. `.                       /|/
+/|/                    |      `.,___   ,      :    : :                       /|/
+/|/                    |     .'    ~~~~       \    / :                       /|/
+/|/                     \.. /               `. `--' .'                       /|/
+/|/                        |                  ~----~                         /|/
+/|/                           System - 170330.1                              /|/
+
+/|/ ------------------------------------------------------------------------ /|/
+/|/  Copyright (c) 2008 - 2016 Nandana Singh, Garvin Twine, Cleo Collins,    /|/
+/|/  Satomi Ahn, Joy Stipe, Wendy Starfall, littlemousy, Romka Swallowtail,  /|/
+/|/  Sumi Perl et al.                                                        /|/
+/|/ ------------------------------------------------------------------------ /|/
+/|/  This script is free software: you can redistribute it and/or modify     /|/
+/|/  it under the terms of the GNU General Public License as published       /|/
+/|/  by the Free Software Foundation, version 2.                             /|/
+/|/                                                                          /|/
+/|/  This script is distributed in the hope that it will be useful,          /|/
+/|/  but WITHOUT ANY WARRANTY; without even the implied warranty of          /|/
+/|/  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            /|/
+/|/  GNU General Public License for more details.                            /|/
+/|/                                                                          /|/
+/|/  You should have received a copy of the GNU General Public License       /|/
+/|/  along with this script; if not, see www.gnu.org/licenses/gpl-2.0        /|/
+/|/ ------------------------------------------------------------------------ /|/
+/|/  This script and any derivatives based on it must remain "full perms".   /|/
+/|/                                                                          /|/
+/|/  "Full perms" means maintaining MODIFY, COPY, and TRANSFER permissions   /|/
+/|/  in Second Life(R), OpenSimulator and the Metaverse.                     /|/
+/|/                                                                          /|/
+/|/  If these platforms should allow more fine-grained permissions in the    /|/
+/|/  future, then "full perms" will mean the most permissive possible set    /|/
+/|/  of permissions allowed by the platform.                                 /|/
+/|/ ------------------------------------------------------------------------ /|/
+/|/       github.com/VirtualDisgrace/opencollar/tree/master/src/collar       /|/
+/|/ ------------------------------------------------------------------------ /|/
+/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/|/
+string g_sDevStage="";
+string g_sCollarVersion="6.5.0";
+float g_fBuildVersion = 170330.1;
+float g_fBGVersion=0;
+string sLConVersion="0";
+string sLConBuild="0";
+
+integer BG_LOCKED = FALSE;
+string lockButton = "BG Lock";
+string unLockButton = "BG Unlock";
+key g_kWearer;
+integer g_iMood;
+list g_lMenuIDs;
+integer g_iMenuStride = 3;
+
+integer CMD_ZERO = 0;
+integer CMD_OWNER = 500;
+integer CMD_TRUSTED = 501;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer CMD_EVERYONE = 504;
+
+integer NOTIFY = 1002;
+integer NOTIFY_OWNERS = 1003;
+
+integer REBOOT = -1000;
+integer LINK_AUTH = 2;
+integer LINK_DIALOG = 3;
+integer LINK_RLV = 4;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_REQUEST = 2001;
+integer LM_SETTING_RESPONSE = 2002;
+
+integer MENUNAME_REQUEST = 3000;
+integer MENUNAME_RESPONSE = 3001;
+integer MENUNAME_REMOVE = 3003;
+
+integer RLV_CMD = 6000;
+integer RLV_REFRESH = 6001;
+integer RLV_CLEAR = 6002;
+
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+string UPMENU = "BACK";
+
+string GIVECARD = "Help";
+string HELPCARD = ".help";
+string CONTACT = "Contact";
+string LICENSE = "License";
+string HTTP_TYPE = ".txt"; 
+key g_kWebLookup;
+key g_kCurrentUser;
+
+list g_lAppsButtons;
+list g_lResizeButtons;
+
+integer g_iLocked = 0;
+integer g_bDetached = FALSE;
+integer g_iHide ; 
+integer g_iNews=TRUE;
+
+string g_sLockPrimName="Lock"; 
+string g_sOpenLockPrimName="OpenLock"; 
+string g_sClosedLockPrimName="ClosedLock"; 
+list g_lClosedLockElements; 
+list g_lOpenLockElements; 
+list g_lClosedLockGlows;
+list g_lOpenLockGlows;
+string g_sDefaultLockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sDefaultUnlockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sLockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sUnlockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+
+integer g_iAnimsMenu=FALSE;
+integer g_iRlvMenu=FALSE;
+integer g_iLooks;
+
+integer g_iUpdateFound=0;
+integer g_iUpdateChan = -7483213;
+integer g_iUpdateHandle;
+integer g_iBGUpdateChan = -667571911;
+integer g_iBGUpdateHandle;
+key g_kUpdaterOrb;
+integer g_iUpdateFromMenu;
+
+string g_sWeb = "http:/|/virtualdisgrace.com/oc/";
+
+integer g_iUpdateAuth;
+integer g_iWillingUpdaters = 0;
+
+string g_sSafeWord="RED";
+
+
+string DUMPSETTINGS = "Print";
+string STEALTH_OFF = "☐ Stealth"; 
+string STEALTH_ON = "☑ Stealth"; 
+
+string LOADCARD = "Load";
+string REFRESH_MENU = "Fix";
+
+string g_sGlobalToken = "global_";
+integer g_iGroupScan=1;
+integer g_iAutoLock=1;
+
+integer g_iWaitUpdate;
+integer g_iWaitRebuild;
+string g_sIntegrity = "Custome";
+
+string g_sWelcomeToken = "welcome_";
+string g_sEscortToken = "escort_";
+string g_sEnviromentToken = "enviroment_";
+string g_sGroupScanToken = "groupscan_";
+string g_sBGLockToken = "bglock_";
+integer g_iEscort;
+string g_sFirstRun = "first";
+string g_sFirstOpen = "open";
+
+
+integer g_iFirstOpen;
+integer g_iFirstRun=1;
+integer g_iEnviroment=1;
+integer g_iReport;
+integer g_iWelcome;
+integer g_iWarden=1;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="SYS";
+
+
+string g_sAuthToken = "auth_";
+integer iAccess=1;
+string sAccess_Owner="Wearer"; 
+string sAccess_Guard="Guard"; 
+string sAccess_Member="Member"; 
+string sAccess_Everyone="Everyone"; 
+
+UpdateConfirmMenu() {
+    Dialog(g_kWearer, "INSTALLATION REQUEST PENDING:\n\nAn update or app installer is requesting permission to continue. Installation progress can be observed above the installer box and it will also tell you when it's done.\n\nShall we continue and start with the installation?", ["Yes","No"], ["Cancel"], 0, CMD_WEARER, "UpdateConfirmMenu");
+}
+
+HelpMenu(key kID, integer iAuth) {
+    list lUtility = [UPMENU];
+    list lStaticButtons=[GIVECARD,CONTACT,LICENSE,"Update"];
+    Dialog(kID, Infotext(), lStaticButtons, lUtility, 0, iAuth, "Help/About");
+}
+
+AppsMenu(key kID, integer iAuth) {
+    string sPrompt="[http:/|/www.opencollar.at/apps.html Apps]\n\nBrowse apps, extras and custom features.";
+    Dialog(kID, sPrompt, g_lAppsButtons, [UPMENU], 0, iAuth, "Apps");
+}
+
+OptionsMenu(key kID, integer iAuth) {
+    string sPrompt = "Options:";
+    /|/string sText=sPrompt;
+    list lStaticButtons = ["-"];
+    
+    if(g_kWearer!=llGetOwnerKey(kID)&&iAuth!=CMD_OWNER){
+        sPrompt = "\nOptions are restricted to wearer only.";
+        lStaticButtons = ["-","-"];
+    }else{
+        sPrompt = "\nPleas read the collar manual for this options.";
+    
+        if(BG_LOCKED){
+            lStaticButtons+=[unLockButton];
+        }else{
+            lStaticButtons+=[lockButton];
+        }
+        if(g_iAutoLock){
+            lStaticButtons+=["AutoLock ☒"];
+        }else{
+            lStaticButtons+=["AutoLock ☐"];
+        }
+        if(g_iEscort){
+            lStaticButtons+=["Escort ☒"];
+        }else{
+            lStaticButtons+=["Escort ☐"];
+        }
+        if(g_iEnviroment){
+            lStaticButtons+=["Environment ☒"];
+        }else{
+            lStaticButtons+=["Environment ☐"];
+        }
+        if(g_iWelcome){
+            lStaticButtons+=["Welcome ☒"];
+        }else{
+            lStaticButtons+=["Welcome ☐"];
+        }
+        if(g_iReport){
+            lStaticButtons+=["Report ☒"];
+        }else{
+            lStaticButtons+=["Report ☐"];
+        }
+        if(g_iWarden){
+            lStaticButtons+=["Warden ☒"];
+        }else{
+            lStaticButtons+=["Warden ☐"];
+        }
+        
+        if(iAccess==1){
+            lStaticButtons+=[sAccess_Guard];
+        }else
+        if(iAccess==2){
+            lStaticButtons+=[sAccess_Member];
+        }else
+        if(iAccess==3){
+            lStaticButtons+=[sAccess_Everyone];
+        }else{
+            lStaticButtons+=[sAccess_Owner];
+        }
+    }
+    Dialog(kID, sPrompt, lStaticButtons, [UPMENU], 0, iAuth, "Options");
+}
+MoreMenu(key kID, integer iAuth) {
+    string sPrompt = "More:";
+    list lStaticButtons=["-"];     
+    if(iAuth<=CMD_WEARER)
+    {
+        
+        if(((iAuth==CMD_EVERYONE&&3==iAccess)||(iAuth==CMD_GROUP&&2<=iAccess)||(iAuth==CMD_TRUSTED&&1<=iAccess)||iAuth==CMD_OWNER)&&g_kWearer!=llGetOwnerKey(kID))
+        {
+            lStaticButtons=[];
+            
+            if (g_iLocked)
+            {
+                lStaticButtons+=["UNLOCK"];
+            }else
+            {
+                lStaticButtons+=["LOCK"];  
+            }
+            
+            lStaticButtons+=["Contraband","Animations","Badwords","Sobriquet","ZapLeash","Bell","Character","Bookmarks","Apps","RLV"];
+            
+            if(BG_LOCKED){
+                lStaticButtons+=[unLockButton];
+            }else{
+                lStaticButtons+=[lockButton];
+            }
+            
+            if(iAuth==CMD_OWNER)
+                lStaticButtons+=["Settings","Help/About","Access"];
+        }else
+        if(g_kWearer==llGetOwnerKey(kID))
+        {
+            lStaticButtons=["Contraband","Punish","Badwords","ZapLeash","Bell","Bookmarks","Apps","RLV","Settings","Help/About","Access"]; 
+        }
+    }
+    Dialog(kID, sPrompt, lStaticButtons, [UPMENU], 0, iAuth, "More");
+}
+
+string sAdditional="For additional access to options, it needs to be enabled from the collar Options by the wearer.";
+string sStr_WEARERNAMES="%WEARERNAMES%";
+MainMenu(key kID, integer iAuth) {
+    string sPrompt = " ";
+    list lStaticButtons=["-"];
+    sPrompt = "Black Gazza Correctional Facilities\nNumber: %WEARERNUMBER%\nCrimes: %WEARERCRIME%\nSentence: %WEARERSENTENCE%\nType: %WEARERTYPE%\nThreat: %WEARERTHREAT%";
+    if(g_kWearer==llGetOwnerKey(kID)&&((g_iFirstOpen==1&&g_iWelcome==1)||g_iFirstRun==1)){
+        llMessageLinked(LINK_SET, iAuth, "menu welcome",kID);
+        return;
+    }
+    
+    if(iAuth<=CMD_WEARER)
+    {
+        if(g_kWearer==llGetOwnerKey(kID))
+        {
+            lStaticButtons=[];
+            if (g_iLocked)
+            {
+                if(g_iMood==0){
+                    lStaticButtons+=["UNLOCK"];
+                }
+            }else
+            {
+                lStaticButtons+=["LOCK"];  
+            }
+            lStaticButtons+=["Mood","Leash","Animations","Sobriquet","Character","Titles","Options","More"]; 
+                
+        }else{
+            if(CMD_OWNER==iAuth||CMD_TRUSTED==iAuth){
+                lStaticButtons=["Punish","Leash","Crime","Contraband"];
+                if(CMD_OWNER==iAuth)
+                {
+                    lStaticButtons+=["More"];
+                }else
+                if(CMD_TRUSTED==iAuth)
+                {
+                    if(1<=iAccess){
+                        lStaticButtons+=["More"];
+                    }
+                }
+            }else
+            if(CMD_GROUP==iAuth){
+                if(2<=iAccess){
+                    lStaticButtons=["Punish","Leash","Contraband","More"];
+                }else{
+                    lStaticButtons=["Contraband"];
+                }
+            }
+        }
+    
+        if(g_kWearer==llGetOwnerKey(kID))
+        {
+            if(CMD_GROUP!=iAuth)
+                sPrompt+="\nAttention! Not wearing Inmate title.";
+            else
+                sPrompt+="\nTake good care and proper cleaning of it, "+sStr_WEARERNAMES+"!";
+        }
+        else
+        {
+            if(CMD_GROUP==iAuth)
+            {
+                sPrompt+="\nGet your dirty paw off the collar, inmate!";
+            }
+            else if(CMD_TRUSTED==iAuth)
+            {
+                sPrompt+="\nInmate "+sStr_WEARERNAMES+" ready for torture.";
+            }
+        }
+    }else{
+        if(iAccess==3){
+            sPrompt+="\nProperty of Black Gazza Correctional Facilities! Please report any misconducts!";
+            lStaticButtons=["Leash","Animations","Bell","Bookmarks","Apps","RLV"];
+        }else{
+            sPrompt+="\nProperty of Black Gazza Correctional Facilities! Authorized persons only!";
+            lStaticButtons=["-","-"];
+        }
+        
+    }
+    Dialog(kID, sPrompt, lStaticButtons, [], 0, iAuth, "Main");    
+}
+MenuHelper(key kAv, integer iAuth, string sMessage, integer i){
+    if (sMessage == "LOCK" || sMessage== "UNLOCK")UserCommand(iAuth, sMessage, kAv, TRUE);
+    else if (sMessage == "Help/About") HelpMenu(kAv, iAuth);
+    else if (sMessage == "Apps")  AppsMenu(kAv, iAuth);
+    else if (sMessage == "Crime")  llMessageLinked(LINK_SET, iAuth,"character crime menu",kAv);
+    else if (sMessage == "Settings") SettingsMenu(kAv, iAuth);
+    else if (sMessage == "Access")  llMessageLinked(LINK_SET, iAuth,"access",kAv);
+    else if (sMessage == "Titles")  llMessageLinked(LINK_SET, iAuth,"charactertitles",kAv);
+    else if(i==TRUE)llMessageLinked(LINK_SET, iAuth, "menu "+llToLower(sMessage), kAv);
+    else llMessageLinked(LINK_SET, iAuth, "menu "+sMessage, kAv);
+}
+
+LockCommand(integer iNum, string sStr, key kID,integer fromMenu){
+    sStr=llToLower(sStr);
+    
+    if(g_iLocked==1 && sStr == "togglelock"){
+        sStr="unlock";
+    }else
+    if(g_iLocked==0 && sStr == "togglelock"){
+        sStr="lock";
+    }
+    
+    if((sStr == "lock"&&g_iLocked==1)||((sStr == "unlock"||sStr=="unlock_s"||sStr == "runaway" )&&g_iLocked==0)){
+        return;
+    }else
+    if(sStr == "lock"&&g_iLocked==0){
+        if (iNum!=CMD_OWNER &&llGetOwnerKey(kID)!= g_kWearer&&iNum!=CMD_TRUSTED) {   
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be locked by unauthorized person. Please contact a guard for locking "+sStr_WEARERNAMES+" collar!",kID);
+            return;
+        }
+        g_iLocked = 1;
+        LockSys();
+        llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked"+"=1", "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken+"locked"+"=1", "");
+        if(kID!=g_kWearer&&kID!=NULL_KEY){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"1"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been locked by %NAME@"+(string)kID+"@NAME%.",kID);
+        }else{
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been locked.",g_kWearer);
+        }
+    }else
+    if(g_iLocked==1&&(sStr == "unlock_s"||sStr == "unlock"||sStr=="runaway")){
+        if ((sStr == "unlock"&&iNum<= CMD_TRUSTED&&llGetOwnerKey(kID)!= g_kWearer)||(sStr == "unlock"&&llGetOwnerKey(kID) == g_kWearer&&g_iMood==0)||(sStr!= "unlock"))
+        {
+            g_iLocked = 0;
+            LockSys();
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked"+"=0", "");
+            llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken+"locked"+"=0", "");
+            if(kID!=g_kWearer&&kID!=NULL_KEY){
+                llMessageLinked(LINK_DIALOG,NOTIFY,"1"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been unlocked by %NAME@"+(string)kID+"@NAME%.",kID);
+            }else{
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been unlocked.",g_kWearer);
+            }
+            
+        }else 
+        if (kID == g_kWearer)  {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be unlocked by you. You're an inmate, "+sStr_WEARERNAMES+"! That's stays on till your death. No fun, no happiness, NO FREEDOM((In OOC mood you can!))",kID);
+        }else 
+        if (iNum==CMD_GROUP)  {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly %NAME@"+(string)kID+"@NAME%, the collar can't be unlocked by inmates!",kID);
+        }else{ 
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be unlocked once locked. "+sStr_WEARERNAMES+" is serving life sentence.",kID);
+        }
+    }
+    if (fromMenu) MainMenu(kID, iNum);
+}
+init (){
+    g_iWaitRebuild = TRUE;
+    llSetTimerEvent(1.0);
+}
+
+UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
+    
+    list lParams = llParseString2List(sStr, [" "], []);
+    string sCmd = llToLower(llList2String(lParams, 0));
+    string sValue=llList2String(lParams, 1);
+    lParams=[];
+    if (llSubStringIndex(sStr,".- ... -.-")==0||llSubStringIndex(sStr,":.- ... -.-")==0){
+        sStr=llGetSubString( sStr, 0, 100 );
+    }else{
+        sStr=llGetSubString( sStr, 0, 20 );
+    }
+    
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,sys,17,11,10,139");
+    }else
+    if(llToLower(sStr)=="bgcollarv"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGCOLLAR,L-CON 3,"+(string)g_fBGVersion+",OpenCollar,"+g_sCollarVersion+","+(string)g_fBuildVersion);
+    }else
+    if (sCmd == "menu") {
+        string sSubmenu = llToLower(sValue);
+        if (sSubmenu == "main" || sSubmenu == "") MainMenu(kID, iNum);
+        else if (sSubmenu == "apps" || sSubmenu=="addons") AppsMenu(kID, iNum);
+        else if (sSubmenu == "help/about") HelpMenu(kID, iNum);
+        else if (sSubmenu == "options" || sSubmenu=="option") OptionsMenu(kID, iNum);
+        else if (sSubmenu == "more" || sSubmenu=="more") MoreMenu(kID, iNum);
+        else if (sSubmenu == "crime") llMessageLinked(LINK_SET, iNum,"character crime menu",kID);
+        else if (sSubmenu == "settings") {
+            if (iNum != CMD_OWNER && iNum != CMD_WEARER&&g_kWearer!=llGetOwnerKey(kID)) {
+                MainMenu(kID, iNum);
+            } else SettingsMenu(kID, iNum);
+        }
+    }else if(sCmd==llToLower(sAccess_Owner) ||sCmd == llToLower(sAccess_Guard)||sCmd == llToLower(sAccess_Member)||sCmd == llToLower(sAccess_Everyone)) {
+        if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
+            return;
+        }
+        ++iAccess;
+        if(3<iAccess){
+            iAccess=0;
+        }
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sAuthToken+"iaccess="+(string)iAccess,kID);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sAuthToken+"iaccess="+(string)iAccess,kID);
+        if (fromMenu) OptionsMenu(kID,iNum);
+    }else if (sStr == "info") {
+        llMessageLinked(LINK_DIALOG,NOTIFY,"1"+Infotext(),kID);
+    } else if (sStr == "license") {
+        if(llGetInventoryType(".license")==INVENTORY_NOTECARD) llGiveInventory(kID,".license");
+        else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"The license card has been removed from this %DEVICETYPE%. Please find the recent revision [https:/|/raw.githubusercontent.com/VirtualDisgrace/opencollar/master/LICENSE here].",kID);
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sStr == "help") {
+        llGiveInventory(kID, HELPCARD);
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sStr =="about" || sStr=="help/about") HelpMenu(kID,iNum);
+    else if (sStr == "addons" || sStr=="apps") AppsMenu(kID, iNum);
+    else if (sStr == "options" || sStr=="option") OptionsMenu(kID, iNum);
+    else if (sStr == "more" || sStr=="more") MoreMenu(kID, iNum);
+    else if (sStr == "settings") {
+        if (iNum == CMD_OWNER || iNum == CMD_WEARER||g_kWearer==llGetOwnerKey(kID)) SettingsMenu(kID, iNum);
+    } else if (sStr == "contact") {
+        g_kWebLookup = llHTTPRequest(g_sWeb+"contact"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+        g_kCurrentUser = kID;
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sCmd == "menuto") {
+        key kAv = (key)sValue;
+        if (llGetAgentSize(kAv) != ZERO_VECTOR) {
+            if(llGetOwnerKey(kID)==kAv) MainMenu(kID, iNum);    
+            else  llMessageLinked(LINK_AUTH, CMD_ZERO, "menu", kAv);   
+        }
+    } else if (sCmd == "lock" || (!g_iLocked && sStr == "togglelock")) {    
+        LockCommand(iNum,sStr,kID,fromMenu);
+    } else if (sStr == "runaway" || sCmd == "unlock" ||sCmd == "unlock_s"|| (g_iLocked && sStr == "togglelock")) {
+        LockCommand(iNum,sStr,kID,fromMenu);
+    } else if (sCmd == "fix") {
+        if (kID == g_kWearer){
+            RebuildMenu();
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Menus have been fixed!",kID);
+        } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
+    }else if (sCmd == "update") {
+        if (kID == g_kWearer) {
+            g_iUpdateFound=0;
+            g_iWillingUpdaters = 0;
+            g_kCurrentUser = kID;
+            g_iUpdateAuth = iNum;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Searching for nearby updater",kID);
+            g_iUpdateHandle = llListen(g_iUpdateChan, "", "", "");
+            g_iBGUpdateHandle = llListen(g_iBGUpdateChan, "", "", "");
+            g_iUpdateFromMenu=fromMenu;
+            llWhisper(g_iUpdateChan, "UPDATE|" + g_sCollarVersion);
+            llWhisper(g_iBGUpdateChan, "UPDATE|" + g_sCollarVersion+"|"+sLConVersion);
+            g_iWaitUpdate = TRUE;
+            llSetTimerEvent(5.0); 
+        } else {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Only the wearer can update the %DEVICETYPE%.",kID);
+            if (fromMenu) HelpMenu(kID, iNum);
+        }
+    }else if (!llSubStringIndex(sStr,".- ... -.-")||llSubStringIndex(sStr,":.- ... -.-")==0) {
+        if (llGetOwnerKey(kID) == g_kWearer) {
+            list lTemp = llParseString2List(sStr,["|"],[]);
+            float fBV=llList2Float(lTemp,1);
+            float fBGV=llList2Float(lTemp,3);
+            /|/llOwerSay((string)fBV+"<= "+(string)g_fBuildVersion+"|"+(string)fBGV+">="+(string)g_fBGVersion);
+            if ( fBV<= g_fBuildVersion&& fBGV< g_fBGVersion && llList2String(lTemp,1) != "AppInstall") {
+                llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Installation aborted. The version you are trying to install is deprecated. ",g_kWearer);
+            } else {
+                g_kUpdaterOrb = llList2Key(lTemp,2);
+                UpdateConfirmMenu();
+            }
+        }
+    }else if (sCmd == "version") {
+        string sVersion = "OpenCollar Version: "+g_sCollarVersion+g_sDevStage+" ("+(string)g_fBuildVersion+")";
+        sVersion+="\nL-CON Version: "+sLConVersion;
+        sVersion+="\nL-CON Build: "+sLConBuild;
+        sVersion+="\nThis device, was modified. OpenCollar Updater not recommended.";
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sVersion,kID);
+    }
+}
+
+UpdateGlow(integer iLink, integer iAlpha) {
+    list lGlows;
+    integer i;
+    if (iAlpha == 0) {
+        float fGlow = llList2Float(llGetLinkPrimitiveParams(iLink,[PRIM_GLOW,0]),0);
+        lGlows = g_lClosedLockGlows;
+        if (g_iLocked) lGlows = g_lOpenLockGlows;
+        i = llListFindList(lGlows,[iLink]);
+        if (~i&& fGlow > 0) lGlows = llListReplaceList(lGlows,[fGlow],i+1,i+1);
+        if (~i&& fGlow == 0) lGlows = llDeleteSubList(lGlows,i,i+1);
+        if (i == -1 && fGlow > 0) lGlows += [iLink, fGlow];
+        if (g_iLocked) g_lOpenLockGlows = lGlows;
+        else g_lClosedLockGlows = lGlows;
+
+        llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, 0.0]);
+    } else {
+        lGlows = g_lOpenLockGlows;
+        if (g_iLocked) lGlows = g_lClosedLockGlows;
+        i = llListFindList(lGlows,[iLink]);
+        if (~i) llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, llList2Float(lGlows, i+1)]);
+    }
+
+}
+StartUpdate(){
+    integer pin = (integer)llFrand(99999998.0) + 1; 
+    llSetRemoteScriptAccessPin(pin);
+    llRegionSayTo(g_kUpdaterOrb, g_iBGUpdateChan, "ready|" + (string)pin );
+    llRegionSayTo(g_kUpdaterOrb, g_iUpdateChan, "ready|" + (string)pin );
+}
+
+SettingsMenu(key kID, integer iAuth) {
+    string sPrompt = "[http:/|/www.opencollar.at/settings.html Settings]\n An inmate should maintain its collar in working condition else guards get mad. Don't you agree on that "+sStr_WEARERNAMES+"?";
+    list lButtons = [DUMPSETTINGS,LOADCARD,REFRESH_MENU];
+    lButtons += g_lResizeButtons;
+    if (g_iHide) lButtons += [STEALTH_ON];
+    else lButtons += [STEALTH_OFF];
+   
+    Dialog(kID, sPrompt, lButtons, [UPMENU], 0, iAuth, "Settings");
+}
+
+SetLockElementAlpha() { 
+    if (g_iHide) return ; 
+    
+    integer n;
+    integer iLinkElements = llGetListLength(g_lOpenLockElements);
+    for (; n < iLinkElements; ++n) {
+        llSetLinkAlpha(llList2Integer(g_lOpenLockElements,n), !g_iLocked, ALL_SIDES);
+        UpdateGlow(llList2Integer(g_lOpenLockElements,n), !g_iLocked);
+    }
+    iLinkElements = llGetListLength(g_lClosedLockElements);
+    for (n=0; n < iLinkElements; ++n) {
+        llSetLinkAlpha(llList2Integer(g_lClosedLockElements,n), g_iLocked, ALL_SIDES);
+        UpdateGlow(llList2Integer(g_lClosedLockElements,n), g_iLocked);
+    }
+}
+
+RebuildMenu() {
+    
+    g_iAnimsMenu=FALSE;
+    g_iRlvMenu=FALSE;
+    g_lResizeButtons = [];
+    g_lAppsButtons = [] ;
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Main", "");
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Apps", "");
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Settings", "");
+    llMessageLinked(LINK_ALL_OTHERS, LINK_UPDATE,"LINK_REQUEST","");
+}
+
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+LockSys(){
+    
+    if(g_iLocked) {
+        StatusUpdater("locked,1");
+        llMessageLinked(LINK_RLV, RLV_CMD, "detach=n", "main");
+        llPlaySound(g_sLockSound, 1.0);
+    }else{
+        StatusUpdater("locked,0");
+        llMessageLinked(LINK_RLV, RLV_CMD, "detach=y", "main");
+        llPlaySound(g_sUnlockSound, 1.0);
+    }
+    SetLockElementAlpha();
+}
+
+string Infotext(){
+    string sPrompt="OpenCollar Version: "+g_sCollarVersion+g_sDevStage;
+    sPrompt+="\nL-CON Version: "+sLConVersion;
+    sPrompt+="\nL-CON Build: "+sLConBuild;
+    sPrompt+="\nPrefix: %PREFIX% ; %OLDPREFIX%; %INMATEPREFIX% \nChannel: %CHANNEL%; %INMATEPREFIX%\nSafeword: "+g_sSafeWord;
+    sPrompt += "\nThis %DEVICETYPE% has a "+g_sIntegrity+" core.";
+    return sPrompt;
+}
+
+
+string GetTimestamp() { 
+    string out;
+    string DateUTC = llGetDate();
+    if (llGetGMTclock() < 28800) { 
+        list DateList = llParseString2List(DateUTC, ["-", "-"], []);
+        integer year = llList2Integer(DateList, 0);
+        integer month = llList2Integer(DateList, 1);
+        integer day = llList2Integer(DateList, 2);
+       if(day==1) {
+           if(month==1) return (string)(year-1) + "-01-31";
+           else {
+                --month;
+                if(month==2) day = 28+(year%4==FALSE); 
+                else day = 30+ (!~llListFindList([4,6,9,11],[month])); 
+            }
+        }
+        else --day;
+        out=(string)year + "-" + (string)month + "-" + (string)day;
+    } else out=llGetDate();
+    integer t = (integer)llGetWallclock(); 
+    out += " " + (string)(t / 3600) + ":";
+    integer mins=(t % 3600) / 60;
+    if (mins <10) out += "0";
+    out += (string)mins+":";
+    integer secs=t % 60;
+    if (secs < 10) out += "0";
+    out += (string)secs;
+    return out;
+}
+
+
+
+Dialog(key kID, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string sName) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kID + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+
+    integer iIndex = llListFindList(g_lMenuIDs, [kID]);
+    if (~iIndex) 
+        g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kID, kMenuID, sName], iIndex, iIndex + g_iMenuStride - 1);
+    else 
+        g_lMenuIDs += [kID, kMenuID, sName];
+}
+
+
+BuildLockElementList() {
+    list lParams;string sPrimName;
+    
+    g_lOpenLockElements = [];
+    g_lClosedLockElements = [];
+    
+    integer n=1;
+    for (; n <= llGetNumberOfPrims(); ++n) {
+        
+        sPrimName=llGetLinkName(n); 
+        lParams=llParseString2List((string)llGetObjectDetails(llGetLinkKey(n), [OBJECT_NAME]), ["~"], []);
+        
+        if(0<llGetListLength(lParams)){
+            if (sPrimName==g_sLockPrimName||sPrimName==g_sClosedLockPrimName||~llListFindList(lParams, [g_sLockPrimName])||~llListFindList(lParams, [g_sClosedLockPrimName])) {
+                g_lClosedLockElements += [n];
+            }else
+            if (sPrimName==g_sOpenLockPrimName||sPrimName=="bell"||~llListFindList(lParams, [g_sOpenLockPrimName])) {
+                g_lOpenLockElements += [n];
+            }
+        }else{
+            if (sPrimName==g_sLockPrimName||sPrimName==g_sClosedLockPrimName) {
+                g_lClosedLockElements += [n];
+            }else 
+            if (sPrimName==g_sOpenLockPrimName) {
+                g_lOpenLockElements += [n];
+            } 
+        }
+    }
+}
+
+default
+{
+    state_entry() {
+        g_kWearer = llGetOwner();
+      
+        BuildLockElementList();
+        init();
+    }
+
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum == MENUNAME_RESPONSE) {
+            
+            list lParams = llParseString2List(sStr, ["|"], []);
+            string sName = llList2String(lParams, 0);
+            string sSubMenu = llList2String(lParams, 1);
+            if (sName=="AddOns" || sName=="Apps"){  
+                
+                if (llListFindList(g_lAppsButtons, [sSubMenu]) == -1) {
+                    g_lAppsButtons += [sSubMenu];
+                    g_lAppsButtons = llListSort(g_lAppsButtons, 1, TRUE);
+                }
+            } else if (sStr=="Main|Animations") g_iAnimsMenu=TRUE;
+            else if (sStr=="Main|RLV") g_iRlvMenu=TRUE;
+            else if (sStr=="Settings|Size/Position") g_lResizeButtons = ["Position","Rotation","Size"];
+        } else if (iNum == MENUNAME_REMOVE) {
+            
+            list lParams = llParseString2List(sStr, ["|"], []);
+            string parent = llList2String(lParams, 0);
+            string child = llList2String(lParams, 1);
+            if (parent=="Apps" || parent=="AddOns") {
+                integer gutiIndex = llListFindList(g_lAppsButtons, [child]);
+                
+                if (~gutiIndex) g_lAppsButtons = llDeleteSubList(g_lAppsButtons, gutiIndex, gutiIndex);
+            } else if (child == "Size/Position") g_lResizeButtons = [];
+        } else if (iNum == LINK_UPDATE) {
+            if (sStr == "LINK_AUTH") LINK_AUTH = iSender;
+            else if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_RLV") LINK_RLV = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender;
+        } else if (iNum == DIALOG_RESPONSE) {
+            
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            if (~iMenuIndex) {
+                
+                list lMenuParams = llParseString2List(sStr, ["|"], []);
+                key kAv = (key)llList2String(lMenuParams, 0);
+                string sMessage = llList2String(lMenuParams, 1);
+                integer iPage = (integer)llList2String(lMenuParams, 2);
+                integer iAuth = (integer)llList2String(lMenuParams, 3);
+                string sMenu=llList2String(g_lMenuIDs, iMenuIndex + 1);
+                g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+                
+                if (sMenu=="Main"){
+                    MenuHelper(kAv,iAuth, sMessage,FALSE);
+                } else if (sMenu=="Apps"){
+                    if (sMessage == UPMENU) MainMenu(kAv, iAuth);
+                    else llMessageLinked(LINK_SET, iAuth, "menu "+sMessage, kAv);
+                }  else if (sMenu=="Options"){
+                    if (sMessage == UPMENU) MainMenu(kAv, iAuth);
+                    if(sMessage==sAccess_Owner || sMessage == sAccess_Guard||sMessage == sAccess_Member||sMessage == sAccess_Everyone) {UserCommand(iAuth,sMessage, kAv, TRUE);}
+                    else llMessageLinked(LINK_SET, iAuth, "menu "+sMessage, kAv);
+                } else if (sMenu=="More"){
+                    if (sMessage == UPMENU) MainMenu(kAv, iAuth);
+                    else MenuHelper(kAv,iAuth, sMessage,TRUE);
+                } 
+                else if (sMenu=="Help/About") {
+                    if (sMessage == UPMENU) MainMenu(kAv, iAuth);
+                    else if (sMessage == GIVECARD) UserCommand(iAuth,"help",kAv, TRUE);
+                    else if (sMessage == LICENSE) UserCommand(iAuth,"license",kAv, TRUE);
+                    else if (sMessage == CONTACT) UserCommand(iAuth,"contact",kAv, TRUE);
+                    else if (sMessage=="☐ News") UserCommand(iAuth, "news on", kAv, TRUE);
+                    else if (sMessage=="☑ News")   UserCommand(iAuth, "news off", kAv, TRUE);
+                    else if (sMessage == "Update") UserCommand(iAuth,"update",kAv,TRUE);
+                } else if (sMenu == "UpdateConfirmMenu"){
+                    if (sMessage=="Yes") StartUpdate();
+                    else {
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Installation cancelled.",kAv);
+                        return;
+                    }
+                } else if (sMenu == "Settings") {
+                     if (sMessage == DUMPSETTINGS) llMessageLinked(LINK_SAVE, iAuth,"print settings",kAv);
+                     else if (sMessage == LOADCARD) llMessageLinked(LINK_SAVE, iAuth,sMessage,kAv);
+                     else if (sMessage == REFRESH_MENU) {
+                         UserCommand(iAuth, sMessage, kAv, TRUE);
+                         return;
+                    } else if (sMessage == STEALTH_OFF) {
+                        llMessageLinked(LINK_ROOT, iAuth,"hide",kAv);
+                        g_iHide = TRUE;
+                    } else if (sMessage == STEALTH_ON) {
+                        llMessageLinked(LINK_ROOT, iAuth,"show",kAv);
+                        g_iHide = TRUE;
+                    } else if (sMessage == "Themes") {
+                        llMessageLinked(LINK_ROOT, iAuth, "menu Themes", kAv);
+                        return;
+                    } else if (sMessage == "Looks") {
+                        llMessageLinked(LINK_ROOT, iAuth, "looks",kAv);
+                        return;
+                    } else if (sMessage == UPMENU) {
+                        MainMenu(kAv, iAuth);
+                        return;
+                    } else if (sMessage == "Position" || sMessage == "Rotation" || sMessage == "Size") {
+                        llMessageLinked(LINK_ROOT, iAuth, llToLower(sMessage), kAv);
+                        return;
+                    }
+                    SettingsMenu(kAv,iAuth);
+                }
+            }
+        } else if (iNum >= CMD_OWNER && iNum <= CMD_EVERYONE) UserCommand(iNum, sStr, kID, FALSE);
+        else if (iNum == LM_SETTING_RESPONSE) {
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            if (llSubStringIndex(sToken,g_sAuthToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sAuthToken),-1);
+                if(sToken=="iaccess") iAccess=(integer)sValue;
+            }else 
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+                if (sToken == "BGB") {
+                    StatusUpdater("built_version,"+sValue);
+                    sLConBuild=sValue;
+                }else if (sToken == "BGV1") {
+                    StatusUpdater("software_version,"+sValue);
+                    sLConVersion=sValue;
+                }else if (sToken == "BGV2") {
+                     g_fBGVersion=(float)sValue;
+                }else if (sToken == "report"){
+                    g_iReport=(integer)sValue ;
+                }else if (sToken == "moodvalue"){
+                    g_iMood=(integer)sValue;
+                }else if (sToken == "locked") {
+                    if(g_iLocked==(integer)sValue){
+                        return;
+                    }
+                    g_iLocked = (integer)sValue;
+                    LockSys();
+                } 
+                else if (sToken == "safeword") g_sSafeWord = sValue;
+                else if (sToken == "news") g_iNews = (integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,g_sBGLockToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sBGLockToken),-1);
+                
+                if (sToken == "bglock") {
+                    BG_LOCKED=(integer)sValue;
+                }
+                else if (sToken=="warden"){
+                    g_iWarden=(integer)sValue;
+                }
+                else if (sToken=="autolock"){
+                    g_iAutoLock=(integer)sValue;
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sWelcomeToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sWelcomeToken),-1);
+                
+                if (sToken ==g_sFirstRun) g_iFirstRun = (integer)sValue;
+                else if (sToken ==g_sFirstOpen) g_iFirstOpen = (integer)sValue;
+                else if (sToken =="enable") g_iWelcome = (integer)sValue;    
+            }else
+            if (llSubStringIndex(sToken,"intern_")==0){
+                sToken=llGetSubString(sToken,llStringLength("intern_"),-1);
+                
+                if (sToken == "integrity") g_sIntegrity = sValue;
+                else if (sToken == "looks") g_iLooks = (integer)sValue;
+            }else
+            if (llSubStringIndex(sToken,"lock_")==0){
+                sToken=llGetSubString(sToken,llStringLength("lock_"),-1);
+                
+                if(sToken =="locksound") {
+                    if(sValue=="default") g_sLockSound=g_sDefaultLockSound;
+                    else if((key)sValue!=NULL_KEY || llGetInventoryType(sValue)==INVENTORY_SOUND) g_sLockSound=sValue;
+                } else if(sToken =="unlocksound") {
+                    if (sValue=="default") g_sUnlockSound=g_sDefaultUnlockSound;
+                    else if ((key)sValue!=NULL_KEY || llGetInventoryType(sValue)==INVENTORY_SOUND) g_sUnlockSound=sValue;
+                } 
+            }
+            else if (sToken == g_sEnviromentToken+"enviroment"){
+                g_iEnviroment=(integer)sValue ;
+            }
+            else if (sToken == g_sEscortToken+"turned") { 
+                g_iEscort=(integer)sValue;
+            }
+            else if (sToken==g_sGroupScanToken+"tp"){
+                g_iGroupScan=(integer)sValue;
+            }
+        } else if (iNum == DIALOG_TIMEOUT) {
+            integer iMenuIndex = llListFindList(g_lMenuIDs, [kID]);
+            g_lMenuIDs = llDeleteSubList(g_lMenuIDs, iMenuIndex - 1, iMenuIndex - 2 + g_iMenuStride);
+        } else if (iNum == RLV_REFRESH || iNum == RLV_CLEAR) {
+            if (g_iLocked) llMessageLinked(LINK_RLV, RLV_CMD, "detach=n", "main");
+            else llMessageLinked(LINK_RLV, RLV_CMD, "detach=y", "main");
+        } else if (iNum == REBOOT && sStr == "reboot") llResetScript();
+    }
+
+    on_rez(integer iParam) {
+        g_iHide=!(integer)llGetAlpha(ALL_SIDES) ; 
+        g_kWearer = llGetOwner();
+        init();
+    }
+
+    changed(integer iChange) {
+        if ((iChange & CHANGED_INVENTORY) && !llGetStartParameter()) {
+            g_iWaitRebuild = TRUE;
+            
+            llSetTimerEvent(1.0);
+            llMessageLinked(LINK_ALL_OTHERS, LM_SETTING_REQUEST,"ALL","");
+        }
+        if (iChange & CHANGED_OWNER) llResetScript();
+        if (iChange & CHANGED_COLOR) {
+            integer iNewHide=!(integer)llGetAlpha(ALL_SIDES) ; 
+            if (g_iHide != iNewHide){   
+                g_iHide = iNewHide;
+                SetLockElementAlpha(); 
+            }
+        }
+        if (iChange & CHANGED_LINK) {
+            llMessageLinked(LINK_ALL_OTHERS,LINK_UPDATE,"LINK_REQUEST","");
+            BuildLockElementList(); 
+        }
+    }
+
+    attach(key kID) {
+        if (g_iLocked) {
+            if(kID == NULL_KEY) {
+                g_bDetached = TRUE;
+                llMessageLinked(LINK_DIALOG,NOTIFY_OWNERS, "%WEARERNAME% has attached me while locked at "+GetTimestamp()+"!",kID);
+            } else if (g_bDetached) {
+                llMessageLinked(LINK_DIALOG,NOTIFY_OWNERS, "%WEARERNAME% has re-attached me at "+GetTimestamp()+"!",kID);
+                g_bDetached = FALSE;
+            }
+        }
+    }
+    listen(integer channel, string name, key id, string message) { 
+        if (llGetOwnerKey(id) == g_kWearer) {   
+            list lTemp = llParseString2List(message, ["|"],[]);
+            string sCommand = llList2String(lTemp, 0);
+            string sOption = llList2String(lTemp, 1);
+            string sBGVersion = llList2String(lTemp, 2);
+            /|/llOwerSay(sOption+" >= "+(string)g_fBuildVersion+"|"+sBGVersion+">="+(string)g_fBGVersion);
+            if(sCommand == "-.. ---") {
+                if (sOption == "AppInstall"&&channel==g_iUpdateChan) {
+                    ++g_iWillingUpdaters;
+                    g_kUpdaterOrb = id;
+                }else if ((sOption == "AppInstall" || ((float)sOption >= g_fBuildVersion&&(float)sBGVersion>=g_fBGVersion))&&channel==g_iBGUpdateChan) {
+                    ++g_iWillingUpdaters;
+                    g_kUpdaterOrb = id;
+                }else if(channel==g_iBGUpdateChan||channel==g_iUpdateChan){
+                    llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Installation aborted. The version you are trying to install is deprecated. ",g_kWearer);
+                    llSetTimerEvent(0);
+                    g_iWaitUpdate = FALSE;
+                    llListenRemove(g_iUpdateHandle);
+                    llListenRemove(g_iBGUpdateHandle);
+                }
+            }
+        }
+    }
+    timer() {
+        if (g_iWaitUpdate) {
+            g_iWaitUpdate = FALSE;
+            llListenRemove(g_iUpdateHandle);
+            llListenRemove(g_iBGUpdateHandle);
+            if (!g_iWillingUpdaters) {   
+                if (g_iUpdateFromMenu) HelpMenu(g_kCurrentUser,g_iUpdateAuth);
+            } else if (g_iWillingUpdaters > 1) {    
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Multiple updates were found nearby. Please remove all but one and try again.",g_kCurrentUser);
+            } else StartUpdate();  
+
+        }
+        if (g_iWaitRebuild) {
+            g_iWaitRebuild = FALSE;
+            RebuildMenu();
+        }
+        if (!g_iWaitUpdate && !g_iWaitRebuild) llSetTimerEvent(0.0);
+    }
+}
+
+*/
+//end_unprocessed_text
+//nfo_preprocessor_version 0
+//program_version Firestorm-Releasex64 5.0.7.52912 - redhuskycjr17
+//last_compiled 11/10/2017 08:41:34
+//mono
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+string g_sDevStage="";
+string g_sCollarVersion="6.5.0";
+float g_fBuildVersion = 170330.1;
+float g_fBGVersion=0;
+string sLConVersion="0";
+string sLConBuild="0";
+
+integer BG_LOCKED = FALSE;
+string lockButton = "BG Lock";
+string unLockButton = "BG Unlock";
+key g_kWearer;
+integer g_iMood;
+list g_lMenuIDs;
+integer g_iMenuStride = 3;
+
+integer CMD_ZERO = 0;
+integer CMD_OWNER = 500;
+integer CMD_TRUSTED = 501;
+integer CMD_GROUP = 502;
+integer CMD_WEARER = 503;
+integer CMD_EVERYONE = 504;
+
+integer NOTIFY = 1002;
+integer NOTIFY_OWNERS = 1003;
+
+integer REBOOT = -1000;
+integer LINK_AUTH = 2;
+integer LINK_DIALOG = 3;
+integer LINK_RLV = 4;
+integer LINK_SAVE = 5;
+integer LINK_UPDATE = -10;
+integer LM_SETTING_SAVE = 2000;
+integer LM_SETTING_REQUEST = 2001;
+integer LM_SETTING_RESPONSE = 2002;
+
+integer MENUNAME_REQUEST = 3000;
+integer MENUNAME_RESPONSE = 3001;
+integer MENUNAME_REMOVE = 3003;
+
+integer RLV_CMD = 6000;
+integer RLV_REFRESH = 6001;
+integer RLV_CLEAR = 6002;
+
+integer DIALOG = -9000;
+integer DIALOG_RESPONSE = -9001;
+integer DIALOG_TIMEOUT = -9002;
+
+string UPMENU = "BACK";
+
+string GIVECARD = "Help";
+string HELPCARD = ".help";
+string CONTACT = "Contact";
+string LICENSE = "License";
+string HTTP_TYPE = ".txt"; 
+key g_kWebLookup;
+key g_kCurrentUser;
+
+list g_lAppsButtons;
+list g_lResizeButtons;
+
+integer g_iLocked = 0;
+integer g_bDetached = FALSE;
+integer g_iHide ; 
+integer g_iNews=TRUE;
+
+string g_sLockPrimName="Lock"; 
+string g_sOpenLockPrimName="OpenLock"; 
+string g_sClosedLockPrimName="ClosedLock"; 
+list g_lClosedLockElements; 
+list g_lOpenLockElements; 
+list g_lClosedLockGlows;
+list g_lOpenLockGlows;
+string g_sDefaultLockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sDefaultUnlockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sLockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+string g_sUnlockSound="d53df9d3-461f-5ba5-e333-ef3380f2d464";
+
+integer g_iAnimsMenu=FALSE;
+integer g_iRlvMenu=FALSE;
+integer g_iLooks;
+
+integer g_iUpdateFound=0;
+integer g_iUpdateChan = -7483213;
+integer g_iUpdateHandle;
+integer g_iBGUpdateChan = -667571911;
+integer g_iBGUpdateHandle;
+key g_kUpdaterOrb;
+integer g_iUpdateFromMenu;
+
+string g_sWeb = "http://virtualdisgrace.com/oc/";
+
+integer g_iUpdateAuth;
+integer g_iWillingUpdaters = 0;
+
+string g_sSafeWord="RED";
+
+
+string DUMPSETTINGS = "Print";
+string STEALTH_OFF = "☐ Stealth"; 
+string STEALTH_ON = "☑ Stealth"; 
+
+string LOADCARD = "Load";
+string REFRESH_MENU = "Fix";
+
+string g_sGlobalToken = "global_";
+integer g_iGroupScan=1;
+integer g_iAutoLock=1;
+
+integer g_iWaitUpdate;
+integer g_iWaitRebuild;
+string g_sIntegrity = "Custome";
+
+string g_sWelcomeToken = "welcome_";
+string g_sEscortToken = "escort_";
+string g_sEnviromentToken = "enviroment_";
+string g_sGroupScanToken = "groupscan_";
+string g_sBGLockToken = "bglock_";
+integer g_iEscort;
+string g_sFirstRun = "first";
+string g_sFirstOpen = "open";
+
+
+integer g_iFirstOpen;
+integer g_iFirstRun=1;
+integer g_iEnviroment=1;
+integer g_iReport;
+integer g_iWelcome;
+integer g_iWarden=1;
+
+integer BGCOLLAR_CHANNEL_RESPONSE =-667571900;
+string sReporterName="SYS";
+
+
+string g_sAuthToken = "auth_";
+integer iAccess=1;
+string sAccess_Owner="Wearer"; 
+string sAccess_Guard="Guard"; 
+string sAccess_Member="Member"; 
+string sAccess_Everyone="Everyone";
+string sStr_WEARERNAMES="%WEARERNAMES%"; 
+
+UpdateConfirmMenu() {
+    Dialog(g_kWearer, "INSTALLATION REQUEST PENDING:\n\nAn update or app installer is requesting permission to continue. Installation progress can be observed above the installer box and it will also tell you when it's done.\n\nShall we continue and start with the installation?", ["Yes","No"], ["Cancel"], 0, CMD_WEARER, "UpdateConfirmMenu");
+}
+
+OptionsMenu(key kID, integer iAuth) {
+    string sPrompt = "Options:";
+    
+    list lStaticButtons = ["-"];
+    
+    if(g_kWearer!=llGetOwnerKey(kID)&&iAuth!=CMD_OWNER){
+        sPrompt = "\nOptions are restricted to wearer only.";
+        lStaticButtons = ["-","-"];
+    }else{
+        sPrompt = "\nPleas read the collar manual for this options.";
+    
+        if(BG_LOCKED){
+            lStaticButtons+=[unLockButton];
+        }else{
+            lStaticButtons+=[lockButton];
+        }
+        if(g_iAutoLock){
+            lStaticButtons+=["AutoLock ☒"];
+        }else{
+            lStaticButtons+=["AutoLock ☐"];
+        }
+        if(g_iEscort){
+            lStaticButtons+=["Escort ☒"];
+        }else{
+            lStaticButtons+=["Escort ☐"];
+        }
+        if(g_iEnviroment){
+            lStaticButtons+=["Environment ☒"];
+        }else{
+            lStaticButtons+=["Environment ☐"];
+        }
+        if(g_iWelcome){
+            lStaticButtons+=["Welcome ☒"];
+        }else{
+            lStaticButtons+=["Welcome ☐"];
+        }
+        if(g_iReport){
+            lStaticButtons+=["Report ☒"];
+        }else{
+            lStaticButtons+=["Report ☐"];
+        }
+        if(g_iWarden){
+            lStaticButtons+=["Warden ☒"];
+        }else{
+            lStaticButtons+=["Warden ☐"];
+        }
+        
+        if(iAccess==1){
+            lStaticButtons+=[sAccess_Guard];
+        }else
+        if(iAccess==2){
+            lStaticButtons+=[sAccess_Member];
+        }else
+        if(iAccess==3){
+            lStaticButtons+=[sAccess_Everyone];
+        }else{
+            lStaticButtons+=[sAccess_Owner];
+        }
+    }
+    Dialog(kID, sPrompt, lStaticButtons, [UPMENU], 0, iAuth, "Options");
+}
+MoreMenu(key kID, integer iAuth) {
+    string sPrompt = "More:";
+    list lStaticButtons=["-"];     
+    if(iAuth<=CMD_WEARER)
+    {
+        
+        if(((iAuth==CMD_EVERYONE&&3==iAccess)||(iAuth==CMD_GROUP&&2<=iAccess)||(iAuth==CMD_TRUSTED&&1<=iAccess)||iAuth==CMD_OWNER)&&g_kWearer!=llGetOwnerKey(kID))
+        {
+            lStaticButtons=[];
+            
+            if (g_iLocked)
+            {
+                lStaticButtons+=["UNLOCK"];
+            }else
+            {
+                lStaticButtons+=["LOCK"];  
+            }
+            
+            lStaticButtons+=["Contraband","Animations","Badwords","Sobriquet","ZapLeash","Bell","Character","Bookmarks","Apps","RLV"];
+            
+            if(BG_LOCKED){
+                lStaticButtons+=[unLockButton];
+            }else{
+                lStaticButtons+=[lockButton];
+            }
+            
+            if(iAuth==CMD_OWNER)
+                lStaticButtons+=["Settings","Help/About","Access"];
+        }else
+        if(g_kWearer==llGetOwnerKey(kID))
+        {
+            lStaticButtons=["Contraband","Punish","Badwords","ZapLeash","Bell","Bookmarks","Apps","RLV","Settings","Help/About","Access"]; 
+        }
+    }
+    Dialog(kID, sPrompt, lStaticButtons, [UPMENU], 0, iAuth, "More");
+}
+
+LockCommand(integer iNum, string sStr, key kID,integer fromMenu){
+    sStr=llToLower(sStr);
+    
+    if(g_iLocked==1 && sStr == "togglelock"){
+        sStr="unlock";
+    }else
+    if(g_iLocked==0 && sStr == "togglelock"){
+        sStr="lock";
+    }
+    
+    if((sStr == "lock"&&g_iLocked==1)||((sStr == "unlock"||sStr=="unlock_s"||sStr == "runaway" )&&g_iLocked==0)){
+        return;
+    }else
+    if(sStr == "lock"&&g_iLocked==0){
+        if (iNum!=CMD_OWNER &&llGetOwnerKey(kID)!= g_kWearer&&iNum!=CMD_TRUSTED) {   
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be locked by unauthorized person. Please contact a guard for locking "+sStr_WEARERNAMES+" collar!",kID);
+            return;
+        }
+        g_iLocked = 1;
+        LockSys();
+        llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked"+"=1", "");
+        llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken+"locked"+"=1", "");
+        if(kID!=g_kWearer&&kID!=NULL_KEY){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"1"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been locked by %NAME@"+(string)kID+"@NAME%.",kID);
+        }else{
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been locked.",g_kWearer);
+        }
+    }else
+    if(g_iLocked==1&&(sStr == "unlock_s"||sStr == "unlock"||sStr=="runaway")){
+        if ((sStr == "unlock"&&iNum<= CMD_TRUSTED&&llGetOwnerKey(kID)!= g_kWearer)||(sStr == "unlock"&&llGetOwnerKey(kID) == g_kWearer&&g_iMood==0)||(sStr!= "unlock"))
+        {
+            g_iLocked = 0;
+            LockSys();
+            llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken+"locked"+"=0", "");
+            llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken+"locked"+"=0", "");
+            if(kID!=g_kWearer&&kID!=NULL_KEY){
+                llMessageLinked(LINK_DIALOG,NOTIFY,"1"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been unlocked by %NAME@"+(string)kID+"@NAME%.",kID);
+            }else{
+                llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sStr_WEARERNAMES+"'s %DEVICETYPE% has been unlocked.",g_kWearer);
+            }
+            
+        }else 
+        if (kID == g_kWearer)  {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be unlocked by you. You're an inmate, "+sStr_WEARERNAMES+"! That's stays on till your death. No fun, no happiness, NO FREEDOM((In OOC mood you can!))",kID);
+        }else 
+        if (iNum==CMD_GROUP)  {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly %NAME@"+(string)kID+"@NAME%, the collar can't be unlocked by inmates!",kID);
+        }else{ 
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Silly person, the collar can't be unlocked once locked. "+sStr_WEARERNAMES+" is serving life sentence.",kID);
+        }
+    }
+    if (fromMenu) MainMenu(kID, iNum);
+}
+
+
+
+Dialog(key kID, string sPrompt, list lChoices, list lUtilityButtons, integer iPage, integer iAuth, string sName) {
+    key kMenuID = llGenerateKey();
+    llMessageLinked(LINK_DIALOG, DIALOG, (string)kID + "|" + sPrompt + "|" + (string)iPage + "|" + llDumpList2String(lChoices, "`") + "|" + llDumpList2String(lUtilityButtons, "`") + "|" + (string)iAuth, kMenuID);
+
+    integer iIndex = llListFindList(g_lMenuIDs, [kID]);
+    if (~iIndex) 
+        g_lMenuIDs = llListReplaceList(g_lMenuIDs, [kID, kMenuID, sName], iIndex, iIndex + g_iMenuStride - 1);
+    else 
+        g_lMenuIDs += [kID, kMenuID, sName];
+}
+
+AppsMenu(key kID, integer iAuth) {
+    string sPrompt="[http://www.opencollar.at/apps.html Apps]\n\nBrowse apps, extras and custom features.";
+    Dialog(kID, sPrompt, g_lAppsButtons, [UPMENU], 0, iAuth, "Apps");
+}
+init (){
+    g_iWaitRebuild = TRUE;
+    llSetTimerEvent(1.0);
+}
+
+UserCommand(integer iNum, string sStr, key kID, integer fromMenu) {
+    
+    list lParams = llParseString2List(sStr, [" "], []);
+    string sCmd = llToLower(llList2String(lParams, 0));
+    string sValue=llList2String(lParams, 1);
+    lParams=[];
+    if (llSubStringIndex(sStr,".- ... -.-")==0||llSubStringIndex(sStr,":.- ... -.-")==0){
+        sStr=llGetSubString( sStr, 0, 100 );
+    }else{
+        sStr=llGetSubString( sStr, 0, 20 );
+    }
+    
+    if(llToLower(sStr)=="bgversion"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGVERSION_RESPONSE,sys,17,11,10,139");
+    }else
+    if(llToLower(sStr)=="bgcollarv"){
+        llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,"BGCOLLAR,L-CON 3,"+(string)g_fBGVersion+",OpenCollar,"+g_sCollarVersion+","+(string)g_fBuildVersion);
+    }else
+    if (sCmd == "menu") {
+        string sSubmenu = llToLower(sValue);
+        if (sSubmenu == "main" || sSubmenu == "") MainMenu(kID, iNum);
+        else if (sSubmenu == "apps" || sSubmenu=="addons") AppsMenu(kID, iNum);
+        else if (sSubmenu == "help/about") HelpMenu(kID, iNum);
+        else if (sSubmenu == "options" || sSubmenu=="option") OptionsMenu(kID, iNum);
+        else if (sSubmenu == "more" || sSubmenu=="more") MoreMenu(kID, iNum);
+        else if (sSubmenu == "crime") llMessageLinked(LINK_SET, iNum,"character crime menu",kID);
+        else if (sSubmenu == "settings") {
+            if (iNum != CMD_OWNER && iNum != CMD_WEARER&&g_kWearer!=llGetOwnerKey(kID)) {
+                MainMenu(kID, iNum);
+            } else SettingsMenu(kID, iNum);
+        }
+    }else if(sCmd==llToLower(sAccess_Owner) ||sCmd == llToLower(sAccess_Guard)||sCmd == llToLower(sAccess_Member)||sCmd == llToLower(sAccess_Everyone)) {
+        if (iNum!=CMD_OWNER&&g_kWearer!=llGetOwnerKey(kID)){
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
+            return;
+        }
+        ++iAccess;
+        if(3<iAccess){
+            iAccess=0;
+        }
+        llMessageLinked(LINK_SET,LM_SETTING_RESPONSE,g_sAuthToken+"iaccess="+(string)iAccess,kID);
+        llMessageLinked(LINK_SAVE,LM_SETTING_SAVE,g_sAuthToken+"iaccess="+(string)iAccess,kID);
+        if (fromMenu) OptionsMenu(kID,iNum);
+    }else if (sStr == "info") {
+        llMessageLinked(LINK_DIALOG,NOTIFY,"1"+Infotext(),kID);
+    } else if (sStr == "license") {
+        if(llGetInventoryType(".license")==INVENTORY_NOTECARD) llGiveInventory(kID,".license");
+        else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"The license card has been removed from this %DEVICETYPE%. Please find the recent revision [https://raw.githubusercontent.com/VirtualDisgrace/opencollar/master/LICENSE here].",kID);
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sStr == "help") {
+        llGiveInventory(kID, HELPCARD);
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sStr =="about" || sStr=="help/about") HelpMenu(kID,iNum);
+    else if (sStr == "addons" || sStr=="apps") AppsMenu(kID, iNum);
+    else if (sStr == "options" || sStr=="option") OptionsMenu(kID, iNum);
+    else if (sStr == "more" || sStr=="more") MoreMenu(kID, iNum);
+    else if (sStr == "settings") {
+        if (iNum == CMD_OWNER || iNum == CMD_WEARER||g_kWearer==llGetOwnerKey(kID)) SettingsMenu(kID, iNum);
+    } else if (sStr == "contact") {
+        g_kWebLookup = llHTTPRequest(g_sWeb+"contact"+HTTP_TYPE, [HTTP_METHOD, "GET", HTTP_VERBOSE_THROTTLE, FALSE], "");
+        g_kCurrentUser = kID;
+        if (fromMenu) HelpMenu(kID, iNum);
+    } else if (sCmd == "menuto") {
+        key kAv = (key)sValue;
+        if (llGetAgentSize(kAv) != ZERO_VECTOR) {
+            if(llGetOwnerKey(kID)==kAv) MainMenu(kID, iNum);    
+            else  llMessageLinked(LINK_AUTH, CMD_ZERO, "menu", kAv);   
+        }
+    } else if (sCmd == "lock" || (!g_iLocked && sStr == "togglelock")) {    
+        LockCommand(iNum,sStr,kID,fromMenu);
+    } else if (sStr == "runaway" || sCmd == "unlock" ||sCmd == "unlock_s"|| (g_iLocked && sStr == "togglelock")) {
+        LockCommand(iNum,sStr,kID,fromMenu);
+    } else if (sCmd == "fix") {
+        if (kID == g_kWearer){
+            RebuildMenu();
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Menus have been fixed!",kID);
+        } else llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"%NOACCESS%",kID);
+    }else if (sCmd == "update") {
+        if (kID == g_kWearer) {
+            g_iUpdateFound=0;
+            g_iWillingUpdaters = 0;
+            g_kCurrentUser = kID;
+            g_iUpdateAuth = iNum;
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Searching for nearby updater",kID);
+            g_iUpdateHandle = llListen(g_iUpdateChan, "", "", "");
+            g_iBGUpdateHandle = llListen(g_iBGUpdateChan, "", "", "");
+            g_iUpdateFromMenu=fromMenu;
+            llWhisper(g_iUpdateChan, "UPDATE|" + g_sCollarVersion);
+            llWhisper(g_iBGUpdateChan, "UPDATE|" + g_sCollarVersion+"|"+sLConVersion);
+            g_iWaitUpdate = TRUE;
+            llSetTimerEvent(5.0); 
+        } else {
+            llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Only the wearer can update the %DEVICETYPE%.",kID);
+            if (fromMenu) HelpMenu(kID, iNum);
+        }
+    }else if (!llSubStringIndex(sStr,".- ... -.-")||llSubStringIndex(sStr,":.- ... -.-")==0) {
+        if (llGetOwnerKey(kID) == g_kWearer) {
+            list lTemp = llParseString2List(sStr,["|"],[]);
+            float fBV=llList2Float(lTemp,1);
+            float fBGV=llList2Float(lTemp,3);
+            
+            if ( fBV<= g_fBuildVersion&& fBGV< g_fBGVersion && llList2String(lTemp,1) != "AppInstall") {
+                llMessageLinked(LINK_DIALOG, NOTIFY, "0"+"Installation aborted. The version you are trying to install is deprecated. ",g_kWearer);
+            } else {
+                g_kUpdaterOrb = llList2Key(lTemp,2);
+                UpdateConfirmMenu();
+            }
+        }
+    }else if (sCmd == "version") {
+        string sVersion = "OpenCollar Version: "+g_sCollarVersion+g_sDevStage+" ("+(string)g_fBuildVersion+")";
+        sVersion+="\nL-CON Version: "+sLConVersion;
+        sVersion+="\nL-CON Build: "+sLConBuild;
+        sVersion+="\nThis device, was modified. OpenCollar Updater not recommended.";
+        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+sVersion,kID);
+    }
+}
+
+UpdateGlow(integer iLink, integer iAlpha) {
+    list lGlows;
+    integer i;
+    if (iAlpha == 0) {
+        float fGlow = llList2Float(llGetLinkPrimitiveParams(iLink,[PRIM_GLOW,0]),0);
+        lGlows = g_lClosedLockGlows;
+        if (g_iLocked) lGlows = g_lOpenLockGlows;
+        i = llListFindList(lGlows,[iLink]);
+        if (~i&& fGlow > 0) lGlows = llListReplaceList(lGlows,[fGlow],i+1,i+1);
+        if (~i&& fGlow == 0) lGlows = llDeleteSubList(lGlows,i,i+1);
+        if (i == -1 && fGlow > 0) lGlows += [iLink, fGlow];
+        if (g_iLocked) g_lOpenLockGlows = lGlows;
+        else g_lClosedLockGlows = lGlows;
+
+        llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, 0.0]);
+    } else {
+        lGlows = g_lOpenLockGlows;
+        if (g_iLocked) lGlows = g_lClosedLockGlows;
+        i = llListFindList(lGlows,[iLink]);
+        if (~i) llSetLinkPrimitiveParamsFast(iLink, [PRIM_GLOW, ALL_SIDES, llList2Float(lGlows, i+1)]);
+    }
+
+}
+
+StatusUpdater(string sStr){
+    llRegionSay(BGCOLLAR_CHANNEL_RESPONSE,sReporterName+","+sStr);
+}
+StartUpdate(){
+    integer pin = (integer)llFrand(99999998.0) + 1; 
+    llSetRemoteScriptAccessPin(pin);
+    llRegionSayTo(g_kUpdaterOrb, g_iBGUpdateChan, "ready|" + (string)pin );
+    llRegionSayTo(g_kUpdaterOrb, g_iUpdateChan, "ready|" + (string)pin );
+}
+
+SettingsMenu(key kID, integer iAuth) {
+    string sPrompt = "[http://www.opencollar.at/settings.html Settings]\n An inmate should maintain its collar in working condition else guards get mad. Don't you agree on that "+sStr_WEARERNAMES+"?";
+    list lButtons = [DUMPSETTINGS,LOADCARD,REFRESH_MENU];
+    lButtons += g_lResizeButtons;
+    if (g_iHide) lButtons += [STEALTH_ON];
+    else lButtons += [STEALTH_OFF];
+   
+    Dialog(kID, sPrompt, lButtons, [UPMENU], 0, iAuth, "Settings");
+}
+
+SetLockElementAlpha() { 
+    if (g_iHide) return ; 
+    
+    integer n;
+    integer iLinkElements = llGetListLength(g_lOpenLockElements);
+    for (; n < iLinkElements; ++n) {
+        llSetLinkAlpha(llList2Integer(g_lOpenLockElements,n), !g_iLocked, ALL_SIDES);
+        UpdateGlow(llList2Integer(g_lOpenLockElements,n), !g_iLocked);
+    }
+    iLinkElements = llGetListLength(g_lClosedLockElements);
+    for (n=0; n < iLinkElements; ++n) {
+        llSetLinkAlpha(llList2Integer(g_lClosedLockElements,n), g_iLocked, ALL_SIDES);
+        UpdateGlow(llList2Integer(g_lClosedLockElements,n), g_iLocked);
+    }
+}
+
+RebuildMenu() {
+    
+    g_iAnimsMenu=FALSE;
+    g_iRlvMenu=FALSE;
+    g_lResizeButtons = [];
+    g_lAppsButtons = [] ;
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Main", "");
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Apps", "");
+    llMessageLinked(LINK_SET, MENUNAME_REQUEST, "Settings", "");
+    llMessageLinked(LINK_ALL_OTHERS, LINK_UPDATE,"LINK_REQUEST","");
+}
+MenuHelper(key kAv, integer iAuth, string sMessage, integer i){
+    if (sMessage == "LOCK" || sMessage== "UNLOCK")UserCommand(iAuth, sMessage, kAv, TRUE);
+    else if (sMessage == "Help/About") HelpMenu(kAv, iAuth);
+    else if (sMessage == "Apps")  AppsMenu(kAv, iAuth);
+    else if (sMessage == "Crime")  llMessageLinked(LINK_SET, iAuth,"character crime menu",kAv);
+    else if (sMessage == "Settings") SettingsMenu(kAv, iAuth);
+    else if (sMessage == "Access")  llMessageLinked(LINK_SET, iAuth,"access",kAv);
+    else if (sMessage == "Titles")  llMessageLinked(LINK_SET, iAuth,"charactertitles",kAv);
+    else if(i==TRUE)llMessageLinked(LINK_SET, iAuth, "menu "+llToLower(sMessage), kAv);
+    else llMessageLinked(LINK_SET, iAuth, "menu "+sMessage, kAv);
+}
+MainMenu(key kID, integer iAuth) {
+    string sPrompt = " ";
+    list lStaticButtons=["-"];
+    sPrompt = "Black Gazza Correctional Facilities\nNumber: %WEARERNUMBER%\nCrimes: %WEARERCRIME%\nSentence: %WEARERSENTENCE%\nType: %WEARERTYPE%\nThreat: %WEARERTHREAT%";
+    if(g_kWearer==llGetOwnerKey(kID)&&((g_iFirstOpen==1&&g_iWelcome==1)||g_iFirstRun==1)){
+        llMessageLinked(LINK_SET, iAuth, "menu welcome",kID);
+        return;
+    }
+    
+    if(iAuth<=CMD_WEARER)
+    {
+        if(g_kWearer==llGetOwnerKey(kID))
+        {
+            lStaticButtons=[];
+            if (g_iLocked)
+            {
+                if(g_iMood==0){
+                    lStaticButtons+=["UNLOCK"];
+                }
+            }else
+            {
+                lStaticButtons+=["LOCK"];  
+            }
+            lStaticButtons+=["Mood","Leash","Animations","Sobriquet",
