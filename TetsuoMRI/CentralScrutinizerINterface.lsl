@@ -6,7 +6,7 @@ integer giRegistrationListen;
 string gsMyCommandChannel;  
 integer giMyCommandChannel;
 integer giMyCommandListen;
-string gsMyDescription; // like "Medical 2 Scanner"
+string gsMyDescription;
 string gsMyLocationDesignator = "";
 string gsWardenName = "";
 string gStausText = "";
@@ -23,20 +23,13 @@ string logText = "";
 
 key beepSound = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
 
-string commandList = "on off reset maint stow ready load scan unload stop";
+string commandList = "open close small medium large rubber canvas pink paws old";
 
 help() {
     llInstantMessage(gkWarden, 
-    "The Tetsuo Nucleomagnetic Resonance 3D Imaging Scanalyser knows these commands:\n" +
-    "on - switches power on\n"+
-    "off - switches power off\n"+
-    "reset - OOC, not for normal operation\n"+
-    "maint - sets parts into maintenance position for mechanics to service\n"+
-    "ready - sets the sensors to ready position\n"+
-    "unload - sends the bed to the patient preparation room\n"+
-    "load - retrieves the bed from the patient preparation room\n"+
-    "scan - starts the macgine scanning the patient\n"+
-    "stop - interrupts a scan\n"+
+    "The Mental Ward Cells know these commands:\n"+
+    "open close small medium large rubber canvas pink paws old"+
+    "followed by the cell number 1,2,3,4,5"+
     "");
 }
 
@@ -104,9 +97,12 @@ default
         giMyCommandChannel = (integer)gsMyCommandChannel;
         //register(); // don't register until asked
         giMyCommandListen = llListen(giMyCommandChannel, gsSystemName, "", "");
+        floatyLog("state_entry ends");
     }
 
     listen(integer channel, string name, key id, string message) {
+        floatyLog("listen "+name+":"+message);
+
         // if we receive an order form the maindrame to reregister
         if (channel == giRegistrationChannel) {
             //llWhisper(0,"registration message");
@@ -120,20 +116,19 @@ default
             
         // if we receive a specialized order from the mainframe
         } else if (channel == giMyCommandChannel) {
-            //llWhisper(0,"command message");
-            //llWhisper(0,"channel:" + (string)channel + " message:" + message);
             floatyLog("command:"+message);
             list messageList = llCSV2List(message);
             string command = llList2String(messageList,0);
             if (command == "designator") {
                 gsMyLocationDesignator = llList2String(messageList,1);
-                llSetObjectName("TetsuoMRIControl " + gsMyLocationDesignator);
+                llSetObjectName("MentalCellsControl " + gsMyLocationDesignator);
             } else if (command == "loopback") {
                 llInstantMessage(gkWarden,llGetSubString(message,8,-1));
             } else if (command == "help") {
                 help();
             } else if (llSubStringIndex(commandList, command) > -1) {
-                llMessageLinked(LINK_THIS, 0, llToLower(command), "");
+                integer parameter = llList2Integer(messageList,1);
+                llMessageLinked(LINK_THIS, parameter, llToLower(command), "");
             } else {
                 llInstantMessage(gkWarden,"Did not understand command "+command);
                 llInstantMessage(gkWarden,"Available commands are "+commandList);
@@ -142,6 +137,6 @@ default
     }
     link_message(integer channel, integer num, string message, key id)
     {
-        if (num == 1) llInstantMessage(gkWarden,"State: "+message);
+        //if (num == 1) llInstantMessage(gkWarden,"State: "+message);
     }
 }
