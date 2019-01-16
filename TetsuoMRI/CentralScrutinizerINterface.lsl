@@ -6,7 +6,7 @@ integer giRegistrationListen;
 string gsMyCommandChannel;  
 integer giMyCommandChannel;
 integer giMyCommandListen;
-string gsMyDescription;
+string gsMyDescription; // like "Medical 2 Scanner"
 string gsMyLocationDesignator = "";
 string gsWardenName = "";
 string gStausText = "";
@@ -60,7 +60,7 @@ floatyLog(string newEntry)
         logText = llDeleteSubString(logText, 0, chop);
     }
     logText = logTitle + "\n" + logText + newEntry;
-    logText="";
+    //logText="";
     llSetText(logText,<0,1,0>,1);//logText
 }
 
@@ -127,8 +127,7 @@ default
             string command = llList2String(messageList,0);
             if (command == "designator") {
                 gsMyLocationDesignator = llList2String(messageList,1);
-                //llSetObjectName(gsSystemName + " Terminal " + gsMyLocationDesignator);
-                llSetObjectDesc(gsSystemName + " " + gsMyLocationDesignator);
+                llSetObjectName("TetsuoMRIControl " + gsMyLocationDesignator);
             } else if (command == "loopback") {
                 llInstantMessage(gkWarden,llGetSubString(message,8,-1));
             } else if (command == "help") {
