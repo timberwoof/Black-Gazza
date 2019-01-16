@@ -25,6 +25,21 @@ key beepSound = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
 
 string commandList = "on off reset maint stow ready load scan unload stop";
 
+help() {
+    llInstantMessage(gkWarden, 
+    "The Tetsuo Nucleomagnetic Resonance 3D Imaging Scanalyser knows these commands:\n" +
+    "on - switches power on\n"+
+    "off - switches power off\n"+
+    "reset - OOC, not for normal operation\n"+
+    "maint - sets parts into maintenance position for mechanics to service\n"+
+    "ready - sets the sensors to ready position\n"+
+    "unload - sends the bed to the patient preparation room\n"+
+    "load - retrieves the bed from the patient preparation room\n"+
+    "scan - starts the macgine scanning the patient\n"+
+    "stop - interrupts a scan\n"+
+    "");
+}
+
 floatyLog(string newEntry)
 {
     // chop off the title from the old log
@@ -116,6 +131,8 @@ default
                 llSetObjectDesc(gsSystemName + " " + gsMyLocationDesignator);
             } else if (command == "loopback") {
                 llInstantMessage(gkWarden,llGetSubString(message,8,-1));
+            } else if (command == "help") {
+                help();
             } else if (llSubStringIndex(commandList, command) > -1) {
                 llMessageLinked(LINK_THIS, 0, llToLower(command), "");
             } else {
