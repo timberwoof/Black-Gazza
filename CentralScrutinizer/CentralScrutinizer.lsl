@@ -10,7 +10,7 @@ list altitudesList = [0, 1155, 1165, 1200, 1210, 1215, 1220, 1225, 1230, 1235, 1
 vector coreLocation = <128,128,0>;
 string gsSystemName = "Central Scrutinizer";
 
-string initialTerminal = "13I1";
+string initialTerminal = "14K0";
 
 
 // all devices that want to register do so on this channel;
@@ -433,7 +433,7 @@ initialize() {
     rotation avrotation = llEuler2Rot(<0, 0, 0> * DEG_TO_RAD);
   
     llSetSitText(gsSystemName);
-    llSitTarget(<0.0, 0.0, 0.1> ,  avrotation);
+    llSitTarget(<0.0, 0.0, 0.02> ,  avrotation);
     gSitterKey = "";
     llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
 
@@ -680,7 +680,8 @@ default{
             list parameters = llParseString2List(message, [" "], []);
             string command = llToLower(llList2String(parameters,0));
             string parameter = llToLower(llList2String(parameters,1));
-            twDebug(INFO,"processing command "+command+" "+parameter);
+            string parameter2 = llToLower(llList2String(parameters,2));
+            twDebug(INFO,"processing command "+command+" "+parameter+" "+parameter2);
                 
             if(command == "activate") 
             {
@@ -749,9 +750,10 @@ default{
                     else 
                     {
                         // Send the commands unaltered to the terminal. 
-                        twDebug(DEBUG,"command handler sending message \""+parameter+ "\" to terminal " + command);
-                        //string message = llList2String(parameters,0) + "," + llList2String(parameters,2);
-                        SendMessageToOneDevice(command, parameter);
+                        //string message = llList2String(parameters,0) + "," + llList2String(parameters,1) + "," + llList2String(parameters,2);
+                        string message = parameter + "," + parameter2;
+                        twDebug(DEBUG,"command handler sending message \""+message+ "\" to terminal " + command);
+                        SendMessageToOneDevice(command, message);
                     }
                 }
                 
