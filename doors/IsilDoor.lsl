@@ -563,7 +563,7 @@ default
             vector here = llGetPos();
             float distance = llVecDist(here, distantloc)/10.0;
             gPowerState = POWER_FAILING;
-            gPowerTimer = setTimerEvent((integer)distance);
+            gPowerTimer = setTimerEvent((integer)distance+2);
         }
         
         else if (channel == LOCKDOWN_CHANNEL) 
