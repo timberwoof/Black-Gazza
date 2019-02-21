@@ -113,14 +113,6 @@ integer getUsePerms()
     return 0;
 }
 
-place_agent(integer link, key agent)
-{
-    vector pos = <0.0, 0.0, 0.0>;
-    llRequestPermissions(agent, PERMISSION_TRIGGER_ANIMATION);
-    llSetLinkPrimitiveParams(link, [PRIM_POSITION, pos]);
-    llStartAnimation("stand");
-}
-
 showDialog(key agent)
 {
     //llWhisper (0,"showDialog");
@@ -148,10 +140,7 @@ showDialog(key agent)
                     if(arrival_perms & 1) {
                         if(!llSameGroup(agent)) allowed = FALSE;
                     }
-                    // *** arrival permissions based on group are disabled
-                    //if(allowed) {
-                        buttons += [llList2String(data, 0)];
-                    //}
+                    buttons += [llList2String(data, 0)];
                 }
             }
         }
@@ -165,12 +154,10 @@ showDialog(key agent)
     
     llListenControl(gDialogListener, TRUE);
     llDialog(agent, "Please select your destination", buttons, gDialogChannel);
-    //llWhisper (0,"showDialog done");
 }
 
 chooseDestination(string choosen_dest)
 {
-    //llWhisper (0,"chooseDestination");
     pingTeleporters();
     integer i;
     integer n = llGetListLength(gKnownDestinations);
@@ -200,7 +187,6 @@ vector gDestinationPos;
 
 teleportTo(key id)
 {
-    //llWhisper (0,"teleportTo");
     if(gTeleportState != 0) return;
     llPlaySound("17836",1);
     gSourcePos = llGetPos();
@@ -211,7 +197,6 @@ teleportTo(key id)
 
     llWhisper(COMMS_CHANNEL, "teleporting");
     llRegionSay(COMMS_CHANNEL, ">" + (string)id);
-    //particles(TRUE);
     gTeleportState = 1;
     llSetTimerEvent(2.0);
 }
@@ -235,7 +220,6 @@ warpPos( vector destpos )
 
 announceTeleporters()
 {
-    //llWhisper (0,"announceTeleporters");
     list out = gKnownTeleporters;
     
     while(llGetListLength(out) > 0)
@@ -243,7 +227,17 @@ announceTeleporters()
         llRegionSay(COMMS_CHANNEL, "X" + llDumpList2String(llList2List(out, 0, 26), "X"));
         out = llDeleteSubList(out, 0, 26);
     }
-    //llWhisper (0,"announceTeleporters done");
+}
+
+stop_anims( key agent )
+{
+    list    l = llGetAnimationList( agent );
+    integer    lsize = llGetListLength( l );
+    integer i;
+    for ( i = 0; i < lsize; i++ )
+    {
+        llStopAnimation( llList2Key( l, i ) );
+    }
 }
 
 default
@@ -255,39 +249,59 @@ default
     
     state_entry()
     {
-        //llWhisper (0,"state_entry");
-        // llSetRemoteScriptAccessPin(SCRIPT_PIN); *** update
         llSetObjectName("Dynatic Pod Teleporter");
-        
-        llSitTarget(<0, 0, 0.1>, <0, 0, 0, 0>);
-        
+        llSetSitText("Teleport");
+        llSitTarget(<0, 0, -.25>, llEuler2Rot(<0,0,-90>*DEG_TO_RAD));
         gKnownTeleporters = [llGetKey()];
         llListen(COMMS_CHANNEL, "", NULL_KEY, "");
         gDialogChannel = llFloor(llFrand(1314938752)) + 18911488;
         gDialogListener = llListen(gDialogChannel, "", NULL_KEY, "");
         llListenControl(gDialogListener, FALSE);
-        llSetText("", <0.0, 0.0, 0.0>, 0.0);
-        //particles(FALSE);
         llRegionSay(COMMS_CHANNEL, "announce");
         llWhisper(COMMS_CHANNEL, "base");
-        //llWhisper (0,"state_entry done");
     }
     
     changed(integer change)
     {
-        //llWhisper (0,"changed");
-        if(change & CHANGED_LINK)
-        {
-            integer links = llGetNumberOfPrims();
-            if(llGetObjectPrimCount(llGetKey()) < links)
-            {
-                gAgent = llGetLinkKey(links);
-                showDialog(gAgent);
+            key agent = llAvatarOnSitTarget();
+            if (agent)            
+            {    // Sat down
+                llRequestPermissions( agent, PERMISSION_TRIGGER_ANIMATION );
             }
-        }
-        //llWhisper (0,"changed done");
+            else
+            {    // Stood up ( or maybe crashed! )
+                // Get agent to whom permissions were granted
+                agent = llGetPermissionsKey();
+                if ( llGetAgentSize( agent ) != ZERO_VECTOR )
+                { // agent is still in the sim.
+                    
+                    if ( llGetPermissions() & PERMISSION_TRIGGER_ANIMATION )
+                    {    // Only stop anis if permission was granted previously.
+                        stop_anims( agent );
+                    }
+                }
+            }
     }
     
+    run_time_permissions(integer permissions)
+    {
+        if (permissions & PERMISSION_TRIGGER_ANIMATION)
+        {
+            key agent = llGetPermissionsKey();
+            if ( llGetAgentSize( agent ) != ZERO_VECTOR )
+            { // agent is still in the sim.
+                // Sit the agent
+                stop_anims( agent );
+                llStartAnimation( llGetInventoryName( INVENTORY_ANIMATION, 0) );
+                showDialog(agent);
+            }
+        }
+        else
+        {
+            llResetScript();
+        }
+    }
+
     listen(integer channel, string name, key id, string msg)
     {
         // handle user's dialog box response
@@ -329,27 +343,20 @@ default
         //llWhisper (0,"timer");
         if(gTeleportState == 1)
         {
-            //llWhisper (0,"timer gTeleportState = 1");
-            //if(llGetInventoryType("Scanbeam") == INVENTORY_OBJECT)
-            //    llRezObject("Scanbeam", llGetPos(), <0.0, 0.0, 0.75>, ZERO_ROTATION, TRUE);
             gTeleportState = 2;
-            //llSetTimerEvent(5.0);
-            //return;
+            llSetTimerEvent(1.0);
         }
         
         if(gTeleportState == 2)
         {
-            //llWhisper (0,"timer gTeleportState = 2");
             warpPos(gDestinationPos);
             gTeleportState = 3;
-            //particles(FALSE);
             llSleep(1.0);
             llUnSit(gAgent);
             llSetTimerEvent(1.0);
         }
         else if(gTeleportState == 3)
         {
-            //llWhisper (0,"timer gTeleportState = 3");
             warpPos(gSourcePos);
             llSetTimerEvent(0.0);
             gTeleportState = 0;
