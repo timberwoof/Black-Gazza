@@ -263,21 +263,21 @@ default
     
     changed(integer change)
     {
-            key agent = llAvatarOnSitTarget();
-            if (agent)            
+            gAgent = llAvatarOnSitTarget();
+            if (gAgent)            
             {    // Sat down
-                llRequestPermissions( agent, PERMISSION_TRIGGER_ANIMATION );
+                llRequestPermissions( gAgent, PERMISSION_TRIGGER_ANIMATION );
             }
             else
             {    // Stood up ( or maybe crashed! )
                 // Get agent to whom permissions were granted
-                agent = llGetPermissionsKey();
-                if ( llGetAgentSize( agent ) != ZERO_VECTOR )
+                gAgent = llGetPermissionsKey();
+                if ( llGetAgentSize( gAgent ) != ZERO_VECTOR )
                 { // agent is still in the sim.
                     
                     if ( llGetPermissions() & PERMISSION_TRIGGER_ANIMATION )
                     {    // Only stop anis if permission was granted previously.
-                        stop_anims( agent );
+                        stop_anims( gAgent );
                     }
                 }
             }
@@ -287,13 +287,13 @@ default
     {
         if (permissions & PERMISSION_TRIGGER_ANIMATION)
         {
-            key agent = llGetPermissionsKey();
-            if ( llGetAgentSize( agent ) != ZERO_VECTOR )
+            gAgent = llGetPermissionsKey();
+            if ( llGetAgentSize( gAgent ) != ZERO_VECTOR )
             { // agent is still in the sim.
                 // Sit the agent
-                stop_anims( agent );
+                stop_anims( gAgent );
                 llStartAnimation( llGetInventoryName( INVENTORY_ANIMATION, 0) );
-                showDialog(agent);
+                showDialog(gAgent);
             }
         }
         else
