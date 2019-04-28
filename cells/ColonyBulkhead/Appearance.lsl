@@ -65,7 +65,6 @@ integer LOCKDOWN_IMMINENT = 1;
 integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
-
 debug(string message)
 {
     if (OPTION_DEBUG)
@@ -116,7 +115,7 @@ getParameters()
 }
 
 // Colors ****************
-setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState, integer gDoorTimerRunning, integer gDoorClockRunning)
+setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState, integer gDoorTimerRunning, integer gDoorClockRunning, string reservationState )
 // COL door has only one panel to show state.
 // Each door leaf has its own panel 
 // so there are always two linked color or texture calls.
@@ -151,6 +150,14 @@ setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState
         llSetLinkTexture(primDoor, texture_locked, FACE_DOOR_CENTER);
         return;
     }
+
+    vector doorFrameCOlor = WHITE;    
+    if (reservationState == "FREE") doorFrameCOlor = WHITE;
+    else if (reservationState == "READY") doorFrameCOlor = YELLOW;
+    else if (reservationState == "HERE") doorFrameCOlor = GREEN;
+    else if (reservationState == "GONE") doorFrameCOlor = RED;
+    else if (reservationState == "GUEST") doorFrameCOlor = BLUE;
+    llSetColor(doorFrameCOlor, FACE_DOORFRAME);
     
     if (OPEN == doorState) 
     {
@@ -230,7 +237,8 @@ default
             integer doorState = (integer)llJsonGetValue(msgString, ["doorState", "Value"]);
             integer doorTimerRunning = (integer)llJsonGetValue(msgString, ["doorTimerRunning", "Value"]);
             integer doorClockRunning = (integer)llJsonGetValue(msgString, ["doorClockRunning", "Value"]);
-            setColorsAndIcons(powerState, lockdownState, doorState, doorTimerRunning, doorClockRunning);
+            string reservedState = (string)llJsonGetValue(msgString, ["reservationState", "Value"]);
+            setColorsAndIcons(powerState, lockdownState, doorState, doorTimerRunning, doorClockRunning, reservedState);
         } 
         else if (msgInteger == 2010) // checkAuthorization failed
         {
