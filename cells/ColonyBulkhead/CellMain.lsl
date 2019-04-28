@@ -251,6 +251,7 @@ setColorsAndIcons() {
     Dictionary = llJsonSetValue (Dictionary, ["doorState",  "Value"], (string)doorState);
     Dictionary = llJsonSetValue (Dictionary, ["doorTimerRunning",  "Value"], (string)gDoorTimerRunning);
     Dictionary = llJsonSetValue (Dictionary, ["doorClockRunning",  "Value"], (string)gDoorClockRunning);
+    Dictionary = llJsonSetValue (Dictionary, ["reservationState",  "Value"], (string)gReservedState);
     llMessageLinked(LINK_THIS, 2000, Dictionary,"");
 }
 
@@ -993,6 +994,7 @@ reserve_sensor() {
         gReserveButton = "Reserve";
         gReservationPhrase = "Not Reserved";
     }
+    setColorsAndIcons();
 }
 
 reserve_no_sensor() {
@@ -1027,6 +1029,7 @@ reserve_no_sensor() {
         gReserveButton = "Reserve";
         gReservationPhrase = "Not Reserved";
     }
+    setColorsAndIcons();
 }
 
 // cell reservation timer  ********************************
