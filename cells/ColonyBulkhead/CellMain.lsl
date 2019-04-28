@@ -571,67 +571,52 @@ maintenanceMenuListen(integer incoming_channel, key incoming_key, string message
 // This works like a kitchen timer: "30 minutes from now"
 // It has non-obvious states that need to be announced and displayed
 integer gDoorTimeRemaining = 0; // seconds remaining on timer
-integer gPrevousToorTimeRemaining = 0;
-string gPreviousDisplayTime;
 integer gDoorTimerRunning = 0; // 0 = stopped; 1 = running
 integer gDoorTimeStart = 1800; // seconds it was set to so we can set it again 
+
+string secondsToDaysHoursMinutesSeconds(integer seconds) {
+
+    string displayTime = "";
+
+    integer days = gDoorTimeRemaining/86400;
+    integer hours;
+    integer minutes;
+    integer seconds;
+
+    if (days > 0) {
+        display_time += (string)days+"d ";   
+    }
+
+    integer carry_over_hours = gDoorTimeRemaining - (86400 * days);
+    hours = carry_over_hours / 3600;
+    if (hours < 10) {
+        display_time += "0";
+    }
+    display_time += (string)hours + ":";
+
+    integer carry_over_minutes = carry_over_hours - (hours * 3600);
+    minutes = carry_over_minutes / 60;
+    if (minutes < 10) {
+        display_time += "0";
+    }
+    display_time += (string)minutes+":";
+
+    integer seconds = carry_over_minutes - (minutes * 60);
+    if (seconds < 10) {
+        display_time += "0";
+    }
+    display_time += (string)seconds;
+    return display_time; 
+}
 
 string displayDoorTimer() {
     // parameter: gDoorTimeRemaining global
     // returns: a string in the form of "1 Days 3 Hours 5 Minutes 7 Seconds"
     // or "(no timer)" if seconds is less than zero
-    
     if (gDoorTimeRemaining <= 0) {
         return " Timer not set.";
-    } else {
-        
-    // check against cached result
-    if (gDoorTimeRemaining == gPrevousToorTimeRemaining) {
-        // spare us all this needless work
-        return gPreviousDisplayTime;
-    } else {
-        
-    // Calculate
-    string display_time = " Opens in ";
-    integer days = gDoorTimeRemaining/86400;
-    integer hours;
-    integer minutes;
-    integer seconds;
-    
-    if (days > 0) {
-        display_time += (string)days+" Days ";   
-    }
-    
-    integer carry_over_hours = gDoorTimeRemaining - (86400 * days);
-    hours = carry_over_hours / 3600;
-    if (hours > 0) {
-        display_time += (string)hours+" Hours ";
-    }
-    
-    integer carry_over_minutes = carry_over_hours - (hours * 3600);
-    
-    minutes = carry_over_minutes / 60;
-    if (minutes > 0) {
-        display_time += (string)minutes+" Minutes ";
-    }
-    
-    if (gDoorTimeRemaining < 60) {
-        seconds = carry_over_minutes - (minutes * 60);
-        display_time += (string)seconds+" Seconds";
-    }
-    
-    if (gDoorTimerRunning) {
-        display_time += "…";
-    } else {
-        display_time += ".";
-    }    
-    
-    //cache the result
-    gPrevousToorTimeRemaining = gDoorTimeRemaining;
-    gPreviousDisplayTime = display_time;
-    
-    return display_time; 
-    }
+    } else 
+        return display_time = " Opens in " + secondsToDaysHoursMinutesSeconds(gDoorTimeRemaining);
     }
 }
 
@@ -693,7 +678,6 @@ updateDoorTimer() {
 // If the time set has already occurred today, it will open tomorrow. 
 integer gDoorClockRunning = 0; // 0 = stopped; 1 = running
 integer gDoorClockEnd = 1; // midnight:00:01
-integer gPreviousDoorClockEnd;
 integer gDoorClockPassed = 1; // 1 = the time has already occurred today; open tomorrow
 // This configuration is pretty much always true. It is likely that it's after midnight, 
 // so we have to wait until that time tomorrow
@@ -712,44 +696,7 @@ string displayDoorClock() {
     if (!gDoorClockRunning) {
         return " Clock not set.";
     } else {
-
-    // check against cached result
-    if (gDoorClockEnd == gPreviousDoorClockEnd) {
-        // spare us all this needless work
-        return " " + gPreviousDisplayTime;
-    } else {
-        
-    // Calculate
-    integer hours;
-    integer minutes;
-    integer seconds;
-    
-    hours = gDoorClockEnd / 3600;
-    if (hours < 10) {
-        display_time += "0";
-    }
-    display_time += (string)hours + ":";
-    
-    integer carry_over_minutes = gDoorClockEnd - (hours * 3600);
-    
-    minutes = carry_over_minutes / 60;
-    if (minutes < 10) {
-        display_time += "0";
-    }
-    display_time += (string)minutes+":";
-    
-    seconds = carry_over_minutes - (minutes * 60);
-    
-    if (seconds < 10) {
-        display_time += "0";
-    }
-    display_time += (string)seconds;
-
-    // cache the result
-    gPreviousDoorClockEnd = gDoorClockEnd;
-    gPreviousDisplayTime = display_time;
-    return display_time; 
-    }
+        return " Opens at " + secondsToDaysHoursMinutesSeconds(gDoorClockEnd);
     }
 }
 
