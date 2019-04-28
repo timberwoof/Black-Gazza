@@ -39,8 +39,8 @@ integer PRIM_BOX = 2;
 // sounds
 string sound_slide = "b3845015-d1d5-060b-6a63-de05d64d5444";
 string sound_granted = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
-string sound_denied = "d679e663-bba3-9caa-08f7-878f65966194";
-string sound_lockdown = "2d9b82b0-84be-d6b2-22af-15d30c92ad21";
+//string sound_denied = "d679e663-bba3-9caa-08f7-878f65966194";
+//string sound_lockdown = "2d9b82b0-84be-d6b2-22af-15d30c92ad21";
 
 // Physical Sizes - custom grebe
 float leafXscale = 0.22; // width of leaf compared to main prim
@@ -101,7 +101,7 @@ integer OPTION_ZAP = 0;
 integer OPTION_NORMALLY_OPEN = 0;
 integer OPTION_BUTTON = 0;
 integer OPTION_BUMP = 0;
-vector LABEL_COLOR = <1,1,1>;
+vector LABEL_COLOR = <1,1,1>; // used by appearance but we have to save it
 vector FRAME_COLOR = <1,1,1>;
 string owners = "";
 
@@ -326,7 +326,7 @@ lockdownListen(integer channel, key id, string message) {
             if (LOCKDOWN_DELAY <= 0)
             {
                 info("listen LOCKDOWN_DELAY <= 0 -> gLockdownState = LOCKDOWN_ON");
-                llPlaySound(sound_lockdown,1);
+                //llPlaySound(sound_lockdown,1);
                 gLockdownState = LOCKDOWN_ON;
                 gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);
                 close(); // don't put a sensor here. It's lockdown. Get out of the way!
@@ -918,6 +918,7 @@ unreserveCell(key who) {
         gNamesInCell = "";
         gPopulationNum = 0;
         resetReservationTimer();
+        setColorsAndIcons();
     } else {
         llInstantMessage(who, "Only " + gReservationName + "or a guard can unreserve this cell."); 
         llSay(-106969,(string)who); // *** This is not a debug statement
@@ -932,6 +933,7 @@ reserveCell(key who) {
     gReserveButton = "Unreserve";
     gReservationName = "";
     gReservationKey = NULL_KEY;
+    setColorsAndIcons();
     llInstantMessage(who, "This cell is ready for a reservation.");
 }
 
@@ -1015,7 +1017,7 @@ reserve_no_sensor() {
         ; // we knew about this already: nothing to do
     } else if (gReservedState == "HERE") {
         // someone was here but he's gone now
-        info("prisoner has disappared");
+        info("prisoner has disappeared");
         gReservedState = "GONE";
         gReserveButton = "Unreserve";
         gReservationPhrase = "Reserved for " + gReservationName + " (not present)";
