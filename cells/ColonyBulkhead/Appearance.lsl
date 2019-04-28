@@ -32,6 +32,7 @@ vector RED = <1.0, 0.0, 0.0>;
 vector REDORANGE = <1.0, 0.25, 0.0>;
 vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
+vector DARK_GREEN = <0.0, 0.2, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
 
 // my textures
@@ -151,13 +152,14 @@ setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState
         return;
     }
 
-    vector doorFrameCOlor = WHITE;    
-    if (reservationState == "FREE") doorFrameCOlor = WHITE;
-    else if (reservationState == "READY") doorFrameCOlor = YELLOW;
-    else if (reservationState == "HERE") doorFrameCOlor = GREEN;
-    else if (reservationState == "GONE") doorFrameCOlor = RED;
-    else if (reservationState == "GUEST") doorFrameCOlor = BLUE;
-    llSetColor(doorFrameCOlor, FACE_DOORFRAME);
+    // set window frames for reservation state
+    vector doorFrameColor = WHITE;    
+    if (reservationState == "FREE") doorFrameColor = WHITE;
+    else if (reservationState == "READY") doorFrameColor = YELLOW;
+    else if (reservationState == "HERE") doorFrameColor = DARK_GREEN;
+    else if (reservationState == "GONE") doorFrameColor = RED;
+    else if (reservationState == "GUEST") doorFrameColor = DARK_BLUE;
+    llSetColor(doorFrameColor, FACE_DOORFRAME);
     
     if (OPEN == doorState) 
     {
@@ -237,7 +239,7 @@ default
             integer doorState = (integer)llJsonGetValue(msgString, ["doorState", "Value"]);
             integer doorTimerRunning = (integer)llJsonGetValue(msgString, ["doorTimerRunning", "Value"]);
             integer doorClockRunning = (integer)llJsonGetValue(msgString, ["doorClockRunning", "Value"]);
-            string reservedState = (string)llJsonGetValue(msgString, ["reservationState", "Value"]);
+            string reservedState = (string)llJsonGetValue(msgString, ["reservedState", "Value"]);
             setColorsAndIcons(powerState, lockdownState, doorState, doorTimerRunning, doorClockRunning, reservedState);
         } 
         else if (msgInteger == 2010) // checkAuthorization failed
