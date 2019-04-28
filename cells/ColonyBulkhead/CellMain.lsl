@@ -251,7 +251,7 @@ setColorsAndIcons() {
     Dictionary = llJsonSetValue (Dictionary, ["doorState",  "Value"], (string)doorState);
     Dictionary = llJsonSetValue (Dictionary, ["doorTimerRunning",  "Value"], (string)gDoorTimerRunning);
     Dictionary = llJsonSetValue (Dictionary, ["doorClockRunning",  "Value"], (string)gDoorClockRunning);
-    Dictionary = llJsonSetValue (Dictionary, ["reservationState",  "Value"], (string)gReservedState);
+    Dictionary = llJsonSetValue (Dictionary, ["reservedState",  "Value"], (string)gReservedState);
     llMessageLinked(LINK_THIS, 2000, Dictionary,"");
 }
 
@@ -435,7 +435,7 @@ integer menuTimer(float channelExpires, integer menuListen) {
 }
 
 commandMenu(key whoClicked) {
-    string header = "Cell Operation:";
+    string header = "Cell Operation: ";
     if (gDoorClockRunning) 
     {
         header = header + displayDoorClock();
@@ -444,7 +444,7 @@ commandMenu(key whoClicked) {
     {
         header = header + displayDoorTimer();
     }
-    header = header + gReservationPhrase;
+    header = header + " " + gReservationPhrase;
     
     list menu = [];
     menu += [];
@@ -574,34 +574,30 @@ integer gDoorTimeRemaining = 0; // seconds remaining on timer
 integer gDoorTimerRunning = 0; // 0 = stopped; 1 = running
 integer gDoorTimeStart = 1800; // seconds it was set to so we can set it again 
 
-string secondsToDaysHoursMinutesSeconds(integer seconds) {
+string secondsToDaysHoursMinutesSeconds(integer secondsRemaining) {
 
-    string displayTime = "";
+    string display_time = "";
 
-    integer days = gDoorTimeRemaining/86400;
-    integer hours;
-    integer minutes;
-    integer seconds;
-
+    integer days = secondsRemaining/86400;
     if (days > 0) {
         display_time += (string)days+"d ";   
     }
 
-    integer carry_over_hours = gDoorTimeRemaining - (86400 * days);
-    hours = carry_over_hours / 3600;
+    integer carry_over_seconds = secondsRemaining - (86400 * days);
+    integer hours = carry_over_seconds / 3600;
     if (hours < 10) {
         display_time += "0";
     }
     display_time += (string)hours + ":";
 
-    integer carry_over_minutes = carry_over_hours - (hours * 3600);
-    minutes = carry_over_minutes / 60;
+    carry_over_seconds = carry_over_seconds - (hours * 3600);
+    integer minutes = carry_over_seconds / 60;
     if (minutes < 10) {
         display_time += "0";
     }
     display_time += (string)minutes+":";
 
-    integer seconds = carry_over_minutes - (minutes * 60);
+    integer seconds = carry_over_seconds - (minutes * 60);
     if (seconds < 10) {
         display_time += "0";
     }
@@ -614,9 +610,9 @@ string displayDoorTimer() {
     // returns: a string in the form of "1 Days 3 Hours 5 Minutes 7 Seconds"
     // or "(no timer)" if seconds is less than zero
     if (gDoorTimeRemaining <= 0) {
-        return " Timer not set.";
-    } else 
-        return display_time = " Opens in " + secondsToDaysHoursMinutesSeconds(gDoorTimeRemaining);
+        return "Timer not set. ";
+    } else {
+        return "Opens in " + secondsToDaysHoursMinutesSeconds(gDoorTimeRemaining) + ". ";
     }
 }
 
@@ -694,9 +690,9 @@ string displayDoorClock() {
     string display_time = " Opens at ";
     
     if (!gDoorClockRunning) {
-        return " Clock not set.";
+        return "Clock not set. ";
     } else {
-        return " Opens at " + secondsToDaysHoursMinutesSeconds(gDoorClockEnd);
+        return "Opens at " + secondsToDaysHoursMinutesSeconds(gDoorClockEnd) + ". ";
     }
 }
 
@@ -978,6 +974,7 @@ reserve_no_sensor() {
         gReserveButton = "Reserve";
         gReservationPhrase = "Not Reserved";
     }
+    info("reserve_no_sensor gReservedState:"+gReservedState);
     setColorsAndIcons();
 }
 
