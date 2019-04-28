@@ -92,6 +92,7 @@ integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
 // options
 integer OPTION_DEBUG = 0;
+integer OPTION_INFO = 0;
 integer OPTION_LOCKDOWN = 0;
 integer OPTION_POWER = 0;
 integer OPTION_GROUP = 0;
@@ -108,6 +109,13 @@ string owners = "";
 integer TIMER_INTERVAL = 2;
 float buttonTimer;
 
+info(string message) {
+    if (OPTION_INFO + OPTION_DEBUG)
+    {
+        llWhisper(0,"Main - "+message);
+    }
+}
+
 debug(string message) {
     if (OPTION_DEBUG)
     {
@@ -115,6 +123,9 @@ debug(string message) {
     }
 }
 
+
+// evaluates optionstring for presence of option
+// returns true if option is present
 integer getBooleanParameter(string optionstring, string option) {
     integer result = 0;
     if (llSubStringIndex(optionstring,option) > -1) 
@@ -122,6 +133,7 @@ integer getBooleanParameter(string optionstring, string option) {
     return result;
 }
 
+// looks for label in optionstring, parses for following vector, returns it
 vector getVectorParameter(string optionstring, string label, vector defaultValue) {
     vector result = defaultValue;
     integer label_index = llSubStringIndex(optionstring,label); 
@@ -136,10 +148,13 @@ vector getVectorParameter(string optionstring, string label, vector defaultValue
     return result;
 }
 
+// extract option string from description, 
+// set all the relevant options and parameters
 getParameters() {
     string optionstring = llGetObjectDesc();
-    debug("getParameters("+ optionstring +")");
+    info("getParameters("+ optionstring +")");
     OPTION_DEBUG = getBooleanParameter(optionstring, "debug");
+    OPTION_INFO = getBooleanParameter(optionstring, "info");
     OPTION_LOCKDOWN = getBooleanParameter(optionstring, "lockdown");
     OPTION_POWER = getBooleanParameter(optionstring, "power");
     OPTION_GROUP = getBooleanParameter(optionstring, "group");
@@ -192,6 +207,7 @@ string getOption(string choice, integer stateNow) {
     return result;
 }
 
+// if stateNow is True, return the choice, otherwise return empty string. 
 string getOptionString(string choice, string stateNow) {
     string result = "";
     if (stateNow != "")
@@ -201,6 +217,7 @@ string getOptionString(string choice, string stateNow) {
     return result;
 }
 
+// gather up all the options into an option string and save it to the description
 saveOptions() {
     string options = "";
     options = options + getOption("lockdown", OPTION_LOCKDOWN);
@@ -210,6 +227,7 @@ saveOptions() {
     options = options + getOption("button", OPTION_BUTTON);
     options = options + getOption("bump", OPTION_BUMP);
     options = options + getOption("debug", OPTION_DEBUG);
+    options = options + getOption("info", OPTION_INFO);
     options = options + getOption("power", OPTION_POWER);
     options = options + getOptionString("label",  "["+(string)LABEL_COLOR+"]");
     options = options + getOptionString("frame", "["+(string)FRAME_COLOR+"]" );
@@ -218,14 +236,15 @@ saveOptions() {
     {
          options = options + "owner[" + owners + "]";
     }
-    debug("saveOptions: \""+options+"\"");
+    info("saveOptions: \""+options+"\"");
     llSetObjectDesc(options);
     llMessageLinked(LINK_THIS, 2030, "",""); // make other scripts reread options
     //llResetScript();
 }
  
+// communicate the door state through a JSON string to the Appearance script. 
 setColorsAndIcons() {
-    debug("setColorsAndIcons"); 
+    info("setColorsAndIcons"); 
     string Dictionary = llList2Json( JSON_OBJECT, [] ); 
     Dictionary = llJsonSetValue (Dictionary, ["powerState",  "Value"], (string)gPowerState);
     Dictionary = llJsonSetValue (Dictionary, ["lockdownState",  "Value"], (string)gLockdownState);
@@ -235,9 +254,10 @@ setColorsAndIcons() {
     llMessageLinked(LINK_THIS, 2000, Dictionary,"");
 }
 
+// communicate the window state to the Appearance script. 
 integer gcellAlphaState;
 setCellAlpha(integer transparency) {
-    debug("setCellAlpha send");
+    info("setCellAlpha send");
     gcellAlphaState = transparency;
     llMessageLinked(LINK_THIS, 2020+transparency, "",""); // handoff to Apppearance
 }
@@ -299,12 +319,12 @@ PowerTimer(){
 lockdownListen(integer channel, key id, string message) {
     if (channel == LOCKDOWN_CHANNEL) 
     {
-        debug("lockdownListen "+message);
+        info("lockdownListen "+message);
         if (message == "LOCKDOWN") 
         {
             if (LOCKDOWN_DELAY <= 0)
             {
-                debug("listen LOCKDOWN_DELAY <= 0 -> gLockdownState = LOCKDOWN_ON");
+                info("listen LOCKDOWN_DELAY <= 0 -> gLockdownState = LOCKDOWN_ON");
                 llPlaySound(sound_lockdown,1);
                 gLockdownState = LOCKDOWN_ON;
                 gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);
@@ -312,7 +332,7 @@ lockdownListen(integer channel, key id, string message) {
             }
             else
             {
-                debug("listen LOCKDOWN_DELAY > 0 -> gLockdownState = LOCKDOWN_IMMINENT");
+                info("listen LOCKDOWN_DELAY > 0 -> gLockdownState = LOCKDOWN_IMMINENT");
                 gLockdownState = LOCKDOWN_IMMINENT;
                 gLockdownTimer = setTimerEvent(LOCKDOWN_DELAY);   
                 setColorsAndIcons();
@@ -321,7 +341,7 @@ lockdownListen(integer channel, key id, string message) {
         if (message == "RELEASE") 
         {
             // Lockdown On -> Off because message
-            debug("listen RELEASE -> gLockdownState = LOCKDOWN_OFF");
+            info("listen RELEASE -> gLockdownState = LOCKDOWN_OFF");
             gLockdownState = LOCKDOWN_OFF;
             gLockdownTimer = setTimerEvent(LOCKDOWN_OFF); 
             string optionstring = llGetObjectDesc();
@@ -388,6 +408,7 @@ integer maintenanceChannelExpires;
 integer prisonerChannelExpires;
 string WINDOW_BUTTON = "Window";
 
+// convert a "boolean" to a checked or not checked checkbox
 string menuCheckbox(string title, integer onOff) {
     string checkbox;
     if (onOff)
@@ -401,6 +422,7 @@ string menuCheckbox(string title, integer onOff) {
     return checkbox + " " + title;
 }
 
+// if a menu timer has expired, kill its listen and return zero
 integer menuTimer(float channelExpires, integer menuListen) {
     integer result = menuListen;
     if (llGetUnixTime() > channelExpires) {
@@ -452,10 +474,11 @@ commandMenu(key whoClicked) {
     llSetTimerEvent(TIMER_INTERVAL);
 }
 
+// process string generated by the main Command Menu and chosen by the user
 commandMenuListen(integer incoming_channel, key incoming_key, string incoming_message) {
     if (incoming_channel == commandChannel) 
     {
-        debug("commandMenuListen: "+incoming_message); 
+        info("commandMenuListen: "+incoming_message); 
         if (incoming_message == "Open") {
             open(checkAuthorization(incoming_key),1);
         } else if (incoming_message == "Close") {
@@ -506,6 +529,7 @@ maintenanceMenu(key whoClicked) {
     menu = menu + [menuCheckbox("Button", OPTION_BUTTON)];
     menu = menu + [menuCheckbox("Bump", OPTION_BUMP)];
     menu = menu + [menuCheckbox("Debug", OPTION_DEBUG)];
+    menu = menu + [menuCheckbox("Info", OPTION_INFO)];
     menu += ["Status"];
     maintenanceChannel = -1 * (integer)llFloor(llFrand(1000+1000));
     maintenanceListen = llListen(maintenanceChannel, "", whoClicked, "");
@@ -527,6 +551,8 @@ maintenanceMenuListen(integer incoming_channel, key incoming_key, string message
         OPTION_BUTTON = setOptionLogical(message, "Button", OPTION_BUTTON, stateNew);
         OPTION_BUMP = setOptionLogical(message, "Bump", OPTION_BUMP, stateNew);
         OPTION_DEBUG = setOptionLogical(message, "Debug", OPTION_DEBUG, stateNew);
+        OPTION_INFO = setOptionLogical(message, "Info", OPTION_DEBUG, stateNew);
+        OPTION_POWER = setOptionLogical(message, "Power", OPTION_POWER, stateNew);
             
         saveOptions();
         open(OPTION_NORMALLY_OPEN, 0);
@@ -610,7 +636,7 @@ string displayDoorTimer() {
 
 resetDoorTimer() {
     // reset the timer to the value previously set for it. init and finish countdown. 
-    debug("resetDoorTimer");
+    info("resetDoorTimer");
     gDoorTimeRemaining = gDoorTimeStart; 
     gDoorTimerRunning = 0; // timer is stopped
     startSensor();
@@ -618,7 +644,7 @@ resetDoorTimer() {
 
 setDoorTimer(integer set_time) {
     // set the timer to the desired time, remember that time
-    debug("setDoorTimer");
+    info("setDoorTimer("+(string)set_time+")");
     gDoorTimeRemaining = set_time; // set it to that 
     gDoorTimeStart = set_time; // remember what it was set to
     gDoorTimerRunning = 1;
@@ -628,7 +654,7 @@ setDoorTimer(integer set_time) {
 
 startDoorTimer() {
     // make the timer run. Init and finish countdown. 
-    debug("startDoorTimer");
+    info("startDoorTimer");
     gDoorTimerRunning = 1; // timer is running
     llSetTimerEvent(TIMER_INTERVAL);
 }
@@ -636,7 +662,7 @@ startDoorTimer() {
 stopDoorTimer() {
     // stop the timer.
     // *** perhaps use this while prisoner is being schoked
-    debug("stopDoorTimer");
+    info("stopDoorTimer");
     gDoorTimerRunning = 0; // timer is stopped
 }
 
@@ -675,6 +701,7 @@ string CLOCK_UNSET_BUTTON = "Unset Clock";
 string CLOCK_SET_BUTTON = "Set Clock…";
 string gDoorClockButton = CLOCK_SET_BUTTON;
 
+// converts clock state to a phrase displayable in the menu. 
 string displayDoorClock() {
     // implied parameter: gDoorClockEnd global
     // returns: a string in the form of "19:30:00"
@@ -726,7 +753,7 @@ string displayDoorClock() {
 }
 
 setDoorClock(integer set_time) {
-    debug("setDoorClock");
+    info("setDoorClock");
     // set the timer to the desired time, remember that time
     integer now = (integer) llGetWallclock();    // what time is it now? 
     if (set_time < now) {
@@ -741,7 +768,7 @@ setDoorClock(integer set_time) {
 }
 
 resetDoorClock() {
-    debug("resetDoorClock");
+    info("resetDoorClock");
     gDoorClockRunning = 0; // turn off the clock
     gDoorClockButton = CLOCK_SET_BUTTON;
     llSetTimerEvent(TIMER_INTERVAL);
@@ -768,7 +795,7 @@ updateDoorClock() {
 // Door **********************************
 // Door has obvious state, open and closed, and does not need to announce its state
 open(integer auth, integer override) {
-    debug("open("+(string)auth+", "+(string)override+")");
+    info("open("+(string)auth+", "+(string)override+")");
     if ( (CLOSED == doorState)  &  (((gPowerState == POWER_ON) & (gLockdownState == LOCKDOWN_OFF) & auth) | override) ) 
     {
         llPlaySound(sound_slide,1.0);
@@ -793,7 +820,7 @@ open(integer auth, integer override) {
 }
 
 close() {
-    debug("close");
+    info("close");
     if (OPEN == doorState) 
     {
         llPlaySound(sound_slide,1.0);
@@ -827,7 +854,7 @@ close() {
 }
 
 toggleDoor(integer auth, integer override) {
-    debug("toggleDoor("+(string)auth+", "+(string)override+")");
+    info("toggleDoor("+(string)auth+", "+(string)override+")");
     if (doorState == CLOSED)
     {
         debug("toggleDoor CLOSED");
@@ -898,7 +925,7 @@ unreserveCell(key who) {
 
 reserveCell(key who) {
     // make cell ready for reservation
-    debug("reserveCell");
+    info("reserveCell");
     gReservedState = "READY";
     gReservationPhrase = "Ready for Reservation";
     gReserveButton = "Unreserve";
@@ -918,10 +945,11 @@ reserve_sensor() {
         gReserveButton = "Reserve";
         gReservationName = ""; 
         gReservationPhrase = gNamesInCell;
-        gReservationKey = NULL_KEY;
+        gReservationKey = NULL_KEY; // huh?
         stopReservationTimer();
     } else if (gReservedState == "READY") {
         // ah! A prisoner has arrived! Reserve the cell for him. 
+        info("setting reservation for "+prisoner_name);
         gReservedState = "HERE";
         gReserveButton = "Unreserve";
         gReservationName = prisoner_name;
@@ -933,6 +961,7 @@ reserve_sensor() {
     } else if (gReservedState == "GONE") {
         if (gKeyInCell == gReservationKey) { // (prisoner_name == gReservationName)
             // prisoner has returned
+            info(prisoner_name+" has retruned.");
             gReservedState = "HERE"; 
             gReserveButton = "Unreserve";
             gReservationPhrase = "Reserved for " + gReservationName + " (present)";
@@ -959,7 +988,7 @@ reserve_sensor() {
     } else if (gReservedState == "GUEST") {
         ; // we knew about this already: nothing to do
     } else {
-       debug("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
+       info("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
         gReservedState = "FREE";
         gReserveButton = "Reserve";
         gReservationPhrase = "Not Reserved";
@@ -984,6 +1013,7 @@ reserve_no_sensor() {
         ; // we knew about this already: nothing to do
     } else if (gReservedState == "HERE") {
         // someone was here but he's gone now
+        info("prisoner has disappared");
         gReservedState = "GONE";
         gReserveButton = "Unreserve";
         gReservationPhrase = "Reserved for " + gReservationName + " (not present)";
@@ -992,7 +1022,7 @@ reserve_no_sensor() {
     } else if (gReservedState == "GONE") {
         startReservationTimer();    // make for damn sure
     } else {
-       debug("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
+       info("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
         gReservedState = "FREE";
         gReserveButton = "Reserve";
         gReservationPhrase = "Not Reserved";
@@ -1035,7 +1065,7 @@ stopReservationTimer() {
 updateReservationTimer() {
     // time has run out...
     if (gReservationTimeRemaining <= 0) {
-        debug("updateReservationTimer gReservationTimeRemaining");
+        info("updateReservationTimer gReservationTimeRemaining");
         open(1, 0);
         resetDoorTimer();
         stopSensor();
@@ -1054,7 +1084,8 @@ updateReservationTimer() {
     
     
 // Sensor ***************************************
-// only run the sensor when we need it
+// Only run the sensor when we need it.
+// The sensor runs in the attached box prim and sends link messages back. 
 startSensor() {
     llMessageLinked(PRIM_BOX, 3001, "sensor_start", NULL_KEY);
 }
@@ -1076,14 +1107,14 @@ integer checkAuthorization(key whoclicked) {
     // group prohibits
     if (OPTION_GROUP & (!llSameGroup(llDetectedKey(0))))
     {
-        debug("checkAuthorization failed group check");
+        info("checkAuthorization failed group check");
         authorized = 0;
     }
 
     // power off prohibits
     if ((OPTION_POWER) & (gPowerState == POWER_OFF))
     {
-        debug("checkAuthorization failed power check");
+        info("checkAuthorization failed power check");
         authorized = 0;
         return authorized;
     }
@@ -1091,7 +1122,7 @@ integer checkAuthorization(key whoclicked) {
     // timers running prohibit
     if (gDoorTimerRunning | gDoorClockRunning)
         {
-        debug("checkAuthorization failed timer check");
+        info("checkAuthorization failed timer check");
         authorized = 0;
         return authorized;
     }
@@ -1099,25 +1130,25 @@ integer checkAuthorization(key whoclicked) {
     // lockdown checks group
     if ((OPTION_LOCKDOWN) & (gLockdownState == LOCKDOWN_ON) & (!llSameGroup(llDetectedKey(0))))
     {
-        debug("checkAuthorization failed lockdown group check");
+        info("checkAuthorization failed lockdown group check");
         authorized = 0;
     }
 
     // owner match overrides
     if (OPTION_OWNERS & (llSubStringIndex(owners, llKey2Name(whoclicked))) >0)
     {
-        debug ("checkAuthorization passed OWNERS check");
+        info ("checkAuthorization passed OWNERS check");
         authorized = 1;
     }
     
     llMessageLinked(LINK_THIS, 2010+authorized, "",""); // handoff to Apppearance
 
-    debug("checkAuthorization returns "+(string)authorized);
+    info("checkAuthorization returns "+(string)authorized);
     return authorized;
 }
 
 integer setTimerEvent(integer duration) {
-    debug("setTimerEvent("+(string)duration+")");
+    info("setTimerEvent("+(string)duration+")");
     if (duration > 0)
     {
         llSetTimerEvent(TIMER_INTERVAL);
@@ -1129,7 +1160,7 @@ integer setTimerEvent(integer duration) {
 default {
     state_entry() {
         getParameters();
-        debug("state_entry");
+        info("state_entry");
         gPowerState = POWER_OFF;
         
         // get  the size of the door frame and calculate the sizes of the leaves
@@ -1149,21 +1180,6 @@ default {
         llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_SIZE,leafsize]);
         llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);
 
-        // test the doors
-        if (OPTION_NORMALLY_OPEN)
-        {
-            doorState = OPEN;
-            open(1, 1);
-            close();
-            open(1, 1);
-        }
-        else
-        {
-            doorState = CLOSED;
-            open(1, 1);
-            close();
-        }
-        
         // set up power failure listen
         gPowerState = POWER_ON;
         if (OPTION_POWER) 
@@ -1187,7 +1203,7 @@ default {
         setColorsAndIcons();
         
         llPlaySound(sound_granted,1);
-        debug("initialized");
+        info("initialized");
     }
 
 
@@ -1230,7 +1246,7 @@ default {
     }
 
     link_message(integer sender_num, integer msgInteger, string msgString, key msgKey) {
-        //debug("link_message:"+msgString+(string)msgInteger);
+        debug("link_message:"+msgString+(string)msgInteger);
         if ((msgString == "no_sensor") & (gPopulationNum != 0))
         {
             // only do this work if someone just left
@@ -1324,7 +1340,7 @@ default {
         }        
         // if we don't need a timer, turn it off
         if (!timerisNeeded) {
-            debug("timer off");
+            info("timer off");
             llSetTimerEvent(0);
             setColorsAndIcons();
         }
