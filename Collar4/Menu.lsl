@@ -1,3 +1,11 @@
+// Menu.lsl
+// Menu scuopt for Black Gazza Collar 4
+// Timberwoof Lupindo
+// June 2019
+
+// reference: useful unicode characters
+// https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
+
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
 key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
@@ -61,11 +69,11 @@ list menuRadioButton(string title, string match)
     string radiobutton;
     if (title == match)
     {
-        radiobutton = "•";
+        radiobutton = "●";
     }
     else
     {
-        radiobutton = "°";
+        radiobutton = "○";
     }
     return [radiobutton + " " + title];
 }
