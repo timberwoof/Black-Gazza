@@ -13,6 +13,9 @@ integer allowZapLow = 1;
 integer allowZapMed = 1;
 integer allowZapHigh = 1;
 
+string ICOOCMood = "OOC";
+string playLevel = "Casual";
+
 debug(string message)
 {
     if (OPTION_DEBUG)
@@ -21,6 +24,13 @@ debug(string message)
     }
 }
 
+integer invert(integer boolie)
+{
+    if (boolie == 1) 
+        return 0;
+    else
+        return 1;
+}
 
 setUpMenu(key avatarKey, string message, list buttons)
 {
@@ -45,18 +55,42 @@ list menuCheckbox(string title, integer onOff)
     return [checkbox + " " + title];
 }
 
+list menuRadioButton(string title, string match)
+// make radio button item out of a button and the state text
+{
+    string radiobutton;
+    if (title == match)
+    {
+        radiobutton = "•";
+    }
+    else
+    {
+        radiobutton = "°";
+    }
+    return [radiobutton + " " + title];
+}
+
 playLevelMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Set Play Level";
-        list buttons = ["OOC", "Casual", "Normal", "Hard Core"];
+        string message = "L-CON Collar - Set Your Play Level";
+        list buttons = [];
+        buttons = buttons + menuRadioButton("Casual", playLevel);
+        buttons = buttons + menuRadioButton("Normal", playLevel);
+        buttons = buttons + menuRadioButton("Hard Core", playLevel);
         setUpMenu(avatarKey, message, buttons);
     }
     else
     {
-        
+        llInstantMessage(avatarKey,playLevel);
     }
+}
+
+setPlayLevel(string message)
+{
+    playLevel = llStringTrim(llGetSubString(message,2,10), STRING_TRIM);
+    llMessageLinked(LINK_THIS, 2001, playLevel, "");
 }
 
 zapMenu(key avatarKey)
@@ -69,17 +103,8 @@ zapMenu(key avatarKey)
     setUpMenu(avatarKey, message, buttons);
 }
 
-integer invert(integer boolie)
-{
-    if (boolie == 1) 
-        return 0;
-    else
-        return 1;
-}
-
 doZap(key avatarKey, string message)
 {
-    debug("doZap "+message);
     string checkbox = llGetSubString(message,0,0);
     string action = llGetSubString(message,6,10);
     if (avatarKey == llGetOwner()) 
@@ -191,7 +216,7 @@ default
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
-        debug(message);
+        debug("listen:"+message);
         llListenRemove(menuListen);
         menuListen = 0;
         if (message == "Play Level"){
@@ -224,6 +249,10 @@ default
         
         else if (llGetSubString(message,2,4) == "Zap"){
             doZap(avatarKey, message);
+        }
+        
+        else if (llSubStringIndex("Casual Normal Hard Core", llStringTrim(llGetSubString(message,2,10), STRING_TRIM)) > -1){
+            setPlayLevel(message);
         }
 
                 
