@@ -4,8 +4,23 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
+integer OPTION_DEBUG = 1;
+
 integer menuChannel = 0;
 integer menuListen = 0;
+
+integer allowZapLow = 1;
+integer allowZapMed = 1;
+integer allowZapHigh = 1;
+
+debug(string message)
+{
+    if (OPTION_DEBUG)
+    {
+        llWhisper(0,message);
+    }
+}
+
 
 setUpMenu(key avatarKey, string message, list buttons)
 {
@@ -15,7 +30,22 @@ setUpMenu(key avatarKey, string message, list buttons)
     llSetTimerEvent(30);
 }
 
-playLevel(key avatarKey)
+list menuCheckbox(string title, integer onOff)
+// make checkbox item out of a button title and boolean state
+{
+    string checkbox;
+    if (onOff)
+    {
+        checkbox = "☒";
+    }
+    else
+    {
+        checkbox = "☐";
+    }
+    return [checkbox + " " + title];
+}
+
+playLevelMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -29,23 +59,50 @@ playLevel(key avatarKey)
     }
 }
 
-zap(key avatarKey)
+zapMenu(key avatarKey)
 {
-    if (avatarKey == llGetOwner())
+    string message = "L-CON Collar - Set Permissible Zap";
+    list buttons = [];
+    buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
+    buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
+    buttons = buttons + menuCheckbox("Zap Hi", allowZapHigh);
+    setUpMenu(avatarKey, message, buttons);
+}
+
+integer invert(integer boolie)
+{
+    if (boolie == 1) 
+        return 0;
+    else
+        return 1;
+}
+
+doZap(key avatarKey, string message)
+{
+    debug("doZap "+message);
+    string checkbox = llGetSubString(message,0,0);
+    string action = llGetSubString(message,6,10);
+    if (avatarKey == llGetOwner()) 
     {
-        string message = "L-CON Collar - Set Maximum Zap";
-        list buttons = ["Low", "Medium", "High"]; // needs checkboxes to reflect current state
-        setUpMenu(avatarKey, message, buttons);
+        debug("wearer sets allowable zap level: "+action);
+        if (action == "Low") {
+            allowZapLow = invert(allowZapLow);
+        } else if (action == "Med") {
+            allowZapMed = invert(allowZapMed);
+        } else if (action == "Hi") {
+            allowZapHigh = invert(allowZapHigh);
+        }
+        string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
+        llMessageLinked(LINK_THIS, 1001, zapJsonList, "");
     }
     else
     {
-        string message = "L-CON Collar - Zap";
-        list buttons = ["Low", "Medium", "High"]; // fix this so it only shows available levels
-        setUpMenu(avatarKey, message, buttons);
+        llMessageLinked(LINK_THIS, 1002, action, "");
     }
+
 }
 
-mood(key avatarKey)
+moodMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -59,7 +116,7 @@ mood(key avatarKey)
     }
 }
 
-leash(key avatarKey)
+leashMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -71,10 +128,10 @@ leash(key avatarKey)
     }
 }
 
-crime(key avatarKey)
+crimeDialog(key avatarKey)
 {;}
 
-class(key avatarKey)
+classMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -86,10 +143,10 @@ class(key avatarKey)
     }
 }
 
-info(key avatarKey)
+infoGive(key avatarKey)
 {;}
 
-lock(key avatarKey)
+lockMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -103,7 +160,7 @@ lock(key avatarKey)
     }
 }
 
-hack(key avatarKey)
+hackMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
@@ -134,35 +191,41 @@ default
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
+        debug(message);
         llListenRemove(menuListen);
         menuListen = 0;
         if (message == "Play Level"){
-            playLevel(avatarKey);
+            playLevelMenu(avatarKey);
         }
         else if (message == "Zap"){
-            zap(avatarKey);
+            zapMenu(avatarKey);
         }
         else if (message == "Mood"){
-            mood(avatarKey);
+            moodMenu(avatarKey);
         }
         else if (message == "Leash"){
-            leash(avatarKey);
+            leashMenu(avatarKey);
         }
         else if (message == "Crime"){
-            crime(avatarKey);
+            crimeDialog(avatarKey);
         }
         else if (message == "Class"){
-            class(avatarKey);
+            classMenu(avatarKey);
         }
         else if (message == "Info"){
-            info(avatarKey);
+            infoGive(avatarKey);
         }
         else if (message == "Lock"){
-            lock(avatarKey);
+            lockMenu(avatarKey);
         }
         else if (message == "Hack"){
-            hack(avatarKey);
+            hackMenu(avatarKey);
         }
+        
+        else if (llGetSubString(message,2,4) == "Zap"){
+            doZap(avatarKey, message);
+        }
+
                 
         if (llGetOwner() == avatarKey)
          ; 
