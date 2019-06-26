@@ -5,7 +5,6 @@ integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
     
 displayText(string text){
-    llWhisper(0,"displayText("+text+")");
     string textMap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,:;-#*";
     integer i;
     integer j;
@@ -19,12 +18,11 @@ displayText(string text){
         float x = ix * 0.1 + .05;
 
         integer iy = 7 - j / 10;
-        if (iy < 4) iy = iy + 4;
+        if (iy < 4) iy = iy + 3;
         else iy = iy - 4;
-        float y = iy * 0.14;
+        float y = iy * 0.1429;
 
         integer linkNumber = 15 - i;
-        llWhisper(0,(string)linkNumber+" '"+letter+"' j:"+(string)j+" x:"+(string)x+" y:"+(string)y);
         llSetLinkPrimitiveParamsFast(linkNumber,[PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
     }
 }
@@ -45,7 +43,7 @@ displayScroll(string text){
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
     scrollPos = 0;
     scrollLimit = llStringLength(text);
-    llSetTimerEvent(1);
+    llSetTimerEvent(0.5);
 }
 
 default
@@ -53,15 +51,14 @@ default
     state_entry()
     {
         //llMessageLinked(LINK_ALL_CHILDREN, 555, "INITIALIZING", "");
-        displayText("001234567899");
-        llSleep(10);
-        displayText("ABCDEFGHIJAB");
-        llSleep(10);
-        displayText("KLMNOPQRSTKL");
-        llSleep(10);
-        displayText("UVWXYZabcdUV");
-        llSleep(10);
         displayText("INITIALIZING");
+        displayText("*0123456789*");
+        displayText("*ABCDEFGHIJ*");
+        displayText("*KLMNOPQRST*");
+        displayText("*UVWXYZabcd*");
+        displayText("*efghijklmn*");
+        displayText("*opqrstuvwx*");
+        displayText("*yz .,:;-#**");
         string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
         crimeRequest= llHTTPRequest(URL,[],"");
         
@@ -77,7 +74,7 @@ default
             string theKey = llList2Key(returned, 3);
             string number = llList2String(returned, 4);
             if (theKey == llGetOwner()) {
-                displayCentered(crime);
+                displayScroll(number+" *"+name+"* "+crime+". ");
             }
             else {
                 displayCentered("Key Error");
