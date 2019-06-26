@@ -2,7 +2,7 @@ key crimeRequest;
 string scrollText;
 integer scrollPos;
 integer scrollLimit;
-string fontID = "c25aac96-92e1-e27e-670a-b8f34946f5cb";
+string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
     
 displayText(string text){
     llWhisper(0,"displayText("+text+")");
@@ -16,15 +16,15 @@ displayText(string text){
         integer ix = (j % 10);
         if (ix < 5) ix = ix + 5;
         else ix = ix - 5;
-        float x = ix * 0.1;
+        float x = ix * 0.1 + .05;
 
-        integer iy = 7 - j / 7;
+        integer iy = 7 - j / 10;
         if (iy < 4) iy = iy + 4;
         else iy = iy - 4;
         float y = iy * 0.14;
 
         integer linkNumber = 15 - i;
-        llWhisper(0,(string)linkNumber+" "+letter+" "+(string)j+" "+(string)x+" "+(string)y);
+        llWhisper(0,(string)linkNumber+" '"+letter+"' j:"+(string)j+" x:"+(string)x+" y:"+(string)y);
         llSetLinkPrimitiveParamsFast(linkNumber,[PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
     }
 }
@@ -53,16 +53,18 @@ default
     state_entry()
     {
         //llMessageLinked(LINK_ALL_CHILDREN, 555, "INITIALIZING", "");
-        //displayText("INITIALIZING");
-        //string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-        //crimeRequest= llHTTPRequest(URL,[],"");
         displayText("001234567899");
-        //llSleep(10);
-        //displayText("ABCDEFGHIJAB");
-        //llSleep(10);
-        //displayText("KLMNOPQRSTKL");
-        //llSleep(10);
-        //displayText("UVWXYZabcdUV");
+        llSleep(10);
+        displayText("ABCDEFGHIJAB");
+        llSleep(10);
+        displayText("KLMNOPQRSTKL");
+        llSleep(10);
+        displayText("UVWXYZabcdUV");
+        llSleep(10);
+        displayText("INITIALIZING");
+        string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+        crimeRequest= llHTTPRequest(URL,[],"");
+        
     }
 
     http_response( key request_id, integer status, list metadata, string body )
