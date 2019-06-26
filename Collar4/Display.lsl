@@ -5,7 +5,14 @@ integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
     
 displayText(string text){
-    string textMap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .,:;-#*";
+    string textMap = 
+        "0123456789" + 
+        "ABCDEFGHIJ" +
+        "KLMNOPQRST" +
+        "UVWXYZabcd" +
+        "efghijklmn" +
+        "opqrstuvwx" +
+        "yz .,:;-#*";
     integer i;
     integer j;
     string letter;
@@ -13,13 +20,13 @@ displayText(string text){
         letter =  llGetSubString(text,i,i); 
         j = llSubStringIndex(textMap,letter);
         integer ix = (j % 10);
-        if (ix < 5) ix = ix + 5;
-        else ix = ix - 5;
+        //if (ix < 5) ix = ix + 5;
+        //else ix = ix - 5;
         float x = ix * 0.1 + .05;
 
         integer iy = 7 - j / 10;
-        if (iy < 4) iy = iy + 3;
-        else iy = iy - 4;
+        //if (iy < 4) iy = iy + 3;
+        //else iy = iy - 4;
         float y = iy * 0.1429;
 
         integer linkNumber = 15 - i;
