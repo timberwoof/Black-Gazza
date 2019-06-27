@@ -5,14 +5,15 @@ integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
     
 displayText(string text){
+    // The text map is in this jumbled order because the bitmap maps weirdly. 
     string textMap = 
-        "0123456789" + 
-        "ABCDEFGHIJ" +
-        "KLMNOPQRST" +
-        "UVWXYZabcd" +
-        "efghijklmn" +
-        "opqrstuvwx" +
-        "yz .,:;-#*";
+        "ZabcdUVWXY" + // 4 U-Za-d
+        "jklmnefghi" + // 5 e-n
+        "tuvwxopqrs" + // 6 o-x
+        ":;-#*yz .," + // 7 yz...
+        "5678901234" + // 1 0-9
+        "FGHIJABCDE" + // 2 A-J
+        "PQRSTKLMNO" ; // 3 K-T
     integer i;
     integer j;
     string letter;
@@ -20,13 +21,9 @@ displayText(string text){
         letter =  llGetSubString(text,i,i); 
         j = llSubStringIndex(textMap,letter);
         integer ix = (j % 10);
-        //if (ix < 5) ix = ix + 5;
-        //else ix = ix - 5;
         float x = ix * 0.1 + .05;
 
         integer iy = 7 - j / 10;
-        //if (iy < 4) iy = iy + 3;
-        //else iy = iy - 4;
         float y = iy * 0.1429;
 
         integer linkNumber = 15 - i;
@@ -59,13 +56,21 @@ default
     {
         //llMessageLinked(LINK_ALL_CHILDREN, 555, "INITIALIZING", "");
         displayText("INITIALIZING");
+        llSleep(2);
         displayText("*0123456789*");
+        llSleep(2);
         displayText("*ABCDEFGHIJ*");
+        llSleep(2);
         displayText("*KLMNOPQRST*");
+        llSleep(2);
         displayText("*UVWXYZabcd*");
+        llSleep(2);
         displayText("*efghijklmn*");
+        llSleep(2);
         displayText("*opqrstuvwx*");
+        llSleep(2);
         displayText("*yz .,:;-#**");
+        llSleep(2);
         string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
         crimeRequest= llHTTPRequest(URL,[],"");
         
