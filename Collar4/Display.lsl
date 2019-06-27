@@ -96,7 +96,7 @@ displayBattery(integer percent)
     
     //llWhisper(0,"displayBattery("+(string)percent+") "+(string)batteryIconHoffset+" "+(string)batteryIconColor);
     
-    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, fontID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 0.0]);
+    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 0.0]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
