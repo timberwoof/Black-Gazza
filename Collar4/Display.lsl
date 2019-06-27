@@ -66,8 +66,8 @@ displayBattery(integer percent)
 {
     // BG_CollarV4_PowerDisplay_PNG
     key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
-    integer batteryIconLink = 1;
-    integer batteryIconFace = 6;  // *******************
+    integer batteryIconLink = 16;
+    integer batteryIconFace = 0;
     float batteryIconHScale = 0.2;
     float batteryIconVScale = 0.75;
     float batteryIconRotation = 90.0;
@@ -89,14 +89,14 @@ displayBattery(integer percent)
     else if (percent > 12) batteryIconHoffset =  0.2; // 1/4
     else batteryIconHoffset =  0.4; // empty
     
-    if (percent > 12) batteryIconColor = <0, .5, 1>;
-    else if (percent > 5) batteryIconColor = <0.5, 1, 0>;
-    else if (percent > 0) batteryIconColor = <1, 0, 0>;
-    else batteryIconColor = <1, 0, 0>;
+    if (percent > 12) batteryIconColor = <0, .5, 1>; // blue-cyan full, 3/4, 1/2, 1/4
+    else if (percent > 8) batteryIconColor = <1.0, 0.5, 0>; // orange empty
+    else if (percent > 4) batteryIconColor = <1, 0, 0>; // red empty
+    else batteryIconColor = <0, 0, 0>; // black empty
     
     //llWhisper(0,"displayBattery("+(string)percent+") "+(string)batteryIconHoffset+" "+(string)batteryIconColor);
     
-    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 0.0]);
+    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 1.5708]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
