@@ -13,6 +13,8 @@ string scrollText;
 integer scrollPos;
 integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
+
+integer debugBatteryLevel;
     
 // Display a string of 12 characters on the collar display. 
 // If you supply less than 12 characters, the last ones don't get reset. 
@@ -56,7 +58,46 @@ displayScroll(string text){
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
     scrollPos = 0;
     scrollLimit = llStringLength(text);
-    llSetTimerEvent(0.5);
+    llSetTimerEvent(1);
+}
+
+// based on the percentage, display the correct icon and color
+displayBattery(integer percent)
+{
+    // BG_CollarV4_PowerDisplay_PNG
+    key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
+    integer batteryIconLink = 1;
+    integer batteryIconFace = 6;  // *******************
+    float batteryIconHScale = 0.2;
+    float batteryIconVScale = 0.75;
+    float batteryIconRotation = 90.0;
+    float batteryIconHoffset = -0.4;
+    vector batteryIconColor = <0, .5, 1>;
+    
+    // The battery icon has 5 states. Horizontal Offsets can be
+    // -0.4 full charge 100% - 88%
+    // -0.2 3/4 charge   87% - 75% - 62%
+    //  0.0 1/2 charge   61% - 50% - 38%
+    //  0.2 1/4 charge   37% - 25% - 12%
+    //  0.4 0/4 charge   12% - 0%
+    //  Between 5% and 1% it shows red.
+    //  At 0% it turns black. 
+    
+    if (percent > 87) batteryIconHoffset = -0.4; // full
+    else if (percent > 61) batteryIconHoffset = -0.2; // 3/4
+    else if (percent > 37) batteryIconHoffset =  0.0; // 1/2
+    else if (percent > 12) batteryIconHoffset =  0.2; // 1/4
+    else batteryIconHoffset =  0.4; // empty
+    
+    if (percent > 12) batteryIconColor = <0, .5, 1>;
+    else if (percent > 5) batteryIconColor = <0.5, 1, 0>;
+    else if (percent > 0) batteryIconColor = <1, 0, 0>;
+    else batteryIconColor = <1, 0, 0>;
+    
+    //llWhisper(0,"displayBattery("+(string)percent+") "+(string)batteryIconHoffset+" "+(string)batteryIconColor);
+    
+    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, fontID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 0.0]);
+    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
 default
@@ -89,6 +130,8 @@ default
         // fire off a request tot he crime database for this wearer. 
         string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
         crimeRequest= llHTTPRequest(URL,[],"");
+        
+        debugBatteryLevel = 0;
     }
 
     // handle the response from the crime database
@@ -101,10 +144,10 @@ default
             string crime = llList2String(returned, 2);
             string theKey = llList2Key(returned, 3);
             string number = llList2String(returned, 4);
-            displayText(number);
             
-            // this tests the scrolling display function
             if (theKey == llGetOwner()) {
+                displayCentered(number);
+                // test the scrolling display function
                 displayScroll(number+" *"+name+"* "+crime+". ");
             }
             else {
@@ -123,5 +166,9 @@ default
         if (scrollPos >= scrollLimit) {
             scrollPos = 0;
         }
+        
+        displayBattery(debugBatteryLevel);
+        debugBatteryLevel = debugBatteryLevel + 1;
+        if (debugBatteryLevel > 100) debugBatteryLevel = 0;
     }
 }
