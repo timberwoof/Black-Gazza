@@ -99,12 +99,11 @@ displayText(string text){
 }
 
 setTextColor(vector classColor){
-    //llWhisper(0,"setTextColor "+(string)classColor);
     integer i;
     for (i = 0; i < 12; i++){
         integer linkNumber = 15 - i; 
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, classColor, 0.5]);
-        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.0]);
     }
 }
 
@@ -220,7 +219,6 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        //llWhisper(0,"Display link_message "+(string)num+" "+message);
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
