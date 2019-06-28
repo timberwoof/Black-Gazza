@@ -22,6 +22,7 @@ integer allowZapMed = 1;
 integer allowZapHigh = 1;
 
 string ICOOCMood = "OOC";
+string prisonerClass = "White";
 string playLevel = "Casual";
 
 debug(string message)
@@ -168,7 +169,9 @@ classMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        ;
+         string message = "L-CON Collar - Set Prisoner Class";
+         list buttons = ["White", "Pink", "Red",  "Orange", "Green","Blue", "Black"];
+        setUpMenu(avatarKey, message, buttons);
     }
     else
     {
@@ -257,10 +260,15 @@ default
         
         // Mood
         else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD", message) > -1) {
+            ICOOCMood = message;
             llMessageLinked(LINK_THIS, 1100, message, "");
         }
         
-        
+        //Class
+        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", message) > -1) {
+            prisonerClass = message;
+            llMessageLinked(LINK_THIS, 1200, message, "");
+        }
         
         else if (llGetSubString(message,2,4) == "Zap"){
             doZap(avatarKey, message);
