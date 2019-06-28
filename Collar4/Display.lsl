@@ -10,8 +10,10 @@
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
+vector GRAY = <0.5, 0.5, 0.5>;
 vector DARK_BLUE = <0.0, 0.0, 0.2>;
 vector BLUE = <0.0, 0.0, 1.0>;
+vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
 vector MAGENTA = <1.0, 0.0, 1.0>;
 vector CYAN = <0.0, 1.0, 1.0>;
 vector WHITE = <1.0, 1.0, 1.0>;
@@ -46,6 +48,7 @@ float batteryIconRotation = 90.0;
 float batteryIconHoffset = -0.4;
 vector batteryIconColor = <0.0, 0.5, 1.0>;
 vector batteryLightColor = <1.0, 0.0, 0.0>;
+float batteryLightGlow = 0.1;
  
 
 key crimeRequest;
@@ -57,6 +60,11 @@ string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 string Mood;
 list moodNames;
 list moodColors;
+
+string Class;
+list classNames;
+list classColors;
+vector classColor;
 
 integer debugBatteryLevel;
     
@@ -86,7 +94,17 @@ displayText(string text){
         float y = iy * 0.1429;
 
         integer linkNumber = 15 - i;            // shift the appropriate textmap
-        llSetLinkPrimitiveParamsFast(linkNumber,[PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
+    }
+}
+
+setTextColor(vector classColor){
+    //llWhisper(0,"setTextColor "+(string)classColor);
+    integer i;
+    for (i = 0; i < 12; i++){
+        integer linkNumber = 15 - i; 
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, classColor, 0.5]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
     }
 }
 
@@ -126,20 +144,26 @@ displayBattery(integer percent)
     if (percent > 12) {
         batteryIconColor = <0.0, 0.5, 1.0>; // blue-cyan full, 3/4, 1/2, 1/4
         batteryLightColor = <0.0, 1.0, 0.0>;
+        batteryLightGlow = 0.1;
     }
     else if (percent > 8) {
         batteryIconColor = <1.0, 0.5, 0>; // orange empty
         batteryLightColor = <1.0, 0.5, 0>;
+        batteryLightGlow = 0.2;
     }
     else if (percent > 4) {
         batteryIconColor = <1.0, 0.0, 0.0>; // red empty
         batteryLightColor = <1.0, 0.0, 0.0>;
+        batteryLightGlow = 0.4;
     }
     else {
         batteryIconColor = <0.0, 0.0, 0.0>; // black empty
         batteryLightColor = <0.0, 0.0, 0.0>;
+        batteryLightGlow = 0.0;
     }
     llSetLinkColor(LinkBlinky, batteryLightColor, 0);
+    llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, ALL_SIDES, batteryLightGlow]);
+    llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 1.5708]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
@@ -151,39 +175,29 @@ default
         // set up lists and shit
         moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
         moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
+        
+        classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
+        classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, LIGHT_BLUE, GRAY];
+        classColor = WHITE;
+        setTextColor(CYAN);
+        
         // Test the displaytext functions
         displayText("INITIALIZING");
-        displayText("*0123456789*");
-        displayText("*ABCDEFGHIJ*");
-        displayText("*KLMNOPQRST*");
-        displayText("*UVWXYZabcd*");
-        displayText("*efghijklmn*");
-        displayText("*opqrstuvwx*");
-        displayText("*yz .,:;-#**");
-        displayCentered("");
-        displayCentered("*");
-        displayCentered("**");
-        displayCentered("***");
-        displayCentered("****");
-        displayCentered("*****");
-        displayCentered("******");
-        displayCentered("*******");
-        displayCentered("********");
-        displayCentered("*********");
-        displayCentered("**********");
-        displayCentered("***********");
-        displayCentered("************");
-        
-        // fire off a request tot he crime database for this wearer. 
+        llSleep(1);
+        displayText(" REQUESTING ");
+
+        // fire off a request to the crime database for this wearer. 
         string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
         crimeRequest= llHTTPRequest(URL,[],"");
         
         debugBatteryLevel = 0;
+        llSetTimerEvent(1); // to make battery change
     }
 
     // handle the response from the crime database
     http_response( key request_id, integer status, list metadata, string body )
     {
+        displayCentered("status "+(string)status);
         if (status == 200) {
             // body looks like "Timberwoof Lupindo,0,Piracy,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361"
             list returned = llParseString2List(body, [","], []);
@@ -195,7 +209,7 @@ default
             if (theKey == llGetOwner()) {
                 displayCentered(number);
                 // test the scrolling display function
-                displayScroll(number+" *"+name+"* "+crime+". ");
+                //displayScroll(number+" *"+name+"* "+crime+". ");
             }
             else {
                 displayCentered("Key Error");
@@ -206,15 +220,21 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        // The Display listens on channel 1000
-        // llMessageLinked(LINK_THIS, 1002, action, "");
+        //llWhisper(0,"Display link_message "+(string)num+" "+message);
         if (num == 1100) {
             Mood = message;
-            integer moodi = llListFindList(moodNames, [message]);
+            integer moodi = llListFindList(moodNames, [Mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, moodColor, 1.0]);
-            //FaceBlinky1
+            llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
+        }
+        else if (num == 1200) {
+            Class = message;
+            integer classi = llListFindList(classNames, [Class]);
+            classColor = llList2Vector(classColors, classi);
+            setTextColor(classColor);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, classColor, 1.0]);
         }
     }
     
@@ -222,11 +242,11 @@ default
     timer()
     {
         // Scrolling Text handler works for text longer than 12 characters. 
-        displayText(llGetSubString(scrollText, scrollPos, scrollPos+12) + "            ");
-        scrollPos = scrollPos + 1;
-        if (scrollPos >= scrollLimit) {
-            scrollPos = 0;
-        }
+        //displayText(llGetSubString(scrollText, scrollPos, scrollPos+12) + "            ");
+        //scrollPos = scrollPos + 1;
+        //if (scrollPos >= scrollLimit) {
+        //    scrollPos = 0;
+        //}
         
         displayBattery(debugBatteryLevel);
         debugBatteryLevel = debugBatteryLevel + 1;
