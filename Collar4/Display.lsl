@@ -8,11 +8,55 @@
 // • blinky lights
 // • battery display
 
+vector BLACK = <0,0,0>;
+vector DARK_GRAY = <0.2, 0.2, 0.2>;
+vector DARK_BLUE = <0.0, 0.0, 0.2>;
+vector BLUE = <0.0, 0.0, 1.0>;
+vector MAGENTA = <1.0, 0.0, 1.0>;
+vector CYAN = <0.0, 1.0, 1.0>;
+vector WHITE = <1.0, 1.0, 1.0>;
+vector RED = <1.0, 0.0, 0.0>;
+vector REDORANGE = <1.0, 0.25, 0.0>;
+vector ORANGE = <1.0, 0.5, 0.0>;
+vector YELLOW = <1.0, 1.0, 0.0>;
+vector GREEN = <0.0, 1.0, 0.0>;
+vector PURPLE = <0.5, 0.0, 1.0>;
+
+integer LinkFrame = 1;
+integer FaceFrame = 0;
+integer FacePadding = 1;
+
+integer LinkBlinky = 17;
+integer FaceBlinky1 = 1;
+integer FaceBlinky2 = 2;
+integer FaceBlinky3 = 3;
+integer FaceBlinky4 = 4;
+
+integer LinkAlphanumFrame = 17;
+integer FaceAlphanumFrame = 5;
+integer FaceAlphanum = 1;
+
+// BG_CollarV4_PowerDisplay_PNG
+key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
+integer batteryIconLink = 16;
+integer batteryIconFace = 0;
+float batteryIconHScale = 0.2;
+float batteryIconVScale = 0.75;
+float batteryIconRotation = 90.0;
+float batteryIconHoffset = -0.4;
+vector batteryIconColor = <0.0, 0.5, 1.0>;
+vector batteryLightColor = <1.0, 0.0, 0.0>;
+ 
+
 key crimeRequest;
 string scrollText;
 integer scrollPos;
 integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
+
+string Mood;
+list moodNames;
+list moodColors;
 
 integer debugBatteryLevel;
     
@@ -63,17 +107,7 @@ displayScroll(string text){
 
 // based on the percentage, display the correct icon and color
 displayBattery(integer percent)
-{
-    // BG_CollarV4_PowerDisplay_PNG
-    key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
-    integer batteryIconLink = 16;
-    integer batteryIconFace = 0;
-    float batteryIconHScale = 0.2;
-    float batteryIconVScale = 0.75;
-    float batteryIconRotation = 90.0;
-    float batteryIconHoffset = -0.4;
-    vector batteryIconColor = <0, .5, 1>;
-    
+{   
     // The battery icon has 5 states. Horizontal Offsets can be
     // -0.4 full charge 100% - 88%
     // -0.2 3/4 charge   87% - 75% - 62%
@@ -89,13 +123,23 @@ displayBattery(integer percent)
     else if (percent > 12) batteryIconHoffset =  0.2; // 1/4
     else batteryIconHoffset =  0.4; // empty
     
-    if (percent > 12) batteryIconColor = <0, .5, 1>; // blue-cyan full, 3/4, 1/2, 1/4
-    else if (percent > 8) batteryIconColor = <1.0, 0.5, 0>; // orange empty
-    else if (percent > 4) batteryIconColor = <1, 0, 0>; // red empty
-    else batteryIconColor = <0, 0, 0>; // black empty
-    
-    //llWhisper(0,"displayBattery("+(string)percent+") "+(string)batteryIconHoffset+" "+(string)batteryIconColor);
-    
+    if (percent > 12) {
+        batteryIconColor = <0.0, 0.5, 1.0>; // blue-cyan full, 3/4, 1/2, 1/4
+        batteryLightColor = <0.0, 1.0, 0.0>;
+    }
+    else if (percent > 8) {
+        batteryIconColor = <1.0, 0.5, 0>; // orange empty
+        batteryLightColor = <1.0, 0.5, 0>;
+    }
+    else if (percent > 4) {
+        batteryIconColor = <1.0, 0.0, 0.0>; // red empty
+        batteryLightColor = <1.0, 0.0, 0.0>;
+    }
+    else {
+        batteryIconColor = <0.0, 0.0, 0.0>; // black empty
+        batteryLightColor = <0.0, 0.0, 0.0>;
+    }
+    llSetLinkColor(LinkBlinky, batteryLightColor, 0);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 1.5708]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
@@ -104,6 +148,9 @@ default
 {
     state_entry()
     {
+        // set up lists and shit
+        moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
+        moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
         // Test the displaytext functions
         displayText("INITIALIZING");
         displayText("*0123456789*");
@@ -157,6 +204,20 @@ default
         else {
         }
     }
+    
+    link_message( integer sender_num, integer num, string message, key id ){ 
+        // The Display listens on channel 1000
+        // llMessageLinked(LINK_THIS, 1002, action, "");
+        if (num == 1100) {
+            Mood = message;
+            integer moodi = llListFindList(moodNames, [message]);
+            vector moodColor = llList2Vector(moodColors, moodi);
+            llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, moodColor, 1.0]);
+            //FaceBlinky1
+        }
+    }
+    
     
     timer()
     {
