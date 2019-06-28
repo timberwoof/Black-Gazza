@@ -1,5 +1,5 @@
 // Menu.lsl
-// Menu scuopt for Black Gazza Collar 4
+// Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
 
@@ -126,11 +126,11 @@ doZap(key avatarKey, string message)
             allowZapHigh = invert(allowZapHigh);
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
-        llMessageLinked(LINK_THIS, 1001, zapJsonList, "");
+        llMessageLinked(LINK_THIS, 1101, zapJsonList, "");
     }
     else
     {
-        llMessageLinked(LINK_THIS, 1002, action, "");
+        llMessageLinked(LINK_THIS, 1102, action, "");
     }
 
 }
@@ -140,7 +140,7 @@ moodMenu(key avatarKey)
     if (avatarKey == llGetOwner())
     {
         string message = "L-CON Collar - Set Play Level";
-        list buttons = ["OOC", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story-Driven"];
+        list buttons = ["OOC", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -254,6 +254,13 @@ default
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
+        
+        // Mood
+        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD", message) > -1) {
+            llMessageLinked(LINK_THIS, 1100, message, "");
+        }
+        
+        
         
         else if (llGetSubString(message,2,4) == "Zap"){
             doZap(avatarKey, message);
