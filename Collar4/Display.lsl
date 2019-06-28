@@ -58,6 +58,11 @@ string Mood;
 list moodNames;
 list moodColors;
 
+string Class;
+list classNames;
+list classColors;
+vector classColor;
+
 integer debugBatteryLevel;
     
 // Display a string of 12 characters on the collar display. 
@@ -86,7 +91,16 @@ displayText(string text){
         float y = iy * 0.1429;
 
         integer linkNumber = 15 - i;            // shift the appropriate textmap
-        llSetLinkPrimitiveParamsFast(linkNumber,[PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
+    }
+}
+
+setTextColor(vector classColor){
+    integer i;
+    for (i = 0; i < 12; i++){
+        integer linkNumber = 15 - i; 
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, classColor, 0.5]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.0]);
     }
 }
 
@@ -151,6 +165,11 @@ default
         // set up lists and shit
         moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
         moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
+        
+        classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
+        classColors = [WHITE, CYAN, RED, ORANGE, GREEN, BLUE, BLACK];
+        classColor = WHITE;
+        
         // Test the displaytext functions
         displayText("INITIALIZING");
         displayText("*0123456789*");
@@ -206,15 +225,18 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        // The Display listens on channel 1000
-        // llMessageLinked(LINK_THIS, 1002, action, "");
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [message]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, moodColor, 1.0]);
-            //FaceBlinky1
+        }
+        else if (num == 1200) {
+            Mood = message;
+            integer classi = llListFindList(moodNames, [message]);
+            classColor = llList2Vector(moodColors, classi);
+            setTextColor(classColor);
         }
     }
     
