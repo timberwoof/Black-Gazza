@@ -1,3 +1,7 @@
+// Timberwoof's Black Gazza Inmate HUD
+
+// need to work out what different states it has and the transitions between locked and unlocked and stuff
+
 key avatarKey; 
 string avatarKeyString;
 string avatarName;
@@ -5,15 +9,34 @@ string avatarName;
 key primKey;
 string primKeyString;
 
-integer statuschannel = 16565;
-integer statuslisten = 0;
-integer commandchannel = -1654;
-integer commandlisten = 0;
+integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
+integer RLVStatusListen = 0;
+integer MenuChannel = 0;        // listen to itself for menu; generated on the fly
+integer MenuListen = 0;
+integer CommandChannel = 0;     //listen to commands from prison box & guard HUD; generated on the fly
+integer CommandListen = 0;
 
-string tagTitle = "Zap Tag 0.4";
+string hudTitle = "BG Inmate HUD 0.5";
+string tagDesc = "";
 
-integer rlv = 0;        // default is there is no RLV
-integer locked = 0;     // start up unlocked
+integer hudAttached = 0;    //0 = unattached; 1 = attached
+integer rlvPresent = 0;     //0 = no RLV; 1 = RLV is present
+
+integer HudFunctionState = 0;
+// -3 = off with remote turn-on
+// 0 = off
+// 1 = on with off switch
+// 2 = on with timer
+// 3 = on with remote turn-off
+
+integer SAFEWORD = 1; // ***
+// Later on, add code that will change the value of this to 0 for hardcore users. 
+
+sayDebug(string message) {
+    if (tagDesc == "debug") {
+        llOwnerSay(message);
+    }
+}
 
 
 // =================================
@@ -23,61 +46,106 @@ vector green = <0.25,1.0,0.25>;
 vector yellow = <1.0, 1.0, 0.0>;
 vector red = <1.0, 0.0, 0.0>;
 
-vector thecolor() {
-    if (locked == 1) {
-        if (rlv == 1) {
-            return red;
-        } else {
-            return yellow;
-        }
+setStateTitleAndColor() {
+    string suffix;
+    vector color;
+    if (hudAttached == 0) {
+        suffix = "Unattatched";
+        color  = white;
+        
+    } else if ((HudFunctionState < 1)){
+        suffix = "Inactive";
+        color  = green;
+        
+    } else if (rlvPresent == 0) {
+        // this is a stupid state
+        suffix = "Active";
+        color  = yellow;
+        
     } else {
-        return green;
+        suffix = "Active RLV";
+        color  = red;
     }
+
+    llSetText(hudTitle+" \n"+suffix,color,1);
+    llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,color,1.0]);
+    //llWhisper(0,avatarName + "'s prison tag is now " + lock + ".");
 }
 
 
 // =================================
-// particle system
-StopParticles () {
-    llParticleSystem(  [   ]  );
+// HUD menu
+//
+list addSafewordToMenu() {
+    if (SAFEWORD == 1) {
+        return ["Safeword"];
+    } else {
+        return [];
+    }
 }
 
-StartParticles () {
-            llParticleSystem( [
-            PSYS_PART_START_SCALE, <0.1,0.1,0.0>, 
-            PSYS_PART_END_SCALE, <1.0,2.0,0.0>,    
-            PSYS_PART_START_COLOR, thecolor(), 
-            PSYS_PART_END_COLOR, yellow,    
-            PSYS_PART_START_ALPHA, 0.2,     
-            PSYS_PART_END_ALPHA, 0.0,            
-            PSYS_SRC_BURST_PART_COUNT, 256,  
-            PSYS_SRC_BURST_RATE, 0.1,  
-            PSYS_PART_MAX_AGE, 1.0,   
-            PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_EXPLODE, 
-            PSYS_SRC_ACCEL, <0.0,0.0,-1.0>,       
-            PSYS_SRC_BURST_SPEED_MIN, 0.3,   
-            PSYS_SRC_BURST_SPEED_MAX, 2.3, 
-            PSYS_PART_FLAGS, ( 
-                PSYS_PART_EMISSIVE_MASK | 
-                PSYS_PART_FOLLOW_VELOCITY_MASK | 
-                PSYS_PART_INTERP_COLOR_MASK | 
-                PSYS_PART_INTERP_SCALE_MASK )
-        ] );
+hudMenu() {
+// "On","Off","On Timer","On Remote","Set Timer","Safeword","Register"
+
+    list buttons;
+    string message;
+    if (HudFunctionState == 0) {   
+        // off
+        message = "OFF";
+        buttons = ["On","On Timer","On Remote","Set Timer"];
+    
+    } else if (HudFunctionState == 1) { 
+        // on with off switch
+        message = "ON";
+        buttons = ["Off","On Timer","On Remote","Set Timer"] + addSafewordToMenu();   
+    
+    } else if (HudFunctionState == 2) { 
+        // on with timer
+        message = "ON Timer";
+        buttons = [] + addSafewordToMenu();   
+    
+    } else if (HudFunctionState == -3) { 
+        // off with remote turn-on
+        message = "OFF with Remote Activation";
+        buttons = ["On","On Timer","Set Timer"];
+    
+    } else if (HudFunctionState == 3) { 
+        // on with remote turn-off
+        message = "Hud is ON with Remote Deactivation";
+        buttons = [] + addSafewordToMenu();  
+     
+    } else {
+        llOwnerSay("Error: illegal value for HudFunctionState: " + (string)HudFunctionState + " resetting.");
+        llResetScript();
+    }
+
+    buttons = buttons + ["Register"];   // what's this for? 
+
+    message = "Prisoner HUD v0.5 is " + message;
+    MenuListen = llListen(MenuChannel, "", avatarKey, "" );
+    // listen on the MenuChannel
+    // to only the avatar wearing the hud
+    llDialog(avatarKey, message, buttons, MenuChannel);
+    llSetTimerEvent(30); 
 }
+
 
 // =================================
 // Communication with database
 key httprequest;
-string theAnimation;
 
-registerWithDB(integer $locked) {
-    // $locked == 0 means not locked
-    // $locked == 1 means prisoner locked
+registerWithDB() {
     string timestamp = llGetTimestamp( ); // format 
     string timeStampDate = llGetSubString(timestamp,0,9);
     string timeStampTime = llGetSubString(timestamp,11,18);
     string timeStampAll = timeStampDate + " " + timeStampTime;
     string url;
+    
+    // what  to tell the database
+    string hudActive = "0";
+    if (HudFunctionState > 0) {
+        hudActive = "1";
+        }
     
     if (avatarKeyString == "00000000-0000-0000-0000-000000000000") {
         // tag is not attatched
@@ -85,26 +153,39 @@ registerWithDB(integer $locked) {
         "avatar=" + avatarKeyString + "&" + 
         "name=" + llEscapeURL(avatarName) + "&" + 
         "prim=" + primKeyString + "&" + 
-        "timeSent=" + llEscapeURL(timeStampAll);
+        "timeSent=" + llEscapeURL(timeStampAll) + "&" +
+        "commandChannel=0";
     } else {
         url = "http://web.infernosoft.com/blackgazza/registerInmate.php?"+
         "avatar=" + avatarKeyString + "&" + 
         "name=" + llEscapeURL(avatarName) + "&" + 
         "prim=" + primKeyString + "&" + 
-        "locked=" + (string)locked + "&" +
-        "timeSent=" + llEscapeURL(timeStampAll);
+        "locked=" + hudActive + "&" +
+        "timeSent=" + llEscapeURL(timeStampAll) + "&" +
+        "commandChannel=" + (string)CommandChannel;
     }
     
     list parameters = [HTTP_METHOD, "GET",
         HTTP_MIMETYPE,"text/plain;charset=utf-8"];
     string body = "";
-    //llOwnerSay(url); // *** debug
+    sayDebug(url); // *** debug
     httprequest = llHTTPRequest(url, parameters, body );
 }
 
 
 // =================================
 // Animation Queue
+string theAnimation;
+
+oldTouch(){
+    if (HudFunctionState > 0) {   // must be prison-locked *** comment out for debug
+        if (avatarKey != llDetectedKey(0)) { // must be someone else *** comment out for debug
+            startAnimations(1);
+            }   // *** comment out for debug
+        }   // *** comment out for debug
+}
+
+
 list AnimationList = [
 "bogus",0,
 "shock",5,
@@ -125,37 +206,37 @@ initAnimationQueue() {
 startAnimations(integer index) {
     // sets the time wehn we need to kick off the next animation
     // start with call to starSound(0);
-    //llOwnerSay("startAnimation " + (string)index);
+    //sayDebug("startAnimation " + (string)index);
     llSetTimerEvent(1.0);
     if (index < NumberOfAnimations) {
         AnimationPlaying = index;
         theAnimation = llList2String(AnimationList, AnimationPlaying*2);
         PlayNextAnimation = llGetUnixTime() + llList2Integer(AnimationList,AnimationPlaying*2+1);
-        //llOwnerSay("animating '" + theAnimation + "' until " + (string)PlayNextAnimation);
+        //sayDebug("animating '" + theAnimation + "' until " + (string)PlayNextAnimation);
         if (avatarKey != NULL_KEY) {
             llRequestPermissions( avatarKey, PERMISSION_TRIGGER_ANIMATION ); 
         }
         
         if (index == 1) {
-            llSetPrimitiveParams( [ PRIM_GLOW, ALL_SIDES, 1.0 ] ) ; 
-            StartParticles();
+            //llSetPrimitiveParams( [ PRIM_GLOW, ALL_SIDES, 1.0 ] ) ; 
+            //StartParticles(); // doesn't work as hud
             llOwnerSay(llKey2Name(llDetectedKey(0)) + " punishes " + avatarName + " for disobedience.");
             llLoopSound("electricshock", 1.0);      
             llSetTimerEvent(1.0);
         } else if (index == 2) {
-            llSetPrimitiveParams( [ PRIM_GLOW, ALL_SIDES, 0.0 ] ) ; 
-            StopParticles(); 
+            //llSetPrimitiveParams( [ PRIM_GLOW, ALL_SIDES, 0.0 ] ) ; 
+            //StopParticles(); // doesn't work as hud
             llStopSound();
-            if (rlv == 1) {
+            if (rlvPresent == 1) {
                 llOwnerSay("@sendchat=n,recvchat=n");   // no chatting while fainted
             }
         } else if (index == 4) {
-            if (rlv == 1) {
+            if (rlvPresent == 1) {
                 llOwnerSay("@sendchat=y,recvchat=y");   // allow chat again
             }
         }
     } else {
-        //llOwnerSay("startAnimation sequence completed");
+        //sayDebug("startAnimation sequence completed");
         AnimationPlaying = 0;
         PlayNextAnimation = 0;
         stop_anims(avatarKey);
@@ -184,11 +265,24 @@ stop_anims( key agent )
         integer i;
         for ( i = 0; i < lsize; i++ )
         {
-            //llOwnerSay("stopping an animation");
+            //sayDebug("stopping an animation");
             llStopAnimation( llList2Key( animationList, i ) );
         }
     }
 }
+
+
+// =================================
+// RLV
+
+sendRLVRestrictCommand() {
+    llOwnerSay("@chatshout=n,chatnormal=n,tplm=n,tploc=n,tplure=n,sittp=n,fartouch=n,showworldmap=n,showminimap=n,showloc=n,fly=n,detach=n,edit=n,rez=n,detach:BGVisitor=force,attach:BGInmate=force,showinv=n");
+}
+
+sendRLVUnrestrictCommand() {
+    llOwnerSay("@clear");
+}
+
 
 
 // =================================
@@ -197,52 +291,73 @@ default
 {
     state_entry()
     {
-        //llOwnerSay("state_entry");
-        StopParticles();
+        //sayDebug("state_entry");
+        hudAttached = 0;
+        rlvPresent = 0;
+        HudFunctionState = 0;
+        
+        hudTitle = llGetObjectName();
+        tagDesc = llGetObjectDesc();
+
         initAnimationQueue();
         llPreloadSound("electricshock");
-        primKey = llGetKey( );
-        primKeyString = (string)primKey;
-        //llOwnerSay("state_entry done");
+        //sayDebug("state_entry done");
+        llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,white,1.0]); // make it white
+        setStateTitleAndColor();
     }
 
      attach( key id )
      {
-        //llOwnerSay("attach");
-        llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,green,1.0]); // make it green
-        llSetText(tagTitle+"\nInactive",green,1);
+        sayDebug("attach"); // *** debug
 
-        rlv = 0;
-        locked = 0;
+        hudAttached = 1;
+        rlvPresent = 0;
+        HudFunctionState = 0;
         
+        primKey = llGetKey( );
+        primKeyString = (string)primKey;
+
         avatarKey = id;
         avatarKeyString = (string)avatarKey;
         avatarName = llKey2Name(avatarKey);
 
-        commandlisten = llListen(commandchannel, "Timberwoof Prison Box", "", "" );
-        statuslisten = llListen(statuschannel, "", "", "" );
-        string statusquery="version="+(string)statuschannel;
-        //llOwnerSay(statusquery);
-        llOwnerSay("@"+statusquery);
-        llSetTimerEvent(60); // "the timeout should be long enough, like 30 seconds to one minute in order to receive the automatic reply from the viewer." 
+        llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,green,1.0]); // make it green
+        setStateTitleAndColor();
+        
+        MenuChannel = (integer)llFrand(8999)+1000; // generate a session menu channel
 
-        registerWithDB(0);  // doesn't tell RLV status
-        llOwnerSay("Black Gazza Zap Tag 0.4 (development version). To activate or deactivate, click a Prison Box.");
-        //llOwnerSay("attach done");
+        CommandChannel = (integer)llFrand(8999)+1000;   // generate a session command channel
+        sayDebug("commandChannel=" + (string)CommandChannel);
+        CommandListen = llListen(CommandChannel, "", "", "" );
+            // listen on the newly generated command channel 
+            // to any prim or avtar
+            // with any uuid
+            // saying any message
+        
+        RLVStatusChannel = (integer)llFrand(8999)+1000; // generate a sessin RLV status channel
+        RLVStatusListen = llListen(RLVStatusChannel, "", "", "" );
+            // listen on the newly generated rlv status channel
+        string statusquery="version="+(string)RLVStatusChannel;
+        sayDebug(statusquery); // *** debug
+        llOwnerSay("@"+statusquery);
+        llSetTimerEvent(60); 
+        // "the timeout should be long enough, like 30 seconds to one minute 
+        // in order to receive the automatic reply from the viewer." 
+
+        registerWithDB();    // inmate, offline  
+        llOwnerSay("Black Gazza" + hudTitle + 
+            " (development version). To activate or deactivate, click a Prison Box.");
+        sayDebug("attach done"); // *** debug
     }
  
     touch_start( integer num_detected )
     {
-        if (locked > 0) {   // must be prison-locked *** comment out for debug
-            if (avatarKey != llDetectedKey(0)) { // must be someone else *** comment out for debug
-                startAnimations(1);
-            }   // *** comment out for debug
-        }   // *** comment out for debug
+        hudMenu();
     }
     
     run_time_permissions(integer permissions)
     {
-        //llOwnerSay("run_time_permissions " + (string)theAnimation);
+        //sayDebug("run_time_permissions " + (string)theAnimation);
         if (permissions & PERMISSION_TRIGGER_ANIMATION) {
             stop_anims(avatarKey);
             llStartAnimation(theAnimation);
@@ -251,12 +366,16 @@ default
 
     timer()
     {
-        if (statuslisten != 0) {
+        if (RLVStatusListen != 0) {
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
-            rlv = 0;
-            llListenRemove(statuslisten);
-            statuslisten = 0;
+            rlvPresent = 0;
+            llListenRemove(RLVStatusListen);
+            RLVStatusListen = 0;
+        } else if (MenuListen !=0) {
+            // we were waiting for a memnu; this is the timeoit
+            llListenRemove(MenuListen);
+            MenuListen = 0;
         } else {
             // can only have come from an animation event
             handleAnimationQueue();
@@ -266,58 +385,106 @@ default
     // listen to the prison box
     listen( integer channel, string name, key id, string message )
     {
-        if (channel == commandchannel) {
-            //llOwnerSay("command:" + message);
-            integer space = llSubStringIndex(message," ");
-            string keyString = llGetSubString(message,0,space-1);
-            //llOwnerSay("keyString:'" + keyString + "'");
+        if (channel == CommandChannel) {
+            //sayDebug("command:" + message);   // *** debug
+            integer atrlv = llSubStringIndex(message,"@");
             
-            string RLVmessage = llGetSubString(message,space+1,-1);
-            //llOwnerSay("RLVmessage:'" + RLVmessage + "'");
+            if (atrlv >= 0) {
+                integer space = llSubStringIndex(message," ");
+                string keyString = llGetSubString(message,0,space-1);
+                //sayDebug("keyString:'" + keyString + "'");   // *** debug
             
-            if (avatarKeyString == keyString) {
-                string lock;
-                llOwnerSay(RLVmessage); // *** This is where the message gets sent to viewer. Don't comment this out. 
-                if (llSubStringIndex(message,"@clear") > 0) {
-                    locked = 0;
-                    lock = "Inactive";
-                } else {
-                    locked = 1;
-                    if (rlv == 1) {
-                        lock = "Active+RLV";
+                string RLVmessage = llGetSubString(message,space+1,-1);
+                //sayDebug("RLVmessage:'" + RLVmessage + "'");   // *** debug
+            
+                if ((atrlv > -1) && (avatarKeyString == keyString)) {
+                    // *** This is where the message gets sent to viewer. 
+                    llOwnerSay(RLVmessage); // *** Don't comment this out. *** debug
+                    if (llSubStringIndex(message,"@clear") > 0) {
+                        // remote deactivation always allowed.
+                        HudFunctionState = 0;
                     } else {
-                        lock = "Active";
+                        // if remote activation is allowed, then turn it on
+                        if (HudFunctionState == -3) {
+                            HudFunctionState = 1;
+                        }
                     }
+                    setStateTitleAndColor();
                 }
-                llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,thecolor(),1.0]);
-                llSetText(tagTitle+"\n"+lock,thecolor(),1.0);
-                llWhisper(0,avatarName + "'s prison tag is now " + lock + ".");
-            }
-            registerWithDB(locked);
+                registerWithDB();
+            } // if (atrlv >= 0)
+
+            integer atbg = llSubStringIndex(message,"#") +1;
+            if (atbg > 0) {
+                string command = llGetSubString(message,atbg,-1);
+                sayDebug("command=" + command);
+                if (command = "zap") {
+                    startAnimations(1);
+                }
+            } // if (atbg >= 0)
+            // never remove the commandChannel listen                       
         }
-        if (channel == statuschannel) {
-            //llOwnerSay("RLV status:" + message);
-            rlv = 1;
-            llListenRemove(statuslisten);
-            statuslisten = 0;
+        
+        if (channel == RLVStatusChannel) {
+            sayDebug("RLV status:" + message);   // *** debug
+            rlvPresent = 1;
+            llListenRemove(RLVStatusListen);
+            RLVStatusListen = 0;
+        }
+        
+        if (channel == MenuChannel) {
+            if (message == "Off") {
+                sendRLVUnrestrictCommand();
+                HudFunctionState = 0;
+                registerWithDB(); // prisoner, off
+
+            } else if (message == "On") {
+                sendRLVRestrictCommand();
+                HudFunctionState = 1;
+                registerWithDB(); // prisoner, on
+                
+            } else if (message == "On Timer") {
+                HudFunctionState = 2;
+                
+            } else if (message == "On Remote") {
+                HudFunctionState = -3;
+                
+            } else if (message == "Set Timer") {
+                // setTimer();
+                
+            } else if (message == "Safeword") {
+                // safeword();
+                HudFunctionState = 0;
+                
+            } else if (message == "Register") {
+                registerWithDB();    // what's this for? 
+            }
+            setStateTitleAndColor();
+            llListenRemove(MenuListen);
+            MenuListen = 0;
         }
     }
+
+
     
     http_response(key request_id, integer status, list metadata, string body)
     {
         // just drop it in the bitbucket.
-        //if (request_id == httprequest)
-        //{
-        //}
+        if (request_id == httprequest)
+        {
+            sayDebug("http response:");
+            sayDebug(body);
+            sayDebug("---end");
+        }
     }
 
 
     //state_exit()
     //{
         // doesn't seem to work
-        //llOwnerSay("state_exit");
+        //sayDebug("state_exit");
         //llOwnerSay("@clear");
-        //statuslisten = llListen(statuschannel, "Zap Badge", "", "" );
-        //llOwnerSay("@getstatus=" + (string)statuschannel);
+        //RLVStatusListen = llListen(RLVStatusChannel, "Zap Badge", "", "" );
+        //llOwnerSay("@getstatus=" + (string)RLVStatusChannel);
     //}
 }
