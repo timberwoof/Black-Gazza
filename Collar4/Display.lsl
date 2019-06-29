@@ -99,11 +99,12 @@ displayText(string text){
 }
 
 setTextColor(vector classColor){
+    //llWhisper(0,"setTextColor "+(string)classColor);
     integer i;
     for (i = 0; i < 12; i++){
         integer linkNumber = 15 - i; 
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, classColor, 0.5]);
-        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.0]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
     }
 }
 
@@ -194,16 +195,19 @@ default
     }
 
     // handle the response from the crime database
-    http_response( key request_id, integer status, list metadata, string body )
+    http_response( key request_id, integer status, list metadata, string message )
     {
         displayCentered("status "+(string)status);
         if (status == 200) {
             // body looks like "Timberwoof Lupindo,0,Piracy,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361"
-            list returned = llParseString2List(body, [","], []);
+            list returned = llParseString2List(message, [","], []);
             string name = llList2String(returned, 0);
             string crime = llList2String(returned, 2);
             string theKey = llList2Key(returned, 3);
             string number = llList2String(returned, 4);
+            
+            // send this data on to the menu system
+            llMessageLinked(LINK_THIS, 2000, message, "");
             
             if (theKey == llGetOwner()) {
                 displayCentered(number);
@@ -219,6 +223,7 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
+        llWhisper(0,"Display link_message "+(string)num+" "+message);
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
