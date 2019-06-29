@@ -8,6 +8,8 @@
 // • blinky lights
 // • battery display
 
+integer OPTION_DEBUG = 0;
+
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
 vector GRAY = <0.5, 0.5, 0.5>;
@@ -49,7 +51,6 @@ float batteryIconHoffset = -0.4;
 vector batteryIconColor = <0.0, 0.5, 1.0>;
 vector batteryLightColor = <1.0, 0.0, 0.0>;
 float batteryLightGlow = 0.1;
- 
 
 key crimeRequest;
 string scrollText;
@@ -68,6 +69,14 @@ vector classColor;
 
 integer debugBatteryLevel;
     
+debug(string message)
+{
+    if (OPTION_DEBUG)
+    {
+        llWhisper(0,message);
+    }
+}
+
 // Display a string of 12 characters on the collar display. 
 // If you supply less than 12 characters, the last ones don't get reset. 
 // Anything after 12 characters gets truncated. 
@@ -99,7 +108,7 @@ displayText(string text){
 }
 
 setTextColor(vector classColor){
-    //llWhisper(0,"setTextColor "+(string)classColor);
+    debug("setTextColor "+(string)classColor);
     integer i;
     for (i = 0; i < 12; i++){
         integer linkNumber = 15 - i; 
@@ -223,7 +232,9 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        llWhisper(0,"Display link_message "+(string)num+" "+message);
+        debug("Display link_message "+(string)num+" "+message);
+        
+        // IC/OOC Mood sets frame color and blinky 1
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
@@ -232,6 +243,8 @@ default
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
         }
+        
+        // Prisoner Class sets text color anbd blinky 2
         else if (num == 1200) {
             Class = message;
             integer classi = llListFindList(classNames, [Class]);
@@ -239,6 +252,20 @@ default
             setTextColor(classColor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, classColor, 1.0]);
         }
+        
+        // Zap Level sets blinky 3
+        else if (num == 1301) {
+            // message contains a json list of settings
+            debug("zaplevel message:"+message);
+            list zapLevels = llJson2List(message);
+            debug("zapLevels list:"+(string)zapLevels);
+            vector lightcolor = BLACK;
+            if (llList2Integer(zapLevels,0)) lightcolor = lightcolor + BLUE;
+            if (llList2Integer(zapLevels,1)) lightcolor = lightcolor + GREEN;
+            if (llList2Integer(zapLevels,2)) lightcolor = lightcolor + RED;
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, lightcolor, 1.0]);            
+        }
+            
     }
     
     
