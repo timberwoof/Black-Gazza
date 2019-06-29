@@ -24,6 +24,7 @@ integer allowZapHigh = 1;
 string ICOOCMood = "OOC";
 string prisonerClass = "White";
 string playLevel = "Casual";
+string lockLevel = "";
 
 debug(string message)
 {
@@ -96,12 +97,6 @@ playLevelMenu(key avatarKey)
     }
 }
 
-setPlayLevel(string message)
-{
-    playLevel = llStringTrim(llGetSubString(message,2,10), STRING_TRIM);
-    llMessageLinked(LINK_THIS, 2001, playLevel, "");
-}
-
 zapMenu(key avatarKey)
 {
     string message = "L-CON Collar - Set Permissible Zap";
@@ -141,7 +136,14 @@ moodMenu(key avatarKey)
     if (avatarKey == llGetOwner())
     {
         string message = "L-CON Collar - Set Play Level";
-        list buttons = ["OOC", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
+        list buttons = [];
+        buttons = buttons + menuRadioButton("OOC", ICOOCMood);
+        buttons = buttons + menuRadioButton("Submissive", ICOOCMood);
+        buttons = buttons + menuRadioButton("Versatile", ICOOCMood);
+        buttons = buttons + menuRadioButton("Dominant", ICOOCMood);
+        buttons = buttons + menuRadioButton("Nonsexual", ICOOCMood);
+        buttons = buttons + menuRadioButton("Story", ICOOCMood);
+        buttons = buttons + menuRadioButton("DnD", ICOOCMood);
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -169,8 +171,15 @@ classMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-         string message = "L-CON Collar - Set Prisoner Class";
-         list buttons = ["White", "Pink", "Red",  "Orange", "Green","Blue", "Black"];
+        string message = "L-CON Collar - Set Prisoner Class";
+        list buttons = [];
+        buttons = buttons + menuRadioButton("White", prisonerClass);
+        buttons = buttons + menuRadioButton("Pink", prisonerClass);
+        buttons = buttons + menuRadioButton("Red", prisonerClass);
+        buttons = buttons + menuRadioButton("Orange", prisonerClass);
+        buttons = buttons + menuRadioButton("Green", prisonerClass);
+        buttons = buttons + menuRadioButton("Blue", prisonerClass);
+        buttons = buttons + menuRadioButton("Black", prisonerClass);
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -187,7 +196,10 @@ lockMenu(key avatarKey)
     if (avatarKey == llGetOwner())
     {
         string message = "L-CON Collar - Lock";
-        list buttons = ["Casual", "Normal", "Hardcore"];
+        list buttons = [];
+        buttons = buttons + menuRadioButton("Off", lockLevel);
+        buttons = buttons + menuRadioButton("Normal", lockLevel);
+        buttons = buttons + menuRadioButton("Hardcore", lockLevel);
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -210,26 +222,7 @@ hackMenu(key avatarKey)
     }
 }
 
-default
-{
-    state_entry()
-    {
-    }
-
-    touch_start(integer total_number)
-    {
-        key avatarKey  = llDetectedKey(0);
-        integer isGroup = llDetectedGroup(0);
-       
-        string message = "L-CON Collar Control Main Menu";
-        list buttons = ["Play Level", "Zap", "Mood", "Leash", "Crime", "Class", "Info", "Lock", "Hack"];
-        setUpMenu(avatarKey, message, buttons);
-    }
-    
-    listen( integer channel, string name, key avatarKey, string message ){
-        debug("listen:"+message);
-        llListenRemove(menuListen);
-        menuListen = 0;
+mainMenu(key avatarKey, string message) {
         if (message == "Play Level"){
             playLevelMenu(avatarKey);
         }
@@ -257,25 +250,69 @@ default
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
+    }
+
+
+default
+{
+    state_entry()
+    {
+    }
+
+    touch_start(integer total_number)
+    {
+        key avatarKey  = llDetectedKey(0);
+        integer isGroup = llDetectedGroup(0);
+       
+        string message = "L-CON Collar Control Main Menu";
+        list buttons = ["Play Level", "Zap", "Mood", "Leash", "Crime", "Class", "Info", "Lock", "Hack"];
+        setUpMenu(avatarKey, message, buttons);
+    }
+    
+    listen( integer channel, string name, key avatarKey, string message ){
+        llListenRemove(menuListen);
+        menuListen = 0;
+        string messageNoButtons = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
+        debug("listen:"+message+" messageNoButtons:"+messageNoButtons);
+        
+        //Main
+        if (llSubStringIndex("Play Level Zap Mood Leash Crime Class Info Lock Hack", message) > -1){
+            llWhisper(0,"listen: Main:"+message);
+             mainMenu(avatarKey, message);
+        }
         
         // Mood
-        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD", message) > -1) {
-            ICOOCMood = message;
-            llMessageLinked(LINK_THIS, 1100, message, "");
+        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
+            llWhisper(0,"listen: Mood:"+messageNoButtons);
+            ICOOCMood = messageNoButtons;
+            llMessageLinked(LINK_THIS, 1100, ICOOCMood, "");
         }
         
         //Class
-        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", message) > -1) {
-            prisonerClass = message;
-            llMessageLinked(LINK_THIS, 1200, message, "");
+        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageNoButtons) > -1){
+            llWhisper(0,"listen: Class:"+messageNoButtons);
+            prisonerClass = messageNoButtons;
+            llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
         }
         
+        // Zap
         else if (llGetSubString(message,2,4) == "Zap"){
+            llWhisper(0,"listen: Zap:"+message);
             doZap(avatarKey, message);
         }
         
-        else if (llSubStringIndex("Casual Normal Hard Core", llStringTrim(llGetSubString(message,2,10), STRING_TRIM)) > -1){
-            setPlayLevel(message);
+        // Play Level
+        else if (llSubStringIndex("Casual Normal Hard Core", messageNoButtons) > -1){
+            llWhisper(0,"listen: playLevel:"+messageNoButtons);
+            playLevel = messageNoButtons;
+            llMessageLinked(LINK_THIS, 2001, playLevel, "");
+        }
+
+        // Lock Level
+        else if (llSubStringIndex("Off Normal Hard Core", messageNoButtons) > -1){
+            llWhisper(0,"listen: lockLevel:"+messageNoButtons);
+            playLevel = messageNoButtons;
+            llMessageLinked(LINK_THIS, 2001, playLevel, "");
         }
 
                 
