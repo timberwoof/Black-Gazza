@@ -77,10 +77,11 @@ debug(string message)
     }
 }
 
+displayText(string text){
 // Display a string of 12 characters on the collar display. 
 // If you supply less than 12 characters, the last ones don't get reset. 
 // Anything after 12 characters gets truncated. 
-displayText(string text){
+
     // The text map is in this jumbled order because the bitmap maps weirdly. 
     string textMap = 
         "ZabcdUVWXY" + // 4 U-Za-d
@@ -117,13 +118,14 @@ setTextColor(vector classColor){
     }
 }
 
-// display a string of less than 12 characters on the alphanumeric display, more or less centered
 displayCentered(string text){
+// display a string of less than 12 characters on the alphanumeric display, more or less centered
     integer pad = (12 - llStringLength(text)) / 2; 
     displayText(llInsertString("            ", pad, text));
 }
 
 displayScroll(string text){
+// display a string of more than 12 characters in a lovely scrolling manner. 
     string displayText = "            "; // 12 spaces
     //llMessageLinked(LINK_ALL_CHILDREN, 555, displayText, "");
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
@@ -132,8 +134,8 @@ displayScroll(string text){
     llSetTimerEvent(1);
 }
 
-// based on the percentage, display the correct icon and color
 displayBattery(integer percent)
+// based on the percentage, display the correct icon and color
 {   
     // The battery icon has 5 states. Horizontal Offsets can be
     // -0.4 full charge 100% - 88%
@@ -200,11 +202,11 @@ default
         crimeRequest= llHTTPRequest(URL,[],"");
         
         debugBatteryLevel = 0;
-        llSetTimerEvent(1); // to make battery change
+        llSetTimerEvent(1); // to make battery level display change *** debug
     }
 
-    // handle the response from the crime database
     http_response( key request_id, integer status, list metadata, string message )
+    // handle the response from the crime database
     {
         displayCentered("status "+(string)status);
         if (status == 200) {
@@ -267,8 +269,7 @@ default
         }
             
     }
-    
-    
+
     timer()
     {
         // Scrolling Text handler works for text longer than 12 characters. 
