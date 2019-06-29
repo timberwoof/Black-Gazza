@@ -3,6 +3,9 @@
 // Timberwoof Lupindo
 // June 2019
 
+// Handles all the menus for the collar. 
+// State is kept here and transmitted to interested scripts by link message calls. 
+
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
@@ -30,6 +33,7 @@ string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
 string threatLevel = "Unknown";
 
+// Utilities *******
 
 debug(string message)
 {
@@ -48,6 +52,7 @@ integer invert(integer boolie)
 }
 
 setUpMenu(key avatarKey, string message, list buttons)
+// wrapper to do all the calls that make a simple menu dialog.
 {
     string completeMessage = prisonerNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
@@ -57,7 +62,7 @@ setUpMenu(key avatarKey, string message, list buttons)
 }
 
 list menuCheckbox(string title, integer onOff)
-// make checkbox item out of a button title and boolean state
+// make checkbox menu item out of a button title and boolean state
 {
     string checkbox;
     if (onOff)
@@ -72,7 +77,7 @@ list menuCheckbox(string title, integer onOff)
 }
 
 list menuRadioButton(string title, string match)
-// make radio button item out of a button and the state text
+// make radio button menu item out of a button and the state text
 {
     string radiobutton;
     if (title == match)
@@ -86,7 +91,124 @@ list menuRadioButton(string title, string match)
     return [radiobutton + " " + title];
 }
 
+// Menus and Handlers ****************
+
+mainMenu(key avatarKey) {
+    string message = "Main";
+    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings", "Safeword"];
+    setUpMenu(avatarKey, message, buttons);
+}
+
+doMainMenu(key avatarKey, string message) {
+        if (message == "Zap"){
+            zapMenu(avatarKey);
+        }
+        else if (message == "Leash"){
+            leashMenu(avatarKey);
+        }
+        else if (message == "Info"){
+            infoGive(avatarKey);
+        }
+        else if (message == "Hack"){
+            hackMenu(avatarKey);
+        }
+        else if (message == "Safeword"){
+            safeword(avatarKey);
+        }
+        else if (message == "Settings"){
+            settingsMenu(avatarKey);
+        }
+    }
+
+// Action Menus and Handlers **************************
+// Top-level menu items for immediate use in roleplay:
+// Zap, Leash, Info, Hack, Safeword, Settings
+
+zapMenu(key avatarKey)
+{
+    // the zap menu never includes radio buttons in front of the Zap word
+    string message = "Zap";
+    list buttons = [];
+    if (allowZapLow) buttons = buttons + ["Zap Low"];
+    if (allowZapMed) buttons = buttons + ["Zap Med"];
+    if (allowZapHigh) buttons = buttons + ["Zap High"];
+    setUpMenu(avatarKey, message, buttons);
+}
+
+leashMenu(key avatarKey)
+{
+    if (avatarKey == llGetOwner())
+    {
+        ; // can't leash yourself. Well, you can, but you can't unleash yourself. 
+    }
+    else
+    {
+        ;
+    }
+}
+
+infoGive(key avatarKey)
+{;}
+
+hackMenu(key avatarKey)
+{
+    if (avatarKey == llGetOwner())
+    {
+        string message = "Hack";
+        list buttons = ["hack", "Maintenance", "Fix"];
+        setUpMenu(avatarKey, message, buttons);
+    }
+    else
+    {
+        ;
+    }
+}
+
+safeword(key avatarKey)
+{;}
+
+// Settings Menus and Handlers ************************
+// Sets Collar State: Mood, Crime, Class, Threat, Lock, Zap levels 
+
+settingsMenu(key avatarKey) {
+    if (avatarKey == llGetOwner())
+    {
+        string message = "Settings";
+        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock", "SetZap"];
+        setUpMenu(avatarKey, message, buttons);
+    }
+    else
+    {
+        ;
+    }
+}
+    
+doSettingsMenu(key avatarKey, string message) {
+        if (message == "Play Level"){
+            playLevelMenu(avatarKey);
+        }
+        else if (message == "Mood"){
+            moodMenu(avatarKey);
+        }
+        else if (message == "Crime"){
+            crimeDialog(avatarKey);
+        }
+        else if (message == "Class"){
+            classMenu(avatarKey);
+        }
+        else if (message == "Lock"){
+            lockMenu(avatarKey);
+        }
+        else if (message == "Threat"){
+            threatMenu(avatarKey);
+        }
+        else if (message == "SetZap"){
+            ZapLevelMenu(avatarKey);
+        }
+}
+
 playLevelMenu(key avatarKey)
+// Sets the RLV level and related stuff
 {
     if (avatarKey == llGetOwner())
     {
@@ -106,7 +228,9 @@ playLevelMenu(key avatarKey)
 ZapLevelMenu(key avatarKey)
 {
     // the zap Level Menu always includes checkboxes in front of the Zap word. 
-    string message = "Set Permissible Zap";
+    // This is not a maximum zap radio button, it is checkboxes. 
+    // An inmate could be set to most severe zap setting only. 
+    string message = "Set Permissible Zap Levels";
     list buttons = [];
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
@@ -131,17 +255,6 @@ doSetZapLevels(key avatarKey, string message)
     }
 }
 
-zapMenu(key avatarKey)
-{
-    // the zap menu never includes radio buttons in front of the Zap word
-    string message = "Zap";
-    list buttons = [];
-    if (allowZapLow) buttons = buttons + ["Zap Low"];
-    if (allowZapMed) buttons = buttons + ["Zap Med"];
-    if (allowZapHigh) buttons = buttons + ["Zap High"];
-    setUpMenu(avatarKey, message, buttons);
-}
-
 moodMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
@@ -160,18 +273,6 @@ moodMenu(key avatarKey)
     else
     {
         ; // no one else gets a thing
-    }
-}
-
-leashMenu(key avatarKey)
-{
-    if (avatarKey == llGetOwner())
-    {
-        ; // can't leash yourself. Well, you can, but you can't unleash yourself. 
-    }
-    else
-    {
-        ;
     }
 }
 
@@ -200,9 +301,6 @@ classMenu(key avatarKey)
     }
 }
 
-infoGive(key avatarKey)
-{;}
-
 lockMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
@@ -220,60 +318,6 @@ lockMenu(key avatarKey)
     }
 }
 
-hackMenu(key avatarKey)
-{
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Hack";
-        list buttons = ["hack", "Maintenance", "Fix"];
-        setUpMenu(avatarKey, message, buttons);
-    }
-    else
-    {
-        ;
-    }
-}
-
-mainMenu(key avatarKey) {
-    string message = "Main";
-    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings", "Safeword"];
-    setUpMenu(avatarKey, message, buttons);
-}
-
-doMainMenu(key avatarKey, string message) {
-        if (message == "Zap"){
-            zapMenu(avatarKey);
-        }
-        else if (message == "Leash"){
-            leashMenu(avatarKey);
-        }
-        else if (message == "Info"){
-            infoGive(avatarKey);
-        }
-        else if (message == "Hack"){
-            hackMenu(avatarKey);
-        }
-        else if (message == "Safeword"){
-            hackMenu(avatarKey);
-        }
-        else if (message == "Settings"){
-            settingsMenu(avatarKey);
-        }
-    }
-    
-settingsMenu(key avatarKey) {
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Settings";
-        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock", "SetZap"];
-        setUpMenu(avatarKey, message, buttons);
-    }
-    else
-    {
-        ;
-    }
-}
-    
 threatMenu(key avatarKey) {
     if (avatarKey == llGetOwner())
     {
@@ -291,30 +335,7 @@ threatMenu(key avatarKey) {
     }
 }
 
-doSettingsMenu(key avatarKey, string message) {
-        if (message == "Play Level"){
-            playLevelMenu(avatarKey);
-        }
-        else if (message == "Mood"){
-            moodMenu(avatarKey);
-        }
-        else if (message == "Crime"){
-            crimeDialog(avatarKey);
-        }
-        else if (message == "Class"){
-            classMenu(avatarKey);
-        }
-        else if (message == "Lock"){
-            lockMenu(avatarKey);
-        }
-        else if (message == "Threat"){
-            threatMenu(avatarKey);
-        }
-        else if (message == "SetZap"){
-            ZapLevelMenu(avatarKey);
-        }
-}
-
+// Event Handlers ***************************
 
 default
 {
@@ -331,6 +352,7 @@ default
     listen( integer channel, string name, key avatarKey, string message ){
         llListenRemove(menuListen);
         menuListen = 0;
+        llSetTimerEvent(0);
         string messageNoButtons = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         debug("listen:"+message+" messageNoButtons:"+messageNoButtons);
         
@@ -340,10 +362,16 @@ default
              doMainMenu(avatarKey, message);
         }
         
+        // Do Zap
+        else if (llGetSubString(message,0,2) == "Zap"){
+            debug("listen: Zap:"+message);
+            llMessageLinked(LINK_THIS, 1302, message, "");
+        }
+        
         //Settings
         else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood SetZap", message) > -1){
             debug("listen: Settings:"+message);
-             doSettingsMenu(avatarKey, message);
+            doSettingsMenu(avatarKey, message);
         }
 
         // Mood
@@ -358,12 +386,6 @@ default
             debug("listen: Class:"+messageNoButtons);
             prisonerClass = messageNoButtons;
             llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
-        }
-        
-        // Do Zap
-        else if (llGetSubString(message,0,2) == "Zap"){
-            debug("listen: Zap:"+message);
-            llMessageLinked(LINK_THIS, 1302, message, "");
         }
         
         // Set Zap Level
@@ -392,6 +414,7 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
+    // We listen in on all ink messages and pick the ones we're interested in
         debug("Menu link_message "+(string)num+" "+message);
         if (num == 2000) {
             list returned = llParseString2List(message, [","], []);
@@ -399,7 +422,6 @@ default
             prisonerNumber = llList2String(returned, 4);
         }
     }
-
     
     timer() 
     {
