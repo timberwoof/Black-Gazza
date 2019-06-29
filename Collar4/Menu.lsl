@@ -26,6 +26,10 @@ string prisonerClass = "White";
 string playLevel = "Casual";
 string lockLevel = "";
 
+string prisonerCrime = "Unknown";
+string prisonerNumber = "Unknown";
+
+
 debug(string message)
 {
     if (OPTION_DEBUG)
@@ -44,8 +48,9 @@ integer invert(integer boolie)
 
 setUpMenu(key avatarKey, string message, list buttons)
 {
+    string completeMessage = prisonerNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
-    llDialog(avatarKey, message, buttons, menuChannel);
+    llDialog(avatarKey, completeMessage, buttons, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
     llSetTimerEvent(30);
 }
@@ -84,7 +89,7 @@ playLevelMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Set Your Play Level";
+        string message = "Set your Play Level";
         list buttons = [];
         buttons = buttons + menuRadioButton("Casual", playLevel);
         buttons = buttons + menuRadioButton("Normal", playLevel);
@@ -99,7 +104,7 @@ playLevelMenu(key avatarKey)
 
 zapMenu(key avatarKey)
 {
-    string message = "L-CON Collar - Set Permissible Zap";
+    string message = "Set Permissible Zap";
     list buttons = [];
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
@@ -135,7 +140,7 @@ moodMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Set Play Level";
+        string message = "Set your Mood";
         list buttons = [];
         buttons = buttons + menuRadioButton("OOC", ICOOCMood);
         buttons = buttons + menuRadioButton("Submissive", ICOOCMood);
@@ -164,14 +169,15 @@ leashMenu(key avatarKey)
     }
 }
 
-crimeDialog(key avatarKey)
-{;}
+crimeDialog(key avatarKey) {
+    llWhisper(0,prisonerCrime);
+}
 
 classMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Set Prisoner Class";
+        string message = "Set Prisoner Class";
         list buttons = [];
         buttons = buttons + menuRadioButton("White", prisonerClass);
         buttons = buttons + menuRadioButton("Pink", prisonerClass);
@@ -195,7 +201,7 @@ lockMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Lock";
+        string message = "Lock";
         list buttons = [];
         buttons = buttons + menuRadioButton("Off", lockLevel);
         buttons = buttons + menuRadioButton("Normal", lockLevel);
@@ -212,7 +218,7 @@ hackMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "L-CON Collar - Attempt to Hack";
+        string message = "Hack";
         list buttons = ["hack", "Maintenance", "Fix"];
         setUpMenu(avatarKey, message, buttons);
     }
@@ -264,7 +270,7 @@ default
         key avatarKey  = llDetectedKey(0);
         integer isGroup = llDetectedGroup(0);
        
-        string message = "L-CON Collar Control Main Menu";
+        string message = "Main Menu";
         list buttons = ["Play Level", "Zap", "Mood", "Leash", "Crime", "Class", "Info", "Lock", "Hack"];
         setUpMenu(avatarKey, message, buttons);
     }
@@ -305,20 +311,30 @@ default
         else if (llSubStringIndex("Casual Normal Hard Core", messageNoButtons) > -1){
             llWhisper(0,"listen: playLevel:"+messageNoButtons);
             playLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 2001, playLevel, "");
+            llMessageLinked(LINK_THIS, 1300, playLevel, "");
         }
 
         // Lock Level
         else if (llSubStringIndex("Off Normal Hard Core", messageNoButtons) > -1){
             llWhisper(0,"listen: lockLevel:"+messageNoButtons);
-            playLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 2001, playLevel, "");
+            lockLevel = messageNoButtons;
+            llMessageLinked(LINK_THIS, 1400, lockLevel, "");
         }
 
                 
         if (llGetOwner() == avatarKey)
          ; 
     }
+    
+    link_message( integer sender_num, integer num, string message, key id ){ 
+        llWhisper(0,"Menu link_message "+(string)num+" "+message);
+        if (num == 2000) {
+            list returned = llParseString2List(message, [","], []);
+            prisonerCrime = llList2String(returned, 2);
+            prisonerNumber = llList2String(returned, 4);
+        }
+    }
+
     
     timer() 
     {
