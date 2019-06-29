@@ -10,19 +10,43 @@ integer statuslisten;
 integer commandchannel = -1654;
 integer commandlisten;
 
+string tagTitle = "Zap Tag 0.3";
+
 integer locked = 0;
 
-string theAnimation;
+// =================================
+// particle system
+StopParticles () {
+    llParticleSystem(  [   ]  );
+}
 
-integer agony = 0;
-integer inagony = 0;
-integer agonyduraton = 10;
+StartParticles () {
+            llParticleSystem( [
+            PSYS_PART_START_SCALE, <0.1,0.1,0.0>, 
+            PSYS_PART_END_SCALE, <1.0,2.0,0.0>,     // requires INTERP_SCALE
+            PSYS_PART_START_COLOR, <1.0,0.0,0.0>,
+            PSYS_PART_END_COLOR, <1.0,1.0,0.0>,     // requires INTERP_COLOR
+            PSYS_PART_START_ALPHA, 0.2,     
+            PSYS_PART_END_ALPHA, 0.0,               // requires INTERP_COLOR
+            PSYS_SRC_BURST_PART_COUNT, 256,  
+            PSYS_SRC_BURST_RATE, 0.1,  
+            PSYS_PART_MAX_AGE, 1.0,   
+            PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_EXPLODE, 
+            PSYS_SRC_ACCEL, <0.0,0.0,-1.0>,       
+            PSYS_SRC_BURST_SPEED_MIN, 0.3,   
+            PSYS_SRC_BURST_SPEED_MAX, 2.3, 
+            PSYS_PART_FLAGS, ( 
+                PSYS_PART_EMISSIVE_MASK | 
+                PSYS_PART_FOLLOW_VELOCITY_MASK | 
+                PSYS_PART_INTERP_COLOR_MASK | 
+                PSYS_PART_INTERP_SCALE_MASK )
+        ] );
+}
 
-integer faint = 0;
-integer fainted = 0;
-integer faintduration = 10;
-
+// =================================
+// Communication with database
 key httprequest;
+string theAnimation;
 
 registerWithDB(integer $locked) {
     string timestamp = llGetTimestamp( ); // format 
@@ -54,9 +78,74 @@ registerWithDB(integer $locked) {
 }
 
 
+// =================================
+// Animation Queue
+list AnimationList = [
+"bogus",0,
+"shock",5,
+"Fall/Faint",5,
+"Stand From Faint",3,
+"stand",1
+];
 
+integer NumberOfAnimations; // number of sounds in the list. n
+integer AnimationPlaying = 0;   // the number of the sound that's playing. 0..n-1
+integer PlayNextAnimation = 0;  // the Unix time when the next sound must be played
 
+initAnimationQueue() {
+    // initialize the sond playing system
+    NumberOfAnimations =  llGetListLength(AnimationList) / 2;
+}
 
+startAnimations(integer index) {
+    // sets the time wehn we need to kick off the next animation
+    // start with call to starSound(0);
+    //llOwnerSay("startAnimation " + (string)index);
+    llSetTimerEvent(1.0);
+    if (index < NumberOfAnimations) {
+        AnimationPlaying = index;
+        theAnimation = llList2String(AnimationList, AnimationPlaying*2);
+        PlayNextAnimation = llGetUnixTime() + llList2Integer(AnimationList,AnimationPlaying*2+1);
+        //llOwnerSay("animating '" + theAnimation + "' until " + (string)PlayNextAnimation);
+        llRequestPermissions( avatarKey, PERMISSION_TRIGGER_ANIMATION ); 
+        
+        if (index == 1) {
+            StartParticles();
+            llOwnerSay(llKey2Name(llDetectedKey(0)) + " punishes " + avatarName + " for disobedience.");
+            llPlaySound("electricshock", 1.0);      
+            llSetTimerEvent(1.0);
+        } else if (index == 2) {
+            StopParticles();
+            llOwnerSay("@sendchat=n,recvchat=n");   // no chatting while fainted
+        } else if (index == 4) {
+            llOwnerSay("@sendchat=y,recvchat=y");   // allow chat again
+        }
+    } else {
+        //llOwnerSay("startAnimation sequence completed");
+        AnimationPlaying = 0;
+        PlayNextAnimation = 0;
+        stop_anims(avatarKey);
+        llSetTimerEvent(0);
+    }
+}
+
+// stick a call to this in the timer event
+handleAnimationQueue() {
+    if ((PlayNextAnimation > 0) && 
+        (PlayNextAnimation <= llGetUnixTime( )) && 
+        (AnimationPlaying < NumberOfAnimations)){
+            startAnimations(++AnimationPlaying);
+        }
+    
+    if (AnimationPlaying == 1) {
+        llPlaySound("electricshock", 1.0);      
+        }
+} 
+
+// llOwnerSay(avatarName + " fainted from the pain");
+// agonyduraton = agonyduraton + 5; 
+// faintduration = faintduration + 5;  // make it last long next time
+ 
 stop_anims( key agent )
 {
     list    l = llGetAnimationList( agent );
@@ -74,8 +163,10 @@ default
 {
     state_entry()
     {
+        llSetText(tagTitle+"\nInactive",<0,1,0>,1);
+        StopParticles();
+        initAnimationQueue();
         llPreloadSound("electricshock");
-        llSetTimerEvent(1.0);
         commandlisten = llListen(commandchannel, "Timberwoof Prison Box", "", "" );
             }
 
@@ -95,88 +186,25 @@ default
     {
         integer now = llGetUnixTime( );
         //llOwnerSay("now: " + (string)now);
-        if (locked > 0) {
-            llWhisper(0,llKey2Name(llDetectedKey(0)) + " punishes " + avatarName + " for disobedience.");
-            agony = now + agonyduraton;
+        if ((locked > 0) && (avatarKey != llDetectedKey(0))) {
+            startAnimations(1);
         }    
-        //llOwnerSay("agony: " + (string)agony);
-        // agony is normally 0. Now it is set to some time from now. It is the time of the end of agony.
     }
     
     run_time_permissions(integer permissions)
     {
-        //llOwnerSay("run_time_permissions" + (string)mytimer);
+        //llOwnerSay("run_time_permissions " + (string)theAnimation);
         if (permissions & PERMISSION_TRIGGER_ANIMATION) {
+            stop_anims(avatarKey);
             llStartAnimation(theAnimation);
         }
     }
 
-    
     timer()
     {
-        float red = llFrand(1.0);
-        float green = llFrand(0.5);
-        
-        if (green > red) {
-            red = green;
-        }
-        if (locked > 0) {
-            llSetText("BG Tag 0.2\n*Active*",<red,green,0>,1);
-        } else {
-            llSetText("BG Tag 0.2\nInactive",<0,1,0>,1);
-        }
-        
-        integer now = llGetUnixTime( );
-
-        if (agony > now) {
-            //llOwnerSay("now: " + (string)now);
-            // if agony end time has not been reached, see if agony animation has started.
-            llPlaySound("electricshock", 1.0);      
-            if (inagony == 0) {
-                // if agony animaiton has not started, start it
-                theAnimation = "shock";
-                llRequestPermissions( avatarKey, PERMISSION_TRIGGER_ANIMATION );
-                inagony = 1;
-            } else {}}
-        else {        
-            if (inagony == 1) {
-            // agony end time hs been reached; stop that animation and kick off a faint
-            llStopAnimation(theAnimation);
-            stop_anims( avatarKey );
-            agony = 0;
-            inagony = 0;
-            agonyduraton = agonyduraton + 5;    // make it last long er next time
-
-            fainted = now + faintduration;      // kick off a faint
-            llWhisper(0,avatarName + " fainted form the pain");
-            } else {} }
-        
-        
-        if (fainted > now) {
-            //llOwnerSay("now: " + (string)now);
-            // if faint end time has not been reached, see if agony animation has started.      
-            if (faint == 0) {
-                // if faint animaiton has not started, start it
-                llOwnerSay("@sendchat=n,recvchat=n");   // no chatting
-                theAnimation = "Fall/Faint";
-                llRequestPermissions( avatarKey, PERMISSION_TRIGGER_ANIMATION );
-                faint = 1;
-            } else {}}
-        else {        
-            if (faint == 1) {
-            // faint end time hs been reached; stop that animation and kick off a faint
-            llStopAnimation(theAnimation);
-            stop_anims( avatarKey );
-            theAnimation = "Stand";
-            llRequestPermissions( avatarKey, PERMISSION_TRIGGER_ANIMATION );
-            faint = 0;
-            fainted = 0;
-            faintduration = faintduration + 5;  // make it last long next time
-            llOwnerSay("@sendchat=y,recvchat=y");   // allow chat again
-            } else {} }
-        }
+        handleAnimationQueue();
+    }
     
-
     // listen to the prison box
     listen( integer channel, string name, key id, string message )
     {
@@ -191,45 +219,33 @@ default
             
             if (avatarKeyString == keyString) {
                 llOwnerSay(RLVmessage);
-                    if (llSubStringIndex(message,"@clear") > 0) {
+                if (llSubStringIndex(message,"@clear") > 0) {
                     locked = 0;
+                    llSetText(tagTitle+"\nInactive",<0,1,0>,1);
                 } else {
                     locked = 1;
+                    llSetText(tagTitle+"\n*Active*",<1,1,0>,1);
                 }
             }
             registerWithDB(locked);
 
-            //            avatarKeyString
-            //llOwnerSay("received message from prison lock");
-            //llListenRemove(commandlisten); // no wonder it doesn't get the command. 
-            //statuslisten = llListen(statuschannel, "Zap Badge", "", "" );
-            //llOwnerSay("@getstatus=" + (string)statuschannel);
         }
-        // doesn't seem to work
-        //if (channel == statuschannel) {
-        //    llOwnerSay("received status message");
-        //    llOwnerSay (message);
-        //    llListenRemove(statuslisten);
-        //}
     }
     
-    http_response(key request_id, integer status, list metadata, string body)
-    {
-        if (request_id == httprequest)
-        {
-            //llOwnerSay("response...");
-            //llOwnerSay(body); // *** debug
-            //llOwnerSay("...response");
-        }
-    }
+    //http_response(key request_id, integer status, list metadata, string body)
+    //{
+    //    if (request_id == httprequest)
+    //    {
+    //    }
+    //}
 
 
-    state_exit()
-    {
+    //state_exit()
+    //{
         // doesn't seem to work
-        llOwnerSay("state_exit");
-        llOwnerSay("@clear");
+        //llOwnerSay("state_exit");
+        //llOwnerSay("@clear");
         //statuslisten = llListen(statuschannel, "Zap Badge", "", "" );
         //llOwnerSay("@getstatus=" + (string)statuschannel);
-    }
+    //}
 }
