@@ -34,7 +34,7 @@ integer SAFEWORD = 1; // ***
 
 sayDebug(string message) {
     if (tagDesc == "debug") {
-        llOwnerSay(message);
+        llOwnerSay("debug: "+message);
     }
 }
 
@@ -69,7 +69,7 @@ setStateTitleAndColor() {
 
     llSetText(hudTitle+" \n"+suffix,color,1);
     llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,color,1.0]);
-    //llWhisper(0,avatarName + "'s prison tag is now " + lock + ".");
+    //sayDebug(avatarName + "'s prison tag is now " + lock + ".");
 }
 
 
@@ -280,7 +280,7 @@ sendRLVRestrictCommand() {
 }
 
 sendRLVUnrestrictCommand() {
-    llOwnerSay("@clear");
+    llOwnerSay("@clear,detach:BGInmate=force,attach:BGVisitor=force");
 }
 
 
@@ -382,11 +382,13 @@ default
         }            
     }
     
-    // listen to the prison box
+    // listen to objects on the command channel, 
+    // rlv status messages on the status channel, 
+    // and menu commands on the menuc hannel
     listen( integer channel, string name, key id, string message )
     {
         if (channel == CommandChannel) {
-            //sayDebug("command:" + message);   // *** debug
+            sayDebug("command:" + message);   // *** debug
             integer atrlv = llSubStringIndex(message,"@");
             
             if (atrlv >= 0) {
@@ -398,15 +400,19 @@ default
                 //sayDebug("RLVmessage:'" + RLVmessage + "'");   // *** debug
             
                 if ((atrlv > -1) && (avatarKeyString == keyString)) {
-                    // *** This is where the message gets sent to viewer. 
-                    llOwnerSay(RLVmessage); // *** Don't comment this out. *** debug
-                    if (llSubStringIndex(message,"@clear") > 0) {
+                    if (llSubStringIndex(message,"clear") > 0) {
                         // remote deactivation always allowed.
+                        // *** This is where the message gets sent to viewer. 
+                        llOwnerSay(RLVmessage); // *** Don't comment this out. *** debug
                         HudFunctionState = 0;
                     } else {
                         // if remote activation is allowed, then turn it on
                         if (HudFunctionState == -3) {
+                            // *** This is where the message gets sent to viewer. 
+                            llOwnerSay(RLVmessage); // *** Don't comment this out. *** debug
                             HudFunctionState = 1;
+                        } else {
+                            sayDebug("ignored remote activation message:");
                         }
                     }
                     setStateTitleAndColor();
