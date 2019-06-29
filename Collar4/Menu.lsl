@@ -28,6 +28,7 @@ string lockLevel = "";
 
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
+string threatLevel = "Unknown";
 
 
 debug(string message)
@@ -93,7 +94,7 @@ playLevelMenu(key avatarKey)
         list buttons = [];
         buttons = buttons + menuRadioButton("Casual", playLevel);
         buttons = buttons + menuRadioButton("Normal", playLevel);
-        buttons = buttons + menuRadioButton("Hard Core", playLevel);
+        buttons = buttons + menuRadioButton("Hardcore", playLevel);
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -127,11 +128,11 @@ doZap(key avatarKey, string message)
             allowZapHigh = invert(allowZapHigh);
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
-        llMessageLinked(LINK_THIS, 1101, zapJsonList, "");
+        llMessageLinked(LINK_THIS, 1301, zapJsonList, "");
     }
     else
     {
-        llMessageLinked(LINK_THIS, 1102, action, "");
+        llMessageLinked(LINK_THIS, 1302, action, "");
     }
 
 }
@@ -228,18 +229,69 @@ hackMenu(key avatarKey)
     }
 }
 
-mainMenu(key avatarKey, string message) {
-        if (message == "Play Level"){
-            playLevelMenu(avatarKey);
-        }
-        else if (message == "Zap"){
+mainMenu(key avatarKey) {
+    string message = "Main";
+    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings", "Safeword"];
+    setUpMenu(avatarKey, message, buttons);
+}
+
+doMainMenu(key avatarKey, string message) {
+        if (message == "Zap"){
             zapMenu(avatarKey);
-        }
-        else if (message == "Mood"){
-            moodMenu(avatarKey);
         }
         else if (message == "Leash"){
             leashMenu(avatarKey);
+        }
+        else if (message == "Info"){
+            infoGive(avatarKey);
+        }
+        else if (message == "Hack"){
+            hackMenu(avatarKey);
+        }
+        else if (message == "Safeword"){
+            hackMenu(avatarKey);
+        }
+        else if (message == "Settings"){
+            settingsMenu(avatarKey);
+        }
+    }
+    
+settingsMenu(key avatarKey) {
+    if (avatarKey == llGetOwner())
+    {
+        string message = "Settings";
+        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock"];
+        setUpMenu(avatarKey, message, buttons);
+    }
+    else
+    {
+        ;
+    }
+}
+    
+threatMenu(key avatarKey) {
+    if (avatarKey == llGetOwner())
+    {
+        string message = "Threat";
+        list buttons = [];
+        buttons = buttons + menuRadioButton("Low", threatLevel);
+        buttons = buttons + menuRadioButton("Moderate", threatLevel);
+        buttons = buttons + menuRadioButton("Dangerous", threatLevel);
+        buttons = buttons + menuRadioButton("Extreme", threatLevel);
+        setUpMenu(avatarKey, message, buttons);
+    }
+    else
+    {
+        ;
+    }
+}
+
+doSettingsMenu(key avatarKey, string message) {
+        if (message == "Play Level"){
+            playLevelMenu(avatarKey);
+        }
+        else if (message == "Mood"){
+            moodMenu(avatarKey);
         }
         else if (message == "Crime"){
             crimeDialog(avatarKey);
@@ -247,16 +299,13 @@ mainMenu(key avatarKey, string message) {
         else if (message == "Class"){
             classMenu(avatarKey);
         }
-        else if (message == "Info"){
-            infoGive(avatarKey);
-        }
         else if (message == "Lock"){
             lockMenu(avatarKey);
         }
-        else if (message == "Hack"){
-            hackMenu(avatarKey);
+        else if (message == "Threat"){
+            threatMenu(avatarKey);
         }
-    }
+}
 
 
 default
@@ -268,11 +317,7 @@ default
     touch_start(integer total_number)
     {
         key avatarKey  = llDetectedKey(0);
-        integer isGroup = llDetectedGroup(0);
-       
-        string message = "Main Menu";
-        list buttons = ["Play Level", "Zap", "Mood", "Leash", "Crime", "Class", "Info", "Lock", "Hack"];
-        setUpMenu(avatarKey, message, buttons);
+        mainMenu(avatarKey);
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
@@ -282,11 +327,17 @@ default
         debug("listen:"+message+" messageNoButtons:"+messageNoButtons);
         
         //Main
-        if (llSubStringIndex("Play Level Zap Mood Leash Crime Class Info Lock Hack", message) > -1){
+        if (llSubStringIndex("Zap Hack Leash Info Safeword Settings", message) > -1){
             llWhisper(0,"listen: Main:"+message);
-             mainMenu(avatarKey, message);
+             doMainMenu(avatarKey, message);
         }
         
+        //Settings
+        else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood", message) > -1){
+            llWhisper(0,"listen: Main:"+message);
+             doSettingsMenu(avatarKey, message);
+        }
+
         // Mood
         else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
             llWhisper(0,"listen: Mood:"+messageNoButtons);
@@ -307,23 +358,23 @@ default
             doZap(avatarKey, message);
         }
         
-        // Play Level
-        else if (llSubStringIndex("Casual Normal Hard Core", messageNoButtons) > -1){
-            llWhisper(0,"listen: playLevel:"+messageNoButtons);
-            playLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1300, playLevel, "");
-        }
-
         // Lock Level
-        else if (llSubStringIndex("Off Normal Hard Core", messageNoButtons) > -1){
+        else if (llSubStringIndex("Off Normal Hardcore", messageNoButtons) > -1){
             llWhisper(0,"listen: lockLevel:"+messageNoButtons);
             lockLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1400, lockLevel, "");
         }
 
-                
-        if (llGetOwner() == avatarKey)
-         ; 
+        // Threat Level
+        else if (llSubStringIndex("Low Moderate Dangerous Extreme", messageNoButtons) > -1){
+            llWhisper(0,"listen: threatLevel:"+messageNoButtons);
+            threatLevel = messageNoButtons;
+            llMessageLinked(LINK_THIS, 1500, threatLevel, "");
+        }
+
+        else {
+            llWhisper(0,"Error: Unhandled Dialog Message: "+message);
+        } 
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
