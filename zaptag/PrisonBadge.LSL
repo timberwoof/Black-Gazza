@@ -2,6 +2,8 @@
 
 // need to work out what different states it has and the transitions between locked and unlocked and stuff
 
+string hudTitle = "BG Inmate HUD 0.7"; 
+
 key avatarKey; 
 string avatarKeyString;
 string avatarName;
@@ -16,7 +18,6 @@ integer MenuListen = 0;
 integer CommandChannel = 0;     //listen to commands from prison box & guard HUD; generated on the fly
 integer CommandListen = 0;
 
-string hudTitle = "BG Inmate HUD 0.5";
 string tagDesc = "";
 
 integer hudAttached = 0;    //0 = unattached; 1 = attached
@@ -58,7 +59,7 @@ setStateTitleAndColor() {
         color  = green;
         
     } else if (rlvPresent == 0) {
-        // this is a stupid state
+        // this is a stupid state ... but possible nevertheless
         suffix = "Active";
         color  = yellow;
         
@@ -121,7 +122,7 @@ hudMenu() {
 
     buttons = buttons + ["Register"];   // what's this for? 
 
-    message = "Prisoner HUD v0.5 is " + message;
+    message = hudTitle + " is " + message;
     MenuListen = llListen(MenuChannel, "", avatarKey, "" );
     // listen on the MenuChannel
     // to only the avatar wearing the hud
@@ -142,25 +143,29 @@ registerWithDB() {
     string url;
     
     // what  to tell the database
-    string hudActive = "0";
+    integer hudActive = 0;
     if (HudFunctionState > 0) {
-        hudActive = "1";
+        hudActive = 1;
         }
+    if (rlvPresent == 1) {
+        hudActive = hudActive * 10;
+    }
     
     if (avatarKeyString == "00000000-0000-0000-0000-000000000000") {
         // tag is not attatched
-        url = "http://web.infernosoft.com/blackgazza/unregisterInmate.php?"+
+        url = "http://web.infernosoft.com/blackgazza/registerUser.php?"+
         "avatar=" + avatarKeyString + "&" + 
-        "name=" + llEscapeURL(avatarName) + "&" + 
+        "name=&" + 
         "prim=" + primKeyString + "&" + 
+        "role=0&" +
         "timeSent=" + llEscapeURL(timeStampAll) + "&" +
         "commandChannel=0";
     } else {
-        url = "http://web.infernosoft.com/blackgazza/registerInmate.php?"+
+        url = "http://web.infernosoft.com/blackgazza/registerUser.php?"+
         "avatar=" + avatarKeyString + "&" + 
         "name=" + llEscapeURL(avatarName) + "&" + 
         "prim=" + primKeyString + "&" + 
-        "locked=" + hudActive + "&" +
+        "role=" + (string)hudActive + "&" +
         "timeSent=" + llEscapeURL(timeStampAll) + "&" +
         "commandChannel=" + (string)CommandChannel;
     }
@@ -276,11 +281,41 @@ stop_anims( key agent )
 // RLV
 
 sendRLVRestrictCommand() {
-    llOwnerSay("@chatshout=n,chatnormal=n,tplm=n,tploc=n,tplure=n,sittp=n,fartouch=n,showworldmap=n,showminimap=n,showloc=n,fly=n,detach=n,edit=n,rez=n,detach:BGVisitor=force,attach:BGInmate=force,showinv=n");
+    string restrictCommand = "@chatshout=n,chatnormal=n,"+
+        "tplm=n,tploc=n,tplure=n,sittp=n,fartouch=n,"+
+        "showworldmap=n,showminimap=n,showloc=n,fly=n,"+
+        "detach=n,edit=n,rez=n,showinv=n";
+        
+        // http://wiki.secondlife.com/wiki/LSL_Protocol/RestrainedLoveAPI
+        // Camera and View
+        restrictCommand =
+        "tplm=n,tploc=n,tplure=n,sittp=n,fartouch=n,"+
+        "setgroup:Black Gazza=force,"+  // force group to BG
+        // 0.0 dooes othing
+        
+        // these do not work
+        //"camzoommax:1.0=y,"+
+        //"camzoommin:1=0,"+
+        //"camdistmax:1=y,"+
+        //"camdrawmax:20=y,"+
+        //"camunlock=y,"+ 
+        //"camavdist:15=y,"+
+        "";
+    
+    llOwnerSay(restrictCommand);
+    llOwnerSay("@"+restrictCommand);
+    
+    llOwnerSay("@setgroup=n"); // prevent user stting group
+    
+    // these do not work
+    //llOwnerSay("@getdebug_cameraoffsetrearview=0");
+    //llOwnerSay("@getdebug_focusoffsetrearview=0");
+    
+    llOwnerSay("@setenv_bluedensityb:1.0=force");
 }
 
 sendRLVUnrestrictCommand() {
-    llOwnerSay("@clear,detach:BGInmate=force,attach:BGVisitor=force");
+    llOwnerSay("@clear");
 }
 
 
@@ -291,19 +326,19 @@ default
 {
     state_entry()
     {
-        //sayDebug("state_entry");
+        sayDebug("state_entry");
         hudAttached = 0;
         rlvPresent = 0;
         HudFunctionState = 0;
         
-        hudTitle = llGetObjectName();
+        //hudTitle = llGetObjectName(); // no. Loses version info that way
         tagDesc = llGetObjectDesc();
 
         initAnimationQueue();
         llPreloadSound("electricshock");
-        //sayDebug("state_entry done");
         llSetPrimitiveParams([PRIM_COLOR,ALL_SIDES,white,1.0]); // make it white
         setStateTitleAndColor();
+        sayDebug("state_entry done");
     }
 
      attach( key id )
@@ -344,9 +379,8 @@ default
         // "the timeout should be long enough, like 30 seconds to one minute 
         // in order to receive the automatic reply from the viewer." 
 
-        registerWithDB();    // inmate, offline  
-        llOwnerSay("Black Gazza" + hudTitle + 
-            " (development version). To activate or deactivate, click a Prison Box.");
+        //registerWithDB();    // inmate, offline  
+        //llOwnerSay("Black Gazza" + hudTitle + " (development version). Click the HUD for a menu.");
         sayDebug("attach done"); // *** debug
     }
  
@@ -417,7 +451,7 @@ default
                     }
                     setStateTitleAndColor();
                 }
-                registerWithDB();
+                //registerWithDB();
             } // if (atrlv >= 0)
 
             integer atbg = llSubStringIndex(message,"#") +1;
@@ -442,12 +476,12 @@ default
             if (message == "Off") {
                 sendRLVUnrestrictCommand();
                 HudFunctionState = 0;
-                registerWithDB(); // prisoner, off
+                //registerWithDB(); // prisoner, off
 
             } else if (message == "On") {
                 sendRLVRestrictCommand();
                 HudFunctionState = 1;
-                registerWithDB(); // prisoner, on
+                //registerWithDB(); // prisoner, on
                 
             } else if (message == "On Timer") {
                 HudFunctionState = 2;
@@ -463,7 +497,7 @@ default
                 HudFunctionState = 0;
                 
             } else if (message == "Register") {
-                registerWithDB();    // what's this for? 
+                //registerWithDB();    // what's this for? 
             }
             setStateTitleAndColor();
             llListenRemove(MenuListen);
