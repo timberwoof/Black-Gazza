@@ -12,7 +12,7 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -103,38 +103,43 @@ playLevelMenu(key avatarKey)
     }
 }
 
-zapMenu(key avatarKey)
+ZapLevelMenu(key avatarKey)
 {
+    // the zap Level Menu always includes checkboxes in front of the Zap word. 
     string message = "Set Permissible Zap";
     list buttons = [];
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
-    buttons = buttons + menuCheckbox("Zap Hi", allowZapHigh);
+    buttons = buttons + menuCheckbox("Zap High", allowZapHigh);
     setUpMenu(avatarKey, message, buttons);
 }
 
-doZap(key avatarKey, string message)
+doSetZapLevels(key avatarKey, string message)
 {
-    string checkbox = llGetSubString(message,0,0);
-    string action = llGetSubString(message,6,10);
     if (avatarKey == llGetOwner()) 
     {
-        debug("wearer sets allowable zap level: "+action);
-        if (action == "Low") {
+        debug("wearer sets allowable zap level: "+message);
+        if (message == "Zap Low") {
             allowZapLow = invert(allowZapLow);
-        } else if (action == "Med") {
+        } else if (message == "Zap Med") {
             allowZapMed = invert(allowZapMed);
-        } else if (action == "Hi") {
+        } else if (message == "Zap Hi") {
             allowZapHigh = invert(allowZapHigh);
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         llMessageLinked(LINK_THIS, 1301, zapJsonList, "");
     }
-    else
-    {
-        llMessageLinked(LINK_THIS, 1302, action, "");
-    }
+}
 
+zapMenu(key avatarKey)
+{
+    // the zap menu never includes radio buttons in front of the Zap word
+    string message = "Zap";
+    list buttons = [];
+    if (allowZapLow) buttons = buttons + ["Zap Low"];
+    if (allowZapMed) buttons = buttons + ["Zap Med"];
+    if (allowZapHigh) buttons = buttons + ["Zap High"];
+    setUpMenu(avatarKey, message, buttons);
 }
 
 moodMenu(key avatarKey)
@@ -260,7 +265,7 @@ settingsMenu(key avatarKey) {
     if (avatarKey == llGetOwner())
     {
         string message = "Settings";
-        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock"];
+        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock", "SetZap"];
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -305,6 +310,9 @@ doSettingsMenu(key avatarKey, string message) {
         else if (message == "Threat"){
             threatMenu(avatarKey);
         }
+        else if (message == "SetZap"){
+            ZapLevelMenu(avatarKey);
+        }
 }
 
 
@@ -328,57 +336,63 @@ default
         
         //Main
         if (llSubStringIndex("Zap Hack Leash Info Safeword Settings", message) > -1){
-            llWhisper(0,"listen: Main:"+message);
+            debug("listen: Main:"+message);
              doMainMenu(avatarKey, message);
         }
         
         //Settings
-        else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood", message) > -1){
-            llWhisper(0,"listen: Main:"+message);
+        else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood SetZap", message) > -1){
+            debug("listen: Settings:"+message);
              doSettingsMenu(avatarKey, message);
         }
 
         // Mood
         else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
-            llWhisper(0,"listen: Mood:"+messageNoButtons);
+            debug("listen: Mood:"+messageNoButtons);
             ICOOCMood = messageNoButtons;
             llMessageLinked(LINK_THIS, 1100, ICOOCMood, "");
         }
         
         //Class
         else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageNoButtons) > -1){
-            llWhisper(0,"listen: Class:"+messageNoButtons);
+            debug("listen: Class:"+messageNoButtons);
             prisonerClass = messageNoButtons;
             llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
         }
         
-        // Zap
-        else if (llGetSubString(message,2,4) == "Zap"){
-            llWhisper(0,"listen: Zap:"+message);
-            doZap(avatarKey, message);
+        // Do Zap
+        else if (llGetSubString(message,0,2) == "Zap"){
+            debug("listen: Zap:"+message);
+            llMessageLinked(LINK_THIS, 1302, message, "");
         }
         
+        // Set Zap Level
+        else if (llSubStringIndex("Zap Low Zap Med Zap High", messageNoButtons) > -1){
+            debug("listen: Set Zap:"+message);
+            doSetZapLevels(avatarKey, messageNoButtons);
+        }
+
         // Lock Level
         else if (llSubStringIndex("Off Normal Hardcore", messageNoButtons) > -1){
-            llWhisper(0,"listen: lockLevel:"+messageNoButtons);
+            debug("listen: lockLevel:"+messageNoButtons);
             lockLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1400, lockLevel, "");
         }
 
         // Threat Level
         else if (llSubStringIndex("Low Moderate Dangerous Extreme", messageNoButtons) > -1){
-            llWhisper(0,"listen: threatLevel:"+messageNoButtons);
+            debug("listen: threatLevel:"+messageNoButtons);
             threatLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1500, threatLevel, "");
         }
 
         else {
-            llWhisper(0,"Error: Unhandled Dialog Message: "+message);
+            debug("Error: Unhandled Dialog Message: "+message);
         } 
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        llWhisper(0,"Menu link_message "+(string)num+" "+message);
+        debug("Menu link_message "+(string)num+" "+message);
         if (num == 2000) {
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
