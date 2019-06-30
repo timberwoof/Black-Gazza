@@ -26,15 +26,24 @@ integer allowZapHigh = 1;
 
 string ICOOCMood = "OOC";
 string prisonerClass = "White";
-string playLevel = "Casual";
 string lockLevel = "Off";
 integer rlvPresent = 0;
-
 
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
 string threatLevel = "None";
 string batteryLevel = "Unknown";
+
+integer LinkBlinky = 17;
+integer FaceBlinky1 = 1;
+integer FaceBlinky2 = 2;
+integer FaceBlinky3 = 3;
+integer FaceBlinky4 = 4;
+integer batteryIconLink = 16;
+integer batteryIconFace = 0;
+integer batteryCoverLink = 1;
+integer batteryCoverFace = 6;
+
 
 // Utilities *******
 
@@ -370,7 +379,22 @@ default
     touch_start(integer total_number)
     {
         key avatarKey  = llDetectedKey(0);
-        mainMenu(avatarKey);
+        integer touchedLink = llDetectedLinkNumber(0);
+        integer touchedFace = llDetectedTouchFace(0);
+        vector touchedUV = llDetectedTouchUV(0);
+        sayDebug("Link "+(string)touchedLink+", Face "+(string)touchedFace+", UV "+(string)touchedUV);
+        
+        if (touchedLink == LinkBlinky) {
+            if (touchedFace == FaceBlinky1) {llInstantMessage(avatarKey, prisonerNumber+" Mood: "+ICOOCMood);}
+            else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, prisonerNumber+" Class: "+prisonerClass);}
+            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, prisonerNumber+" Threat: "+threatLevel);}
+            else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, prisonerNumber+" Zap:");}
+            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, prisonerNumber+" Battery level: "+batteryLevel+"%");
+        } else if (touchedLink == batteryCoverLink) {
+            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, prisonerNumber+" Battery level: "+batteryLevel+"%");
+            else mainMenu(avatarKey);
+        } else
+            mainMenu(avatarKey);
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
@@ -434,7 +458,8 @@ default
         
         // Document
         else if ((llGetSubString(message,0,2) == "Doc") > -1){
-            integer inumber = (integer)llGetSubString(message,4,4);
+            sayDebug("listen: message:"+message);
+            integer inumber = (integer)llGetSubString(message,4,4) - 1;
             llInstantMessage(llGetOwner(),"Offering '"+llGetInventoryName(INVENTORY_NOTECARD,inumber)+"' to "+llGetDisplayName(avatarKey)+".");
             llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber) );            
         }
