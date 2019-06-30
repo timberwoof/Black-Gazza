@@ -4,7 +4,7 @@
 
 // Receives menu commands on link number 1400
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -32,7 +32,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,message);
+        llWhisper(0,"RLV:"+message);
     }
 }
 
@@ -90,38 +90,40 @@ registerWithDB() {
         HTTP_MIMETYPE,"text/plain;charset=utf-8"];
     string body = "";
     //sayDebug(url); // *** debug
-    httprequest = llHTTPRequest(url, parameters, body );
+    //httprequest = llHTTPRequest(url, parameters, body );
 }
 
 sendRLVRestrictCommand(string level) {
     // level can be Off Light Medium Heavy Hardcore
     if (rlvPresent == 1) {
+        sayDebug("sendRLVRestrictCommand("+level+")");
         string rlvcommand; 
         if (level == "Off") {
-            llOwnerSay("@clear,detach:BGInmate=force,attach:BGVisitor=force");
-        } else if (level = "Light") {
+            rlvcommand = "@clear";
+        } else if (level == "Light") {
             rlvcommand = "@tplm=n,tploc=n,tplure=y," +          
             "showworldmap=y,showminimap=y,showloc=y," + 
             "fly=n,detach=n,edit=y,rez=y," +
             "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y";
-        } else if (level = "Medium") {
+        } else if (level == "Medium") {
             rlvcommand = "@tplm=n,tploc=n,tplure=y," +          
-            "showworldmap=y,showminimap=y,showloc=y," + 
+            "showworldmap=n,showminimap=n,showloc=y," + 
             "fly=n,detach=n,edit=y,rez=y," +
-            "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y";
-        } else if (level = "Heavy") {
+            "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
+        } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=n,shownames=n,sittp=n,fartouch=n";
-        } else if (level = "Hardcore") {
+        } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=n,shownames=n,sittp=n,fartouch=n";
+        }
         sayDebug(rlvcommand);
         llOwnerSay(rlvcommand);
-        }
+        llSleep(2);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
     }
@@ -272,7 +274,7 @@ HUDTimer() {
     if (HUDTimerunning == 1 && HUDTimeremaining <= HUDTimerInterval) {
         // time has run out...
         //llWhisper(0,thisCell+" has finished timelock. Opening.");
-        sendRLVRestrictCommand("Light");
+        sendRLVRestrictCommand("Off");
         HudFunctionState = 0;
         registerWithDB(); // prisoner, off
         HUDTimerReset();
@@ -289,12 +291,14 @@ default
 {
     state_entry()
     {
+        sayDebug("state_entry");
         rlvPresent = 0;
         SafewordListen = 0;
         llPreloadSound("electricshock");
+        sayDebug("state_entry done");
     }
 
-     attach( key id )
+     attach(key id)
      {
         if (id) {
             sayDebug("attach"); // *** debug
@@ -319,6 +323,7 @@ default
             sayDebug("attach but no ID"); // *** debug
             hudAttached = 0;
             HudFunctionState = 0;
+            sendRLVRestrictCommand("Off");
             sendRLVRestrictCommand("Light");
             registerWithDB();    // inmate, offline  
             sayDebug("attach but no ID done"); // *** debug
@@ -338,7 +343,8 @@ default
     // We listen in on all ink messages and pick the ones we're interested in
         if (num == 1400) {
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
-                sayDebug("RLV link_message "+(string)num+" "+message);
+                sayDebug("link_message "+(string)num+" "+message);
+                sendRLVRestrictCommand("Off");
                 sendRLVRestrictCommand(message);
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
@@ -364,7 +370,7 @@ default
         }
         
         if (channel == RLVStatusChannel) {
-            sayDebug("RLV status:" + message);   // *** debug
+            sayDebug("status:" + message);   // *** debug
             rlvPresent = 1;
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
