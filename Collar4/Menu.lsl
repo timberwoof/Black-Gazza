@@ -27,11 +27,12 @@ integer allowZapHigh = 1;
 string ICOOCMood = "OOC";
 string prisonerClass = "White";
 string playLevel = "Casual";
-string lockLevel = "";
+string lockLevel = "Off";
 
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
-string threatLevel = "Unknown";
+string threatLevel = "Low";
+string batteryLevel = "Unknown";
 
 // Utilities *******
 
@@ -39,7 +40,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,message);
+        llWhisper(0,"Menu:"+message);
     }
 }
 
@@ -150,8 +151,23 @@ leashMenu(key avatarKey)
     }
 }
 
-infoGive(key avatarKey)
-{;}
+infoGive(key avatarKey){
+    string ZapLevels = "";
+    if (allowZapLow) ZapLevels = ZapLevels + "Low ";
+    if (allowZapMed) ZapLevels = ZapLevels + "Medium ";
+    if (allowZapHigh) ZapLevels = ZapLevels + "High ";
+
+    string message = "Prisoner Information \n"+
+    "Number: " + prisonerNumber + "\n" +
+    "Crime: " + prisonerCrime + "\n" +
+    "Class: " + prisonerClass + "\n" +
+    "Threat: " + threatLevel + "\n" +
+    "Zap Levels: " + ZapLevels + "\n" +
+    "Restriciton: " + lockLevel + "\n" +
+    "Battery Level: " + batteryLevel + "% \n" +
+    "Mood: " + ICOOCMood + "\n";
+    setUpMenu(avatarKey, message, []);
+}
 
 hackMenu(key avatarKey)
 {
@@ -229,6 +245,9 @@ doSetZapLevels(key avatarKey, string message)
         } else if (message == "Zap Hi") {
             allowZapHigh = invert(allowZapHigh);
         }
+        if (allowZapLow + allowZapMed + allowZapHigh == 0) {
+            allowZapHigh = 1;
+        }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         llMessageLinked(LINK_THIS, 1301, zapJsonList, "");
     }
@@ -257,6 +276,7 @@ moodMenu(key avatarKey)
 
 crimeDialog(key avatarKey) {
     llWhisper(0,prisonerCrime);
+    llMessageLinked(LINK_THIS, 1800, prisonerCrime, ""); // communicate the crime
 }
 
 classMenu(key avatarKey)
@@ -401,6 +421,8 @@ default
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
             prisonerNumber = llList2String(returned, 4);
+        } else if (num == 1700) {
+            batteryLevel = message;
         }
     }
     
