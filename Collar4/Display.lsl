@@ -41,6 +41,7 @@ integer FaceAlphanumFrame = 5;
 integer FaceAlphanum = 1;
 
 // BG_CollarV4_PowerDisplay_PNG
+integer batteryLevel;
 key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
 integer batteryIconLink = 16;
 integer batteryIconFace = 0;
@@ -67,13 +68,12 @@ list classNames;
 list classColors;
 vector classColor;
 
-integer debugBatteryLevel;
     
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,message);
+        llWhisper(0,"Display:"+message);
     }
 }
 
@@ -192,8 +192,7 @@ default
         classColor = WHITE;
         setTextColor(CYAN);
         
-        debugBatteryLevel = 0;
-        llSetTimerEvent(1); // to make battery level display change *** debug
+        batteryLevel = 0;
     }
 
      attach(key id)
@@ -236,7 +235,7 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        sayDebug("Display link_message "+(string)num+" "+message);
+        sayDebug("link_message "+(string)num+" "+message);
         
         // IC/OOC Mood sets frame color and blinky 1
         if (num == 1100) {
@@ -269,20 +268,22 @@ default
             if (llList2Integer(zapLevels,2)) lightcolor = lightcolor + RED;
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, lightcolor, 1.0]);            
         }
-            
-    }
-
-    timer()
-    {
-        // Scrolling Text handler works for text longer than 12 characters. 
-        //displayText(llGetSubString(scrollText, scrollPos, scrollPos+12) + "            ");
-        //scrollPos = scrollPos + 1;
-        //if (scrollPos >= scrollLimit) {
-        //    scrollPos = 0;
-        //}
         
-        displayBattery(debugBatteryLevel);
-        debugBatteryLevel = debugBatteryLevel + 1;
-        if (debugBatteryLevel > 100) debugBatteryLevel = 0;
+        // Threat level sets blinky 4
+        else if (num == 1400) {
+            sayDebug("threat level message:"+message);
+            list threatLevels = ["Low", "Moderate", "Dangerous", "Extreme"];
+            list threatColors = [GREEN, YELLOW, ORANGE, RED];
+            integer threati = llListFindList(threatLevels, [message]);
+            vector threatcolor = llList2Vector(threatColors, threati);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
+            }
+        
+        // Battery Level Report
+        else if (num == 1700) {
+            sayDebug("battery "+message);
+            displayBattery((integer)message);
+            }
+            
     }
 }
