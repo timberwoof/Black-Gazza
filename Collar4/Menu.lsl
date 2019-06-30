@@ -166,7 +166,19 @@ infoGive(key avatarKey){
     "Restriciton: " + lockLevel + "\n" +
     "Battery Level: " + batteryLevel + "% \n" +
     "Mood: " + ICOOCMood + "\n";
-    setUpMenu(avatarKey, message, []);
+    
+    list buttons = []; 
+    integer numNotecards = llGetInventoryNumber(INVENTORY_NOTECARD);
+    if (numNotecards > 0) {
+        message = message + "------------------\nChoose a Notecard:";
+        integer index;
+        for (index = 0; index < numNotecards; index++) {
+            integer inumber = index+1;
+            message += "\n" + (string)inumber + " - " + llGetInventoryName(INVENTORY_NOTECARD,index);
+            buttons += ["Doc "+(string)inumber];
+        }
+    }
+    setUpMenu(avatarKey, message, buttons);
 }
 
 hackMenu(key avatarKey)
@@ -407,6 +419,13 @@ default
             sayDebug("listen: threatLevel:"+messageNoButtons);
             threatLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1500, threatLevel, "");
+        }
+        
+        // Document
+        else if ((llGetSubString(message,0,2) == "Doc") > -1){
+            integer inumber = (integer)llGetSubString(message,4,4);
+            llInstantMessage(llGetOwner(),"Offering '"+llGetInventoryName(INVENTORY_NOTECARD,inumber)+"' to "+llGetDisplayName(avatarKey)+".");
+            llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber) );            
         }
 
         else {
