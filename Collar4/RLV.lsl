@@ -4,7 +4,7 @@
 
 // Receives menu commands on link number 1400
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
