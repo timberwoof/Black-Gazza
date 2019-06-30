@@ -4,7 +4,7 @@
 
 // Receives menu commands on link number 1400
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -114,12 +114,12 @@ sendRLVRestrictCommand(string level) {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
-            "chatshout=n,chatnormal=y,chatwhisper=n,shownames=n,sittp=n,fartouch=n";
+            "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
         } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
-            "chatshout=n,chatnormal=y,chatwhisper=n,shownames=n,sittp=n,fartouch=n";
+            "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
         sayDebug(rlvcommand);
         llOwnerSay(rlvcommand);
@@ -160,6 +160,111 @@ SafewordSucceeded() {
     SafewordListen = 0;
     sendRLVRestrictCommand("Off");
     //registerWithDB(); // prisoner, off
+}
+
+
+// =================================
+// Animation Queue
+string theAnimation;
+integer AnimationQueueStatus = 0;
+
+oldTouch(){
+    if (HudFunctionState > 0) {   // must be prison-locked *** comment out for debug
+        if (llGetOwner() != llDetectedKey(0)) { // must be someone else *** comment out for debug
+            startAnimations(1);
+            }   // *** comment out for debug
+        }   // *** comment out for debug
+}
+
+
+list AnimationList = [
+"bogus",0,
+"shock",5,
+"Fall/Faint",5,
+"Stand From Faint",3,
+"stand",1
+];
+
+integer NumberOfAnimations; // number of sounds in the list. n
+integer AnimationPlaying = 0;   // the number of the sound that's playing. 0..n-1
+integer PlayNextAnimation = 0;  // the Unix time when the next sound must be played
+
+initAnimationQueue() {
+    // initialize the sond playing system
+    NumberOfAnimations =  llGetListLength(AnimationList) / 2;
+}
+
+startAnimations(integer index) {
+    // sets the time wehn we need to kick off the next animation
+    // start with call to starSound(0);
+    sayDebug("startAnimation " + (string)index);
+    llSetTimerEvent(1.0);
+    if (index < NumberOfAnimations) {
+        AnimationQueueStatus = 1; 
+        AnimationPlaying = index;
+        theAnimation = llList2String(AnimationList, AnimationPlaying*2);
+        PlayNextAnimation = llGetUnixTime() + llList2Integer(AnimationList,AnimationPlaying*2+1);
+        sayDebug("animating '" + theAnimation + "' until " + (string)PlayNextAnimation);
+        if (llGetOwner() != NULL_KEY) {
+            sayDebug("startAnimation requesting PERMISSION_TRIGGER_ANIMATION");
+            llRequestPermissions( llGetOwner(), PERMISSION_TRIGGER_ANIMATION ); 
+        }
+        
+        if (index == 1) {
+            //StartParticles(); // doesn't work as hud
+            llOwnerSay(llKey2Name(llDetectedKey(0)) + " punishes for disobedience.");
+            llLoopSound("electricshock", 1.0);      
+            llSetTimerEvent(1.0);
+        } else if (index == 2) {
+            //StopParticles(); // doesn't work as hud
+            llStopSound();
+            if (rlvPresent == 1) {
+                llOwnerSay("@sendchat=n,recvchat=n");   // no chatting while fainted
+            }
+        } else if (index == 4) {
+            if (rlvPresent == 1) {
+                llOwnerSay("@sendchat=y,recvchat=y");   // allow chat again
+            }
+        }
+    } else {
+        sayDebug("startAnimation sequence completed");
+        AnimationPlaying = 0;
+        PlayNextAnimation = 0;
+        stop_anims(llGetOwner());    
+        AnimationQueueStatus = 0; 
+        HUDTimerRestart();
+    }
+}
+
+// stick a call to this in the timer event
+handleAnimationQueue() {
+    if (PlayNextAnimation > 0) { 
+        HUDTimerIncrement(HUDTimerInterval + 1); // makes timer backup while animation is playing 
+            // HUDTimerInterval backs off what was added in accelerated timer
+            // 1 adds in the second for the accelerated timer
+            // the result is that while getting zapped time timer adds time. 
+        if ((PlayNextAnimation <= llGetUnixTime( )) && (AnimationPlaying < NumberOfAnimations)){
+                startAnimations(++AnimationPlaying);
+        }
+    }
+} 
+
+// llOwnerSay(avatarName + " fainted from the pain");
+// agonyduraton = agonyduraton + 5; 
+// faintduration = faintduration + 5;  // make it last long next time
+ 
+stop_anims( key agent )
+{
+    if (agent != NULL_KEY) {
+        list animationList = llGetAnimationList( agent );
+        integer    lsize = llGetListLength( animationList );
+        integer i;
+        for ( i = 0; i < lsize; i++ )
+        {
+            //sayDebug("stopping an animation");
+            llStopAnimation( llList2Key( animationList, i ) );
+        }
+    }
 }
 
 
@@ -292,8 +397,11 @@ default
     state_entry()
     {
         sayDebug("state_entry");
+        llStopSound();
         rlvPresent = 0;
+        HudFunctionState = 0;
         SafewordListen = 0;
+        initAnimationQueue();
         llPreloadSound("electricshock");
         sayDebug("state_entry done");
     }
@@ -332,10 +440,10 @@ default
 
     run_time_permissions(integer permissions)
     {
-        //sayDebug("run_time_permissions " + (string)theAnimation);
+        sayDebug("run_time_permissions " + (string)theAnimation);
         if (permissions & PERMISSION_TRIGGER_ANIMATION) {
-            //stop_anims(llGetOwner());
-            //llStartAnimation(theAnimation);
+            stop_anims(llGetOwner());
+            llStartAnimation(theAnimation);
         }
     }
     
@@ -350,7 +458,18 @@ default
                 SendSafewordInstructions();
             }
         }
-    }
+        if (num == 1302) {
+            // message is like "Zap Low" 
+            string variation = llGetSubString(message, 4,6);
+            if (variation == "Low") {
+            }
+            if (variation == "Med") {
+            }
+            if (variation == "Hig") {
+                startAnimations(1);
+            }
+        }
+   }
 
 
     // listen to objects on the command channel, 
@@ -374,7 +493,8 @@ default
             rlvPresent = 1;
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
-        }         
+        }
+        
     }
 
 
@@ -393,7 +513,7 @@ default
             HUDTimerRestart();
         } else {
             // can only have come from an animation event
-            //handleAnimationQueue();
+            handleAnimationQueue();
         } 
                    
         HUDTimer();
