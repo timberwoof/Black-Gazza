@@ -15,7 +15,7 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -33,7 +33,7 @@ integer rlvPresent = 0;
 
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
-string threatLevel = "Low";
+string threatLevel = "None";
 string batteryLevel = "Unknown";
 
 // Utilities *******
@@ -346,7 +346,7 @@ threatMenu(key avatarKey) {
     {
         string message = "Threat";
         list buttons = [];
-        buttons = buttons + menuRadioButton("Low", threatLevel);
+        buttons = buttons + menuRadioButton("None", threatLevel);
         buttons = buttons + menuRadioButton("Moderate", threatLevel);
         buttons = buttons + menuRadioButton("Dangerous", threatLevel);
         buttons = buttons + menuRadioButton("Extreme", threatLevel);
@@ -426,7 +426,7 @@ default
         }
 
         // Threat Level
-        else if (llSubStringIndex("Low Moderate Dangerous Extreme", messageNoButtons) > -1){
+        else if (llSubStringIndex("None Moderate Dangerous Extreme", messageNoButtons) > -1){
             sayDebug("listen: threatLevel:"+messageNoButtons);
             threatLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1500, threatLevel, "");
