@@ -8,7 +8,7 @@
 // • blinky lights
 // • battery display
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
