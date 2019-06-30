@@ -28,6 +28,8 @@ string ICOOCMood = "OOC";
 string prisonerClass = "White";
 string playLevel = "Casual";
 string lockLevel = "Off";
+integer rlvPresent = 0;
+
 
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
@@ -202,7 +204,10 @@ settingsMenu(key avatarKey) {
     if (avatarKey == llGetOwner())
     {
         string message = "Settings";
-        list buttons = ["Mood", "Crime",  "Class", "Threat", "Lock", "SetZap"];
+        list buttons = ["Mood"];
+        if (lockLevel != "Hardcore" && lockLevel != "Heavy") {
+            buttons = buttons + ["Crime", "Class", "Threat", "SetZap", "Lock"];
+        }
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -319,10 +324,15 @@ lockMenu(key avatarKey)
         string message = "Lock";
         list buttons = [];
         buttons = buttons + menuRadioButton("Off", lockLevel);
-        buttons = buttons + menuRadioButton("Light", lockLevel);
-        buttons = buttons + menuRadioButton("Medium", lockLevel);
-        buttons = buttons + menuRadioButton("Heavy", lockLevel);
-        buttons = buttons + menuRadioButton("Hardcore", lockLevel);
+        
+        if (rlvPresent == 1) {
+            buttons = buttons + menuRadioButton("Light", lockLevel);
+            buttons = buttons + menuRadioButton("Medium", lockLevel);
+            buttons = buttons + menuRadioButton("Heavy", lockLevel);
+            buttons = buttons + menuRadioButton("Hardcore", lockLevel);
+        } else  if (rlvPresent == 0) {
+            message = "Lock is not available because RLV is disabled.";
+        }
         setUpMenu(avatarKey, message, buttons);
     }
     else
@@ -354,6 +364,7 @@ default
 {
     state_entry()
     {
+        string lockLevel = "Off";
     }
 
     touch_start(integer total_number)
@@ -442,6 +453,12 @@ default
             prisonerNumber = llList2String(returned, 4);
         } else if (num == 1700) {
             batteryLevel = message;
+        } else if (num == 1400) {
+            if (message == "NoRLV") {
+                rlvPresent = 0;
+            } else if (message == "YesRLV") {
+                rlvPresent = 1;
+            }
         }
     }
     
