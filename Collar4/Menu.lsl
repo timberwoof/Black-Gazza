@@ -35,7 +35,7 @@ string threatLevel = "Unknown";
 
 // Utilities *******
 
-debug(string message)
+sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
@@ -221,7 +221,7 @@ doSetZapLevels(key avatarKey, string message)
 {
     if (avatarKey == llGetOwner()) 
     {
-        debug("wearer sets allowable zap level: "+message);
+        sayDebug("wearer sets allowable zap level: "+message);
         if (message == "Zap Low") {
             allowZapLow = invert(allowZapLow);
         } else if (message == "Zap Med") {
@@ -335,68 +335,68 @@ default
         menuListen = 0;
         llSetTimerEvent(0);
         string messageNoButtons = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
-        debug("listen:"+message+" messageNoButtons:"+messageNoButtons);
+        sayDebug("listen:"+message+" messageNoButtons:"+messageNoButtons);
         
         //Main
         if (llSubStringIndex("Zap Hack Leash Info Safeword Settings", message) > -1){
-            debug("listen: Main:"+message);
+            sayDebug("listen: Main:"+message);
              doMainMenu(avatarKey, message);
         }
         
         // Do Zap
         else if (llGetSubString(message,0,2) == "Zap"){
-            debug("listen: Zap:"+message);
+            sayDebug("listen: Zap:"+message);
             llMessageLinked(LINK_THIS, 1302, message, "");
         }
         
         //Settings
         else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood SetZap", message) > -1){
-            debug("listen: Settings:"+message);
+            sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message);
         }
 
         // Mood
         else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
-            debug("listen: Mood:"+messageNoButtons);
+            sayDebug("listen: Mood:"+messageNoButtons);
             ICOOCMood = messageNoButtons;
             llMessageLinked(LINK_THIS, 1100, ICOOCMood, "");
         }
         
         //Class
         else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageNoButtons) > -1){
-            debug("listen: Class:"+messageNoButtons);
+            sayDebug("listen: Class:"+messageNoButtons);
             prisonerClass = messageNoButtons;
             llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
         }
         
         // Set Zap Level
         else if (llSubStringIndex("Zap Low Zap Med Zap High", messageNoButtons) > -1){
-            debug("listen: Set Zap:"+message);
+            sayDebug("listen: Set Zap:"+message);
             doSetZapLevels(avatarKey, messageNoButtons);
         }
 
         // Lock Level
         else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageNoButtons) > -1){
-            debug("listen: lockLevel:"+messageNoButtons);
+            sayDebug("listen: lockLevel:"+messageNoButtons);
             lockLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1400, lockLevel, "");
         }
 
         // Threat Level
         else if (llSubStringIndex("Low Moderate Dangerous Extreme", messageNoButtons) > -1){
-            debug("listen: threatLevel:"+messageNoButtons);
+            sayDebug("listen: threatLevel:"+messageNoButtons);
             threatLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1500, threatLevel, "");
         }
 
         else {
-            debug("Error: Unhandled Dialog Message: "+message);
+            sayDebug("Error: Unhandled Dialog Message: "+message);
         } 
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
     // We listen in on all ink messages and pick the ones we're interested in
-        debug("Menu link_message "+(string)num+" "+message);
+        sayDebug("Menu link_message "+(string)num+" "+message);
         if (num == 2000) {
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
