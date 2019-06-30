@@ -95,7 +95,10 @@ list menuRadioButton(string title, string match)
 
 mainMenu(key avatarKey) {
     string message = "Main";
-    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings", "Safeword"];
+    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings"];
+    if (lockLevel != "Hardcore") {
+        buttons = buttons + ["Safeword"];
+    }
     setUpMenu(avatarKey, message, buttons);
 }
 
@@ -112,8 +115,8 @@ doMainMenu(key avatarKey, string message) {
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
-        else if (message == "Safeword"){
-            safeword(avatarKey);
+        else if ((lockLevel != "Hardcore") && (message == "Safeword")){
+            llMessageLinked(LINK_THIS, 1400, lockLevel, "");
         }
         else if (message == "Settings"){
             settingsMenu(avatarKey);
@@ -164,9 +167,6 @@ hackMenu(key avatarKey)
     }
 }
 
-safeword(key avatarKey)
-{;}
-
 // Settings Menus and Handlers ************************
 // Sets Collar State: Mood, Crime, Class, Threat, Lock, Zap levels 
 
@@ -184,10 +184,7 @@ settingsMenu(key avatarKey) {
 }
     
 doSettingsMenu(key avatarKey, string message) {
-        if (message == "Play Level"){
-            playLevelMenu(avatarKey);
-        }
-        else if (message == "Mood"){
+        if (message == "Mood"){
             moodMenu(avatarKey);
         }
         else if (message == "Crime"){
@@ -205,24 +202,6 @@ doSettingsMenu(key avatarKey, string message) {
         else if (message == "SetZap"){
             ZapLevelMenu(avatarKey);
         }
-}
-
-playLevelMenu(key avatarKey)
-// Sets the RLV level and related stuff
-{
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Set your Play Level";
-        list buttons = [];
-        buttons = buttons + menuRadioButton("Casual", playLevel);
-        buttons = buttons + menuRadioButton("Normal", playLevel);
-        buttons = buttons + menuRadioButton("Hardcore", playLevel);
-        setUpMenu(avatarKey, message, buttons);
-    }
-    else
-    {
-        llInstantMessage(avatarKey,playLevel);
-    }
 }
 
 ZapLevelMenu(key avatarKey)
@@ -308,7 +287,9 @@ lockMenu(key avatarKey)
         string message = "Lock";
         list buttons = [];
         buttons = buttons + menuRadioButton("Off", lockLevel);
-        buttons = buttons + menuRadioButton("Normal", lockLevel);
+        buttons = buttons + menuRadioButton("Light", lockLevel);
+        buttons = buttons + menuRadioButton("Medium", lockLevel);
+        buttons = buttons + menuRadioButton("Heavy", lockLevel);
         buttons = buttons + menuRadioButton("Hardcore", lockLevel);
         setUpMenu(avatarKey, message, buttons);
     }
@@ -395,7 +376,7 @@ default
         }
 
         // Lock Level
-        else if (llSubStringIndex("Off Normal Hardcore", messageNoButtons) > -1){
+        else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageNoButtons) > -1){
             debug("listen: lockLevel:"+messageNoButtons);
             lockLevel = messageNoButtons;
             llMessageLinked(LINK_THIS, 1400, lockLevel, "");
