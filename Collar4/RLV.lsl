@@ -4,7 +4,7 @@
 
 // Receives menu commands on link number 1400
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -409,7 +409,7 @@ default
      attach(key id)
      {
         if (id) {
-            sayDebug("attach"); // *** debug
+            sayDebug("attach");
 
             hudAttached = 1;
             rlvPresent = 0;
@@ -418,7 +418,7 @@ default
             generateChannels();
         
             string statusquery="version="+(string)RLVStatusChannel;
-            sayDebug(statusquery); // *** debug
+            sayDebug(statusquery);
             llOwnerSay("@"+statusquery);
             llSetTimerEvent(60); 
             // "the timeout should be long enough, like 30 seconds to one minute 
@@ -426,15 +426,15 @@ default
 
             registerWithDB();    // inmate, offline  
             llOwnerSay("Black Gazza" + hudTitle + " (development version). Click the collar for a menu.");
-            sayDebug("attach done"); // *** debug
+            sayDebug("attach done");
         } else {
-            sayDebug("attach but no ID"); // *** debug
+            sayDebug("attach but no ID");
             hudAttached = 0;
             HudFunctionState = 0;
             sendRLVRestrictCommand("Off");
             sendRLVRestrictCommand("Light");
             registerWithDB();    // inmate, offline  
-            sayDebug("attach but no ID done"); // *** debug
+            sayDebug("attach but no ID done");
         }
     }
 
@@ -492,6 +492,7 @@ default
             sayDebug("status:" + message);   // *** debug
             rlvPresent = 1;
             llListenRemove(RLVStatusListen);
+            llMessageLinked(LINK_THIS, 1400, "YesRLV", "");
             RLVStatusListen = 0;
         }
         
@@ -511,6 +512,7 @@ default
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             HUDTimerRestart();
+            llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
         } else {
             // can only have come from an animation event
             handleAnimationQueue();
