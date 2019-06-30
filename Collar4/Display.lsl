@@ -8,7 +8,7 @@
 // • blinky lights
 // • battery display
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -270,12 +270,12 @@ default
         }
         
         // Threat level sets blinky 4
-        else if (num == 1400) {
-            sayDebug("threat level message:"+message);
-            list threatLevels = ["Low", "Moderate", "Dangerous", "Extreme"];
+        else if (num == 1500) {
+            list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
             list threatColors = [GREEN, YELLOW, ORANGE, RED];
             integer threati = llListFindList(threatLevels, [message]);
             vector threatcolor = llList2Vector(threatColors, threati);
+            sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
             }
         
