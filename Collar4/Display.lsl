@@ -69,7 +69,7 @@ vector classColor;
 
 integer debugBatteryLevel;
     
-debug(string message)
+sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
@@ -109,7 +109,7 @@ displayText(string text){
 }
 
 setTextColor(vector classColor){
-    debug("setTextColor "+(string)classColor);
+    sayDebug("setTextColor "+(string)classColor);
     integer i;
     for (i = 0; i < 12; i++){
         integer linkNumber = 15 - i; 
@@ -192,17 +192,19 @@ default
         classColor = WHITE;
         setTextColor(CYAN);
         
-        // Test the displaytext functions
-        displayText("INITIALIZING");
-        llSleep(1);
-        displayText(" REQUESTING ");
-
-        // fire off a request to the crime database for this wearer. 
-        string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-        crimeRequest= llHTTPRequest(URL,[],"");
-        
         debugBatteryLevel = 0;
         llSetTimerEvent(1); // to make battery level display change *** debug
+    }
+
+     attach(key id)
+     {
+        if (id) {
+            sayDebug("attach"); // *** debug
+            displayCentered("attach");
+            // fire off a request to the crime database for this wearer. 
+            string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+            crimeRequest= llHTTPRequest(URL,[],"");
+        }
     }
 
     http_response( key request_id, integer status, list metadata, string message )
@@ -234,7 +236,7 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        debug("Display link_message "+(string)num+" "+message);
+        sayDebug("Display link_message "+(string)num+" "+message);
         
         // IC/OOC Mood sets frame color and blinky 1
         if (num == 1100) {
@@ -258,9 +260,9 @@ default
         // Zap Level sets blinky 3
         else if (num == 1301) {
             // message contains a json list of settings
-            debug("zaplevel message:"+message);
+            sayDebug("zaplevel message:"+message);
             list zapLevels = llJson2List(message);
-            debug("zapLevels list:"+(string)zapLevels);
+            sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
             if (llList2Integer(zapLevels,0)) lightcolor = lightcolor + BLUE;
             if (llList2Integer(zapLevels,1)) lightcolor = lightcolor + GREEN;
