@@ -3,6 +3,7 @@
 // Timberwoof Lupindo, June 2019
 
 // Receives menu commands on link number 1400
+// Sends RLVstatus commands on link number 1401
 
 integer OPTION_DEBUG = 1;
 
@@ -89,7 +90,7 @@ registerWithDB() {
     list parameters = [HTTP_METHOD, "GET",
         HTTP_MIMETYPE,"text/plain;charset=utf-8"];
     string body = "";
-    //sayDebug(url); // *** debug
+    //sayDebug(url); 
     //httprequest = llHTTPRequest(url, parameters, body );
 }
 
@@ -126,6 +127,8 @@ sendRLVRestrictCommand(string level) {
         llSleep(2);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
+        llMessageLinked(LINK_THIS, 1401, "Off", "");
+        llMessageLinked(LINK_THIS, 1401, "NoRLV", "");
     }
 }
 
@@ -142,7 +145,7 @@ SendSafewordInstructions() {
 
     Safeword =(integer)llFrand(899999)+100000; // generate 6-digit number
             
-    llOwnerSay("To deactivate the Prisoner HUD, say " + (string)Safeword + 
+    llOwnerSay("To unlock your BG Collar, type " + (string)Safeword + 
         " on channel " +  (string)SafewordChannel + " within 60 seconds.");
 }
 
@@ -155,10 +158,12 @@ SafewordFailed() {
 }
 
 SafewordSucceeded() {
+    llOwnerSay("Safeword Succeeded. Removing RLV restrictions.");
     llListenRemove(SafewordListen);
     SafewordChannel = 0;
     SafewordListen = 0;
     sendRLVRestrictCommand("Off");
+    llMessageLinked(LINK_THIS, 1401, "Off", "");
     //registerWithDB(); // prisoner, off
 }
 
@@ -290,7 +295,7 @@ string HUDTimerDisplay() {
     } else {
 
     // Calculate
-    //llWhisper(0,"time_display received "+(string)seconds+" seconds."); // *** debug
+    //llWhisper(0,"time_display received "+(string)seconds+" seconds."); 
     string display_time = ""; // "Unlocks in ";
     integer days = HUDTimeremaining/86400;
     integer hours;
@@ -479,8 +484,8 @@ default
     {
         sayDebug("listen channel:" + (string)channel + " key:" + (string) id + " message:"+ message);
         
-        if (channel == SafewordChannel) {
-            sayDebug("safeword:" + message);   // *** debug
+        if (channel == SafewordChannel && id == llGetOwner()) {
+            sayDebug("safeword:" + message);   
             if (message == (string)Safeword) {
                 SafewordSucceeded();
             } else {
@@ -489,10 +494,10 @@ default
         }
         
         if (channel == RLVStatusChannel) {
-            sayDebug("status:" + message);   // *** debug
+            sayDebug("status:" + message);   
             rlvPresent = 1;
             llListenRemove(RLVStatusListen);
-            llMessageLinked(LINK_THIS, 1400, "YesRLV", "");
+            llMessageLinked(LINK_THIS, 1401, "YesRLV", "");
             RLVStatusListen = 0;
         }
         
@@ -512,7 +517,8 @@ default
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             HUDTimerRestart();
-            llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
+            llMessageLinked(LINK_THIS, 1401, "Off", "");
+            llMessageLinked(LINK_THIS, 1401, "NoRLV", "");
         } else {
             // can only have come from an animation event
             handleAnimationQueue();
