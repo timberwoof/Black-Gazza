@@ -26,7 +26,7 @@ integer allowZapHigh = 1;
 
 string ICOOCMood = "OOC";
 string prisonerClass = "White";
-string lockLevel = "Off";
+string RLVLevel = "Off";
 integer rlvPresent = 0;
 
 string prisonerCrime = "Unknown";
@@ -108,7 +108,7 @@ list menuRadioButton(string title, string match)
 mainMenu(key avatarKey) {
     string message = "Main";
     list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings"];
-    if (lockLevel != "Hardcore") {
+    if (RLVLevel != "Hardcore") {
         buttons = buttons + ["Safeword"];
     }
     setUpMenu(avatarKey, message, buttons);
@@ -127,8 +127,8 @@ doMainMenu(key avatarKey, string message) {
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
-        else if ((lockLevel != "Hardcore") && (message == "Safeword")){
-            llMessageLinked(LINK_THIS, 1400, lockLevel, "");
+        else if ((RLVLevel != "Hardcore") && (message == "Safeword")){
+            llMessageLinked(LINK_THIS, 1400, "Safeword", "");
         }
         else if (message == "Settings"){
             settingsMenu(avatarKey);
@@ -174,7 +174,7 @@ infoGive(key avatarKey){
     "Class: " + prisonerClass + "\n" +
     "Threat: " + threatLevel + "\n" +
     "Zap Levels: " + ZapLevels + "\n" +
-    "Restriciton: " + lockLevel + "\n" +
+    "Restriciton: " + RLVLevel + "\n" +
     "Battery Level: " + batteryLevel + "% \n" +
     "Mood: " + ICOOCMood + "\n";
     
@@ -214,7 +214,7 @@ settingsMenu(key avatarKey) {
     {
         string message = "Settings";
         list buttons = ["Mood"];
-        if (lockLevel != "Hardcore" && lockLevel != "Heavy") {
+        if (RLVLevel != "Hardcore" && RLVLevel != "Heavy") {
             buttons = buttons + ["Crime", "Class", "Threat", "SetZap", "Lock"];
         }
         setUpMenu(avatarKey, message, buttons);
@@ -332,13 +332,13 @@ lockMenu(key avatarKey)
     {
         string message = "Lock";
         list buttons = [];
-        buttons = buttons + menuRadioButton("Off", lockLevel);
+        buttons = buttons + menuRadioButton("Off", RLVLevel);
         
         if (rlvPresent == 1) {
-            buttons = buttons + menuRadioButton("Light", lockLevel);
-            buttons = buttons + menuRadioButton("Medium", lockLevel);
-            buttons = buttons + menuRadioButton("Heavy", lockLevel);
-            buttons = buttons + menuRadioButton("Hardcore", lockLevel);
+            buttons = buttons + menuRadioButton("Light", RLVLevel);
+            buttons = buttons + menuRadioButton("Medium", RLVLevel);
+            buttons = buttons + menuRadioButton("Heavy", RLVLevel);
+            buttons = buttons + menuRadioButton("Hardcore", RLVLevel);
         } else  if (rlvPresent == 0) {
             message = "Lock is not available because RLV is disabled.";
         }
@@ -373,7 +373,7 @@ default
 {
     state_entry()
     {
-        string lockLevel = "Off";
+        string RLVLevel = "Off";
     }
 
     touch_start(integer total_number)
@@ -444,9 +444,9 @@ default
 
         // Lock Level
         else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageNoButtons) > -1){
-            sayDebug("listen: lockLevel:"+messageNoButtons);
-            lockLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1400, lockLevel, "");
+            sayDebug("listen: RLVLevel:"+messageNoButtons);
+            RLVLevel = messageNoButtons;
+            llMessageLinked(LINK_THIS, 1400, RLVLevel, "");
         }
 
         // Threat Level
@@ -478,11 +478,14 @@ default
             prisonerNumber = llList2String(returned, 4);
         } else if (num == 1700) {
             batteryLevel = message;
-        } else if (num == 1400) {
+        } else if (num == 1401) {
             if (message == "NoRLV") {
                 rlvPresent = 0;
+                RLVLevel = "Off";
             } else if (message == "YesRLV") {
                 rlvPresent = 1;
+            } else {
+                RLVLevel = message;
             }
         }
     }
