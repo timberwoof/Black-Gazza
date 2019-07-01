@@ -25,6 +25,23 @@ vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
 vector PURPLE = <0.5, 0.0, 1.0>;
+        
+key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
+key BG_CollarV4_DiffuseBLU = "512f7f51-69b3-1623-fe79-128f2fc72927";
+key BG_CollarV4_DiffuseCLN = "6cf8859d-e117-6470-b8d2-4a2bc3e69f5e"; // White
+key BG_CollarV4_DiffuseGRN = "fa3369fa-bff9-9df9-3824-45fe2ea25711";
+key BG_CollarV4_DiffuseORNG = "05b8b472-25ee-4d48-9306-b322e1329c82";
+key BG_CollarV4_DiffusePRPL = "85b92d52-bc50-6232-ca40-1fc5d4f5e5f3";
+key BG_CollarV4_DiffuseRED = "6c5e4c59-5a20-abb0-cd10-36a7a314b0d4";
+
+// Shininess
+key BG_CollarV4_SpecularBLK = "c8514866-6d1b-1a14-08c9-6f5f6cf19852";
+key BG_CollarV4_SpecularBLU = "57a81cdf-dd18-e56b-d954-1beb95231680";
+key BG_CollarV4_SpecularCLN = "c8fd2092-eae7-a73c-2603-528c7303d895"; // White
+key BG_CollarV4_SpecularGRN = "45ace4a9-808d-9a80-3024-ffb882968ffd";
+key BG_CollarV4_SpecularORNG = "cc716d0a-0e3b-72b4-4933-6888ce9631a6";
+key BG_CollarV4_SpecularPRPL = "c5ab17c6-a9aa-3b4c-6a51-873a72b3d376";
+key BG_CollarV4_SpecularRED = "706aee2e-f690-b1f7-8a1d-80a15ce2e835";
 
 integer LinkFrame = 1;
 integer FaceFrame = 0;
@@ -66,6 +83,8 @@ list moodColors;
 string Class;
 list classNames;
 list classColors;
+list classTextures;
+list classSpeculars;
 vector classColor;
 
     
@@ -189,6 +208,10 @@ default
         
         classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, LIGHT_BLUE, GRAY];
+        classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
+            BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
+        classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
+            BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
         classColor = WHITE;
         setTextColor(CYAN);
         
@@ -254,6 +277,10 @@ default
             classColor = llList2Vector(classColors, classi);
             setTextColor(classColor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, classColor, 1.0]);
+            llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), 
+                <1,1,0>, <0,0,0>, 0]);
+            llSetPrimitiveParams([ PRIM_SPECULAR,FaceFrame, llList2Key(classSpeculars, classi), 
+                <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
         }
         
         // Zap Level sets blinky 3
