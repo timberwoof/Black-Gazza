@@ -123,7 +123,7 @@ sendRLVRestrictCommand(string level) {
             "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
         sayDebug(rlvcommand);
-        llOwnerSay(rlvcommand);
+        llOwnerSay("RLV lock level has been set to "+level);
         llSleep(2);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
