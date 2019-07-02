@@ -15,7 +15,7 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -107,9 +107,18 @@ list menuRadioButton(string title, string match)
 
 mainMenu(key avatarKey) {
     string message = "Main";
-    list buttons = [ "Zap", "Leash", "Info",  "Hack", "Settings"];
-    if (RLVLevel != "Hardcore") {
+    list buttons = ["Info", "Settings", "Leash", "Hack"];
+    if (!llSameGroup(avatarKey)) {
+        // inmates don't get Zap commands
+        buttons = buttons + ["Zap"];
+    }
+    if (RLVLevel != "Hardcore" && RLVLevel != "Off") {
+        // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Safeword"];
+    }
+    if (RLVLevel == "Hardcore" && !llSameGroup(avatarKey)) {
+        // if wearer is in hardcore mode, no safeword
+        buttons = buttons + ["Release"];
     }
     setUpMenu(avatarKey, message, buttons);
 }
@@ -127,11 +136,15 @@ doMainMenu(key avatarKey, string message) {
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
-        else if ((RLVLevel != "Hardcore") && (message == "Safeword")){
+        else if (message == "Safeword"){
             llMessageLinked(LINK_THIS, 1400, "Safeword", "");
         }
         else if (message == "Settings"){
             settingsMenu(avatarKey);
+        }
+        else if (message == "Release"){
+            RLVLevel = "Off";
+            llMessageLinked(LINK_THIS, 1400, RLVLevel, "");
         }
     }
 
@@ -405,7 +418,7 @@ default
         sayDebug("listen:"+message+" messageNoButtons:"+messageNoButtons);
         
         //Main
-        if (llSubStringIndex("Zap Hack Leash Info Safeword Settings", message) > -1){
+        if (llSubStringIndex("Zap Hack Leash Info Safeword Settings Release", message) > -1){
             sayDebug("listen: Main:"+message);
              doMainMenu(avatarKey, message);
         }
