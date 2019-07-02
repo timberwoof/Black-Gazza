@@ -144,7 +144,7 @@ doMainMenu(key avatarKey, string message) {
         }
         else if (message == "Release"){
             RLVLevel = "Off";
-            llMessageLinked(LINK_THIS, 1400, RLVLevel, "");
+            llMessageLinked(LINK_THIS, 1400, "Off", "");
         }
     }
 
