@@ -15,7 +15,7 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -43,7 +43,6 @@ integer batteryIconLink = 16;
 integer batteryIconFace = 0;
 integer batteryCoverLink = 1;
 integer batteryCoverFace = 6;
-
 
 // Utilities *******
 
@@ -128,7 +127,7 @@ doMainMenu(key avatarKey, string message) {
             zapMenu(avatarKey);
         }
         else if (message == "Leash"){
-            leashMenu(avatarKey);
+            llMessageLinked(LINK_THIS, 2000, "Leash", avatarKey);
         }
         else if (message == "Info"){
             infoGive(avatarKey);
@@ -161,18 +160,6 @@ zapMenu(key avatarKey)
     if (allowZapMed) buttons = buttons + ["Zap Med"];
     if (allowZapHigh) buttons = buttons + ["Zap High"];
     setUpMenu(avatarKey, message, buttons);
-}
-
-leashMenu(key avatarKey)
-{
-    if (avatarKey == llGetOwner())
-    {
-        ; // can't leash yourself. Well, you can, but you can't unleash yourself. 
-    }
-    else
-    {
-        ;
-    }
 }
 
 infoGive(key avatarKey){
@@ -425,13 +412,7 @@ default
         //Main
         if (llSubStringIndex("Zap Hack Leash Info Safeword Settings Release", message) > -1){
             sayDebug("listen: Main:"+message);
-             doMainMenu(avatarKey, message);
-        }
-        
-        // Do Zap
-        else if (llGetSubString(message,0,2) == "Zap"){
-            sayDebug("listen: Zap:"+message);
-            llMessageLinked(LINK_THIS, 1302, message, "");
+            doMainMenu(avatarKey, message);
         }
         
         //Settings
