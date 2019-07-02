@@ -94,6 +94,19 @@ registerWithDB() {
     //httprequest = llHTTPRequest(url, parameters, body );
 }
 
+checkRLV() {
+    if (llGetAttached() != 0) {
+        llOwnerSay("Checking RLV version.");
+        generateChannels();
+        string statusquery="version="+(string)RLVStatusChannel;
+        sayDebug(statusquery);
+        llOwnerSay("@"+statusquery);
+        llSetTimerEvent(30); 
+    }
+        // "the timeout should be long enough, like 30 seconds to one minute 
+        // in order to receive the automatic reply from the viewer." 
+}
+
 sendRLVRestrictCommand(string level) {
     // level can be Off Light Medium Heavy Hardcore
     if (rlvPresent == 1) {
@@ -113,12 +126,12 @@ sendRLVRestrictCommand(string level) {
             "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
         } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n," +
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:1=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
         } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n," + 
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:1=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
@@ -408,6 +421,8 @@ default
         SafewordListen = 0;
         initAnimationQueue();
         llPreloadSound("electricshock");
+        
+        checkRLV();
         sayDebug("state_entry done");
     }
 
@@ -419,16 +434,7 @@ default
             hudAttached = 1;
             rlvPresent = 0;
             HudFunctionState = 0;
-        
-            generateChannels();
-        
-            string statusquery="version="+(string)RLVStatusChannel;
-            sayDebug(statusquery);
-            llOwnerSay("@"+statusquery);
-            llSetTimerEvent(60); 
-            // "the timeout should be long enough, like 30 seconds to one minute 
-            // in order to receive the automatic reply from the viewer." 
-
+            checkRLV();
             registerWithDB();    // inmate, offline  
             llOwnerSay("Black Gazza" + hudTitle + " (development version). Click the collar for a menu.");
             sayDebug("attach done");
@@ -502,6 +508,8 @@ default
             llListenRemove(RLVStatusListen);
             llMessageLinked(LINK_THIS, 1401, "YesRLV", "");
             RLVStatusListen = 0;
+            HUDTimerRestart();
+            llOwnerSay(message+"; RLV is present.");
         }
         
     }
