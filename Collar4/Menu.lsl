@@ -186,9 +186,14 @@ infoGive(key avatarKey){
     "Crime: " + prisonerCrime + "\n" +
     "Class: " + prisonerClass + "\n" +
     "Threat: " + threatLevel + "\n" +
-    "Zap Levels: " + ZapLevels + "\n" +
-    "Restriciton: " + RLVLevel + "\n" +
-    "Battery Level: " + batteryLevel + "% \n" +
+    "Zap Levels: " + ZapLevels + "\n"; 
+    
+    if (rlvPresent) {
+        message = message + "Restriction: " + RLVLevel + "\n";
+    } else {
+        message = message + "RLV is not detected.\n";
+    }
+    message = message + "Battery Level: " + batteryLevel + "% \n" +
     "Mood: " + ICOOCMood + "\n";
     
     list buttons = []; 
