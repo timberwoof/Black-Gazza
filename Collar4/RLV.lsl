@@ -5,7 +5,7 @@
 // Receives menu commands on link number 1400
 // Sends RLVstatus commands on link number 1401
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -459,6 +459,9 @@ default
                 sayDebug("link_message "+(string)num+" "+message);
                 sendRLVRestrictCommand("Off");
                 sendRLVRestrictCommand(message);
+                if (message == "Off") {
+                    llMessageLinked(LINK_THIS, 1401, "Off", "");
+                }
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
             }
