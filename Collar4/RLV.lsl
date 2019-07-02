@@ -33,7 +33,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"RLV:"+message);
+        llOwnerSay("RLV:"+message);
     }
 }
 
@@ -101,7 +101,7 @@ sendRLVRestrictCommand(string level) {
         string rlvcommand; 
         if (level == "Off") {
             rlvcommand = "@clear";
-        } else if (level == "Light") {
+        }else if (level == "Light") {
             rlvcommand = "@tplm=n,tploc=n,tplure=y," +          
             "showworldmap=y,showminimap=y,showloc=y," + 
             "fly=n,detach=n,edit=y,rez=y," +
@@ -113,7 +113,7 @@ sendRLVRestrictCommand(string level) {
             "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
         } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n," + 
+            "showworldmap=n,showminimap=n,showloc=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
         } else if (level == "Hardcore") {
@@ -122,7 +122,7 @@ sendRLVRestrictCommand(string level) {
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
-        sayDebug(rlvcommand);
+        llOwnerSay(rlvcommand);
         llOwnerSay("RLV lock level has been set to "+level);
         llSleep(2);
     } else {
