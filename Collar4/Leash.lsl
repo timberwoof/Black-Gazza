@@ -14,12 +14,13 @@ integer rlvPresent;
 string RLVLevel;
 integer leashLength;
 key leashTarget;
+string sensorState = "Leash";
 
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Menu:"+message);
+        llWhisper(0,"Leash:"+message);
     }
 }
 
@@ -59,8 +60,15 @@ leashMenu(key avatarKey)
 {
     sayDebug("leashMenu");
     string message = "Set "+prisonerNumber+"'s Leash.";
-    list buttons = ["Grab Leash", "Leash To", "Length 2m", "Length 5m", "Length 10m", "Length 20m", "Unleash"];
+    list buttons = [];
+    if (avatarKey != llGetOwner()) {
+        buttons = buttons + ["Grab Leash"];
+    }
+    buttons = buttons + ["Leash To", "Length 2m", "Length 5m", "Length 10m", "Length 20m", "Unleash"];
     setUpMenu(avatarKey, message, buttons);    
+}
+
+leashToMenu(key avatarKey, list objects) {
 }
 
 scanLeashPosts(key avatarKey) {
@@ -153,6 +161,7 @@ default
     
     
     listen( integer channel, string name, key avatarKey, string message ){
+        sayDebug("listen("+message+")");
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
@@ -162,9 +171,12 @@ default
             leashMenu(leasherAvatar);
         } else if (message == "Grab Leash") {
             leashTarget = avatarKey;
-            llSensorRepeat("", avatarKey, AGENT, 96, PI, 0.2);
+            sensorState = "Grab";
+            llSensorRepeat("", leashTarget, AGENT, 96, PI, 0.2);
             leashLength = 5;
         } else if (message == "Leash To") {
+            sensorState = "Findpost";
+            llSensor("", NULL_KEY, ( ACTIVE | PASSIVE | SCRIPTED ), 20, PI);
         } else if (llGetSubString(message,0,5) == "Length") {
             leashLength = (integer)llGetSubString(message,7,8);
         } else if (message == "Unleash") {
@@ -181,20 +193,24 @@ default
     }
 
    sensor(integer s)
-   { 
+   {
         float dist; 
         key owner; 
         string targetN;
-       
-        dist = llVecDist(llGetPos(), llDetectedPos(0));
-        leashParticlesOn(llDetectedKey(0));
-        if(dist >= (leashLength + 1))
-        {
-            llMoveToTarget(llDetectedPos(0), 0.75);
-        }
-        if(dist <= leashLength)
-        {
-            llStopMoveToTarget();
+        
+        if (sensorState = "Leash") {
+            dist = llVecDist(llGetPos(), llDetectedPos(0));
+            leashParticlesOn(llDetectedKey(0));
+            if(dist >= (leashLength + 1))
+            {
+                llMoveToTarget(llDetectedPos(0), 0.75);
+            }
+            if(dist <= leashLength)
+            {
+                llStopMoveToTarget();
+            }
+        } else if (sensorState = "Findpost") {
+            sayDebug("sensor("+(string)s+")");
         }
     }
     no_sensor()
