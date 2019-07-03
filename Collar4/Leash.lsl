@@ -18,214 +18,195 @@ integer leashRingPrim = 3;
 
 sayDebug(string message)
 {
-    if (OPTION_DEBUG)
-    {
-        llWhisper(0,"Leash:"+message);
-    }
+     if (OPTION_DEBUG)
+     {
+          llWhisper(0,"Leash:"+message);
+     }
 }
 
 setUpMenu(key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
-    string completeMessage = prisonerNumber + " Collar: " + message;
-    menuChannel = -(llFloor(llFrand(10000)+1000));
-    llDialog(avatarKey, completeMessage, buttons, menuChannel);
-    menuListen = llListen(menuChannel, "", avatarKey, "");
-    llSetTimerEvent(30);
+     string completeMessage = prisonerNumber + " Collar: " + message;
+     menuChannel = -(llFloor(llFrand(10000)+1000));
+     llDialog(avatarKey, completeMessage, buttons, menuChannel);
+     menuListen = llListen(menuChannel, "", avatarKey, "");
+     llSetTimerEvent(30);
 }
 
 leashMenuFilter(key avatarKey) {
-    // If an inmate wants to leash you, ask your permission. 
-    // If you or anybody esle wants to leash you, just present the leash menu. 
-    if (avatarKey != llGetOwner() && llSameGroup(avatarKey)) {
-        sayDebug("leashMenuFilter ask");
-        leashMenuAsk(avatarKey);
-    } else {
-        sayDebug("leashMenuFilter do");
-        leashMenu(avatarKey);
-    }
-    leasherAvatar = avatarKey;
+     // If an inmate wants to leash you, ask your permission. 
+     // If you or anybody esle wants to leash you, just present the leash menu. 
+     if (avatarKey != llGetOwner() && llSameGroup(avatarKey)) {
+          sayDebug("leashMenuFilter ask");
+          leashMenuAsk(avatarKey);
+     } else {
+          sayDebug("leashMenuFilter do");
+          leashMenu(avatarKey);
+     }
+     leasherAvatar = avatarKey;
 }
 
 key leashMenuAsk(key avatarKey) {
-    sayDebug("leashMenuAsk");
-    llInstantMessage(avatarKey,"Requesting permission to leash.");
-    string message = llGetDisplayName(avatarKey) + " wants to leash you.";
-    list buttons = ["Okay" + "No"];
-    setUpMenu(llGetOwner(), message, buttons);
-    return avatarKey;
+     sayDebug("leashMenuAsk");
+     llInstantMessage(avatarKey,"Requesting permission to leash.");
+     string message = llGetDisplayName(avatarKey) + " wants to leash you.";
+     list buttons = ["Okay" + "No"];
+     setUpMenu(llGetOwner(), message, buttons);
+     return avatarKey;
 }
 
 leashMenu(key avatarKey)
 // We passed all the tests. Present the leash menu. 
 {
-    sayDebug("leashMenu");
-    string message = "Set "+prisonerNumber+"'s Leash.";
-    list buttons = [];
-    if (avatarKey != llGetOwner()) {
-        buttons = buttons + ["Grab Leash"];
-    }
-    buttons = buttons + ["Leash To", "Length 2m", "Length 5m", "Length 10m", "Length 20m", "Unleash"];
-    setUpMenu(avatarKey, message, buttons);    
-}
-
-leashToMenu(key avatarKey, list objects) {
-}
-
-scanLeashPosts(key avatarKey) {
-}
-
-doLeash(key avatarKey, string message) {
-    if (message == "Grab leash") {
-        llMessageLinked(LINK_THIS, 2000, message, avatarKey);
-    } else if (message == "Leash To") {
-        scanLeashPosts(avatarKey);
-    } else if (message == "Length") {
-    }
+     sayDebug("leashMenu");
+     string message = "Set "+prisonerNumber+"'s Leash.";
+     list buttons = [];
+     if (avatarKey != llGetOwner()) {
+          buttons = buttons + ["Grab Leash"];
+     }
+     buttons = buttons + ["Leash To", "Length 1m", "Length 2m", "Length 5m", "Length 10m", "Length 20m", "Unleash"];
+     setUpMenu(avatarKey, message, buttons);     
 }
 
 leashParticlesOn(key target) {
-    sayDebug("leashParticlesOn");
-    string texturename = "1d15cba4-91dd-568c-b2b4-d25331bebe73"; 
-    string nullstr = ""; 
-    key nullkey = NULL_KEY; 
-    key posekey = nullkey; 
-    float age = 5; 
-    float gravity = 1.0; 
-    key currenttarget = nullkey; 
-    string ourtarget = nullstr; 
-    integer line; 
-    key loadkey; 
+     sayDebug("leashParticlesOn");
+     string texturename = "1d15cba4-91dd-568c-b2b4-d25331bebe73"; 
+     string nullstr = ""; 
+     key nullkey = NULL_KEY; 
+     key posekey = nullkey; 
+     float age = 5; 
+     float gravity = 1.0; 
+     key currenttarget = nullkey; 
+     string ourtarget = nullstr; 
+     integer line; 
+     key loadkey; 
 
-    llLinkParticleSystem( leashRingPrim, [
-   PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
-   PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
-   PSYS_PART_START_COLOR,(vector) <1,1,1>,
-   PSYS_PART_END_COLOR,(vector) <1,1,1>,
-   PSYS_PART_START_ALPHA,(float) 1.0,
-   PSYS_PART_END_ALPHA,(float) 1.0,
-   PSYS_SRC_TEXTURE,(string) texturename,
-   PSYS_SRC_BURST_PART_COUNT,(integer) 4,
-   PSYS_SRC_BURST_RATE,(float) .025,
-   PSYS_PART_MAX_AGE,(float) age,
-   PSYS_SRC_MAX_AGE,(float) 0.0,
-   PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
-   PSYS_SRC_BURST_RADIUS,(float) 0.5,
-   PSYS_SRC_INNERANGLE,(float) 0.0,
-   PSYS_SRC_OUTERANGLE,(float) 0.0,
-   PSYS_SRC_OMEGA,(vector) <0,0,0>,
-   PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
-   PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
-   PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
-   PSYS_SRC_TARGET_KEY,(key) target,
-   PSYS_PART_FLAGS,
-    PSYS_PART_RIBBON_MASK |
-    PSYS_PART_FOLLOW_SRC_MASK |
-    PSYS_PART_TARGET_POS_MASK | 0
-   ] );
+     llLinkParticleSystem( leashRingPrim, [
+    PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
+    PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
+    PSYS_PART_START_COLOR,(vector) <1,1,1>,
+    PSYS_PART_END_COLOR,(vector) <1,1,1>,
+    PSYS_PART_START_ALPHA,(float) 1.0,
+    PSYS_PART_END_ALPHA,(float) 1.0,
+    PSYS_SRC_TEXTURE,(string) texturename,
+    PSYS_SRC_BURST_PART_COUNT,(integer) 4,
+    PSYS_SRC_BURST_RATE,(float) .025,
+    PSYS_PART_MAX_AGE,(float) age,
+    PSYS_SRC_MAX_AGE,(float) 0.0,
+    PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
+    PSYS_SRC_BURST_RADIUS,(float) 0.5,
+    PSYS_SRC_INNERANGLE,(float) 0.0,
+    PSYS_SRC_OUTERANGLE,(float) 0.0,
+    PSYS_SRC_OMEGA,(vector) <0,0,0>,
+    PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
+    PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
+    PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
+    PSYS_SRC_TARGET_KEY,(key) target,
+    PSYS_PART_FLAGS,
+     PSYS_PART_RIBBON_MASK |
+     PSYS_PART_FOLLOW_SRC_MASK |
+     PSYS_PART_TARGET_POS_MASK | 0
+    ] );
 }
 
 leashParticlesOff() {
-    sayDebug("leashParticlesOff");
-    llLinkParticleSystem(leashRingPrim, []);
+     sayDebug("leashParticlesOff");
+     llLinkParticleSystem(leashRingPrim, []);
 }
 
 default
 {
-    state_entry()
-    {
-        leashParticlesOff();
-        leashLength = 5;
-    }
+     state_entry()
+     {
+          leashParticlesOff();
+          leashLength = 5;
+     }
 
-    link_message( integer sender_num, integer num, string message, key id ){ 
-        sayDebug("link_message("+(string)num+","+message+")");
-        if (num == 2000 && message == "Leash"){
-            leashMenuFilter(id);
-        } else if (num == 2000) {
-            list returned = llParseString2List(message, [","], []);
-            prisonerNumber = llList2String(returned, 4);
-        }
-    }
-    
-    
-    listen( integer channel, string name, key avatarKey, string message ){
-        sayDebug("listen("+message+")");
-        llListenRemove(menuListen);
-        menuListen = 0;
-        llSetTimerEvent(0);
-        sayDebug("listen:"+message);
-        if (message == "Okay"){
-            leashMenu(leasherAvatar);
-        } else if (message == "No"){
-            llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
-        } else if (message == "Grab Leash") {
-            leashTarget = avatarKey;
-            sensorState = "Leash";
-            leashParticlesOn(leashTarget);
-            llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
-        } else if (message == "Leash To") {
-            sensorState = "Findpost";
-            leashPoints = [];
-            llSensor("", NULL_KEY, ( ACTIVE | PASSIVE | SCRIPTED ), 5, PI);
-        } else if (llGetSubString(message,0,5) == "Length") {
-            leashLength = (integer)llGetSubString(message,7,8);
-        } else if (llGetSubString(message,0,4) == "Point") {
-            sensorState = "Leash";
-            integer pointi = (integer)llGetSubString(message,6,7);
-            key leashTarget = llList2Key(leashPoints,pointi);
-            leashParticlesOn(leashTarget);
-            llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
-        } else if (message == "Unleash") {
-            llSensorRemove();
-            leashParticlesOff();
-        }
-        
-        // Leash "Grab Leash", "Leash To", "Length 2 m", "Length 5 m", "Length 10m", "Length 20m", "Unleash"
-        else if (llSubStringIndex("leash", llToLower(message)) > -1){
-            sayDebug("listen: Main:"+message);
-            doLeash(avatarKey, message);
-        }
-    }
+     link_message( integer sender_num, integer num, string message, key id ){ 
+          sayDebug("link_message("+(string)num+","+message+")");
+          if (num == 2000 && message == "Leash"){
+                leashMenuFilter(id);
+          } else if (num == 2000) {
+                list returned = llParseString2List(message, [","], []);
+                prisonerNumber = llList2String(returned, 4);
+          }
+     }
+     
+     
+     listen( integer channel, string name, key avatarKey, string message ){
+          sayDebug("listen("+message+")");
+          llListenRemove(menuListen);
+          menuListen = 0;
+          llSetTimerEvent(0);
+          sayDebug("listen:"+message);
+          if (message == "Okay"){
+                leashMenu(leasherAvatar);
+          } else if (message == "No"){
+                llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
+          } else if (message == "Grab Leash") {
+                leashTarget = avatarKey;
+                sensorState = "Leash";
+                leashParticlesOn(leashTarget);
+                llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
+          } else if (message == "Leash To") {
+                sensorState = "Findpost";
+                leashPoints = [];
+                llSensor("", NULL_KEY, ( ACTIVE | PASSIVE | SCRIPTED ), 5, PI);
+          } else if (llGetSubString(message,0,5) == "Length") {
+                leashLength = (integer)llGetSubString(message,7,8);
+          } else if (llGetSubString(message,0,4) == "Point") {
+                sensorState = "Leash";
+                integer pointi = (integer)llGetSubString(message,6,7);
+                key leashTarget = llList2Key(leashPoints,pointi);
+                leashParticlesOn(leashTarget);
+                llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
+          } else if (message == "Unleash") {
+                llSensorRemove();
+                leashParticlesOff();
+          } else {
+                llOwnerSay("Error: Unhandled listem: "+name+" :"+message);
+          }
+     }
 
-   sensor(integer detected)
-   {
-        float distance; 
-        
-        if (sensorState == "Leash") {
-            // distance to avatar holding the leash or the object leashed to.
-            distance = llVecDist(llGetPos(), llDetectedPos(0));
-            if (distance >= leashLength) {
-                llMoveToTarget(llDetectedPos(0), 1.0);
-            } else {
-                llStopMoveToTarget();
-            }
-        } else if (sensorState == "Findpost") {
-            // we got a list of nearby objects we might be able to leash to.
-            // Male a dialog box out of th elist. 
-            sayDebug("sensor("+(string)detected+")");
-            string message = "Select a leash Point:\n";
-            list buttons = [];
-            integer pointi;
-            for(pointi = 0; pointi < detected; pointi++) {
-                sayDebug(llDetectedName(pointi));
-                message = message + (string)pointi + " " + llDetectedName(pointi) + "\n"; 
-                leashPoints = leashPoints + [llDetectedKey(pointi)];
-                buttons = buttons + ["Point "+(string)pointi];
-            }
-            setUpMenu(leasherAvatar, message, buttons);
-        }
-    }
-    
-    no_sensor()
+    sensor(integer detected)
     {
-        leashParticlesOff();
-        llStopMoveToTarget();
-    }
+          float distance; 
+          
+          if (sensorState == "Leash") {
+                // distance to avatar holding the leash or the object leashed to.
+                distance = llVecDist(llGetPos(), llDetectedPos(0));
+                if (distance >= leashLength) {
+                     llMoveToTarget(llDetectedPos(0), 1.0);
+                } else {
+                     llStopMoveToTarget();
+                }
+          } else if (sensorState == "Findpost") {
+                // we got a list of nearby objects we might be able to leash to.
+                // Male a dialog box out of th elist. 
+                sayDebug("sensor("+(string)detected+")");
+                string message = "Select a leash Point:\n";
+                list buttons = [];
+                integer pointi;
+                for(pointi = 0; pointi < detected; pointi++) {
+                     sayDebug(llDetectedName(pointi));
+                     message = message + (string)pointi + " " + llDetectedName(pointi) + "\n"; 
+                     leashPoints = leashPoints + [llDetectedKey(pointi)];
+                     buttons = buttons + ["Point "+(string)pointi];
+                }
+                setUpMenu(leasherAvatar, message, buttons);
+          }
+     }
+     
+     no_sensor()
+     {
+          leashParticlesOff();
+          llStopMoveToTarget();
+     }
 
-    timer() 
-    {
-        llListenRemove(menuListen);
-        menuListen = 0;    
-    }
+     timer() 
+     {
+          llListenRemove(menuListen);
+          menuListen = 0;     
+     }
 }
