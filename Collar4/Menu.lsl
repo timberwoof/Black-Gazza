@@ -15,7 +15,7 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -219,17 +219,31 @@ hackMenu(key avatarKey)
 settingsMenu(key avatarKey) {
     if (avatarKey == llGetOwner())
     {
-        string message = "Settings";
+        string message = "Settings\nYour collar is in "+RLVLevel+" lock level.\n";
         list buttons = ["Mood"];
         if (RLVLevel != "Hardcore" && RLVLevel != "Heavy") {
-            buttons = buttons + ["Crime", "Class", "Threat", "SetZap", "Lock"];
+            buttons = buttons + ["SetZap", "Lock"];
+            message = message + 
+            "You can set your mood, zap level, and lock level.\n" +
+            "You cannot set your Crime, Class, or Threat.";
+        } else {
+            message = message + 
+            "You can set your mood.\n" +
+            "You cannot set your Crime, Class, Threat, Zap level, or Lock level.";
         }
         setUpMenu(avatarKey, message, buttons);
     }
     else
     {
-        string message = "Settings";
+        string message = "Settings\nThe inmate is in "+RLVLevel+" lock level.\n";
         list buttons = ["Crime", "Class", "Threat"];
+        if (RLVLevel != "Hardcore" && RLVLevel != "Heavy") {
+            message = message + "You can set the inmate's Crime, Class, and Threat Level.";
+        } else {
+            message = message + "You can set the inmate's Crime, Class, Threat Level, and Zap level.";
+            buttons = buttons + ["SetZap"];
+        }
+
         setUpMenu(avatarKey, message, buttons);
     }
 }
