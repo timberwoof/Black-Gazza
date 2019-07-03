@@ -163,6 +163,7 @@ zapMenu(key avatarKey)
 }
 
 infoGive(key avatarKey){
+    // Prepare text of collar settings for the information menu
     string ZapLevels = "";
     if (allowZapLow) ZapLevels = ZapLevels + "Low ";
     if (allowZapMed) ZapLevels = ZapLevels + "Medium ";
@@ -183,6 +184,7 @@ infoGive(key avatarKey){
     message = message + "Battery Level: " + batteryLevel + "% \n" +
     "Mood: " + ICOOCMood + "\n";
     
+    // Prepare a list of documents to hand out 
     list buttons = []; 
     integer numNotecards = llGetInventoryNumber(INVENTORY_NOTECARD);
     if (numNotecards > 0) {
@@ -226,7 +228,9 @@ settingsMenu(key avatarKey) {
     }
     else
     {
-        ;
+        string message = "Settings";
+        list buttons = ["Crime", "Class", "Threat"];
+        setUpMenu(avatarKey, message, buttons);
     }
 }
     
@@ -435,6 +439,12 @@ default
             llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
         }
         
+        // Set Zap Level
+        else if (llSubStringIndex("Zap Low Zap Med Zap High", message) > -1){
+            sayDebug("listen: Zap:"+message);
+            llMessageLinked(LINK_THIS, 1302, message, "");
+        }
+
         // Set Zap Level
         else if (llSubStringIndex("Zap Low Zap Med Zap High", messageNoButtons) > -1){
             sayDebug("listen: Set Zap:"+message);
