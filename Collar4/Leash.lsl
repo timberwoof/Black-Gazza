@@ -5,7 +5,7 @@
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 string prisonerNumber = "P-99999";
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -16,6 +16,7 @@ integer leashLength = 5;
 key leashTarget;
 string sensorState = "Leash";
 list leashPoints;
+integer leashRingPrim = 3;
 
 sayDebug(string message)
 {
@@ -90,23 +91,23 @@ leashParticlesOn(key target) {
     string nullstr = ""; 
     key nullkey = NULL_KEY; 
     key posekey = nullkey; 
-    float age = 3; 
+    float age = 5; 
     float gravity = 1.0; 
     key currenttarget = nullkey; 
     string ourtarget = nullstr; 
     integer line; 
     key loadkey; 
 
-    llParticleSystem( [
+    llLinkParticleSystem( leashRingPrim, [
    PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
-   PSYS_PART_END_SCALE,(vector) <1,1,0>,
+   PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
    PSYS_PART_START_COLOR,(vector) <1,1,1>,
    PSYS_PART_END_COLOR,(vector) <1,1,1>,
    PSYS_PART_START_ALPHA,(float) 1.0,
    PSYS_PART_END_ALPHA,(float) 1.0,
    PSYS_SRC_TEXTURE,(string) texturename,
-   PSYS_SRC_BURST_PART_COUNT,(integer) 1,
-   PSYS_SRC_BURST_RATE,(float) 0.0,
+   PSYS_SRC_BURST_PART_COUNT,(integer) 4,
+   PSYS_SRC_BURST_RATE,(float) .025,
    PSYS_PART_MAX_AGE,(float) age,
    PSYS_SRC_MAX_AGE,(float) 0.0,
    PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
@@ -115,11 +116,11 @@ leashParticlesOn(key target) {
    PSYS_SRC_OUTERANGLE,(float) 0.0,
    PSYS_SRC_OMEGA,(vector) <0,0,0>,
    PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
-   PSYS_SRC_BURST_SPEED_MIN,(float) 1000.0,
-   PSYS_SRC_BURST_SPEED_MAX,(float) 1000.0,
+   PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
+   PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
    PSYS_SRC_TARGET_KEY,(key) target,
    PSYS_PART_FLAGS,
-    PSYS_PART_FOLLOW_VELOCITY_MASK |
+    PSYS_PART_RIBBON_MASK |
     PSYS_PART_FOLLOW_SRC_MASK |
     PSYS_PART_TARGET_POS_MASK | 0
    ] );
@@ -127,7 +128,7 @@ leashParticlesOn(key target) {
 
 leashParticlesOff() {
     sayDebug("leashParticlesOff");
-    llParticleSystem([]);
+    llLinkParticleSystem(leashRingPrim, []);
 }
 
 default
@@ -220,7 +221,7 @@ default
             integer pointi;
             for(pointi = 0; pointi < detected; pointi++)
             {
-                llOwnerSay(llDetectedName(pointi));
+                sayDebug(llDetectedName(pointi));
                 message = message + (string)pointi + " " + llDetectedName(pointi) + "\n"; 
                 leashPoints = leashPoints + [llDetectedKey(pointi)];
                 buttons = buttons + ["Point "+(string)pointi];
