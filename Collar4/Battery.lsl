@@ -44,7 +44,7 @@ dischargeBattery(float seconds)
 
 sendBatteryStatus(){
     integer displayLevel = (integer)llFloor(batteryCharge/basicCharge*100);
-    llMessageLinked(LINK_THIS, 1700, (string)displayLevel, "");
+    llMessageLinked(LINK_THIS, 1701, (string)displayLevel, "");
 }
 
 default
@@ -63,13 +63,13 @@ default
         theRLVstate = "Off";
         batteryCharge = basicCharge;
         currentDischargeRate = calculateDischargeRate();
-        timerInterval = 30.0;
+        timerInterval = 300.0;
         llSetTimerEvent(timerInterval);
         sayDebug("initialized");
     }
 
     link_message( integer sender_num, integer num, string message, key id ){ 
-        if (num != 1700) {
+        if (num != 1701) {
             sayDebug("link_message "+(string)num+" "+message);
             float chargeUsed = 0;
             if (num == 1100 || num == 1301 || num == 1500) { // set icooc, zap level, threat level
@@ -81,7 +81,7 @@ default
                 theRLVstate = message; 
                 chargeUsed = 20 * 60; // 20 minutes for database access
                 currentDischargeRate = calculateDischargeRate();
-                dischargeBattery(timerInterval * currentDischargeRate);
+                dischargeBattery(timerInterval * currentDischargeRate);// *** why?
             } else if (num == 1302) {
                 // message is like "Zap Low" 
                 string variation = llGetSubString(message, 4,6);
