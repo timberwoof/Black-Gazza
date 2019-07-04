@@ -29,6 +29,10 @@ integer rlvPresent = 0;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
 
+key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
+key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
+integer haveAnimatePermissions = 0;
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
@@ -97,6 +101,8 @@ registerWithDB() {
 checkRLV() {
     if (llGetAttached() != 0) {
         llOwnerSay("Checking RLV version.");
+        haveAnimatePermissions = 0;
+        llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
         generateChannels();
         string statusquery="version="+(string)RLVStatusChannel;
         sayDebug(statusquery);
@@ -171,7 +177,7 @@ SafewordFailed() {
 }
 
 SafewordSucceeded() {
-    llOwnerSay("Safeword Succeeded. Removing RLV restrictions.");
+    llShout(0, "Safeword Succeeded. Removing RLV restrictions.");
     llListenRemove(SafewordListen);
     SafewordChannel = 0;
     SafewordListen = 0;
@@ -179,100 +185,41 @@ SafewordSucceeded() {
     llMessageLinked(LINK_THIS, 1401, "Off", "");
     //registerWithDB(); // prisoner, off
 }
-
-
-// =================================
-// Animation Queue
-string theAnimation;
-integer AnimationQueueStatus = 0;
-
-list AnimationList = [
-"bogus",0,
-"shock",5,
-"Fall/Faint",5,
-"Stand From Faint",3,
-"stand",1
-];
-
-integer NumberOfAnimations; // number of sounds in the list. n
-integer AnimationPlaying = 0;   // the number of the sound that's playing. 0..n-1
-integer PlayNextAnimation = 0;  // the Unix time when the next sound must be played
-
-initAnimationQueue() {
-    // initialize the sond playing system
-    NumberOfAnimations =  llGetListLength(AnimationList) / 2;
-}
-
-startAnimations(integer index) {
-    // sets the time wehn we need to kick off the next animation
-    // start with call to starSound(0);
-    sayDebug("startAnimation " + (string)index);
-    llSetTimerEvent(1.0);
-    if (index < NumberOfAnimations) {
-        AnimationQueueStatus = 1; 
-        AnimationPlaying = index;
-        theAnimation = llList2String(AnimationList, AnimationPlaying*2);
-        PlayNextAnimation = llGetUnixTime() + llList2Integer(AnimationList,AnimationPlaying*2+1);
-        sayDebug("animating '" + theAnimation + "' until " + (string)PlayNextAnimation);
-        if (llGetOwner() != NULL_KEY) {
-            sayDebug("startAnimation requesting PERMISSION_TRIGGER_ANIMATION");
-            llRequestPermissions( llGetOwner(), PERMISSION_TRIGGER_ANIMATION ); 
-        }
-        
-        if (index == 1) {
-            //StartParticles(); // doesn't work as hud
-            llOwnerSay(llKey2Name(llDetectedKey(0)) + " punishes for disobedience.");
-            llLoopSound("electricshock", 1.0);      
-            llSetTimerEvent(1.0);
-        } else if (index == 2) {
-            //StopParticles(); // doesn't work as hud
-            llStopSound();
-            if (rlvPresent == 1) {
-                llOwnerSay("@sendchat=n,recvchat=n");   // no chatting while fainted
-            }
-        } else if (index == 4) {
-            if (rlvPresent == 1) {
-                llOwnerSay("@sendchat=y,recvchat=y");   // allow chat again
-            }
-        }
-    } else {
-        sayDebug("startAnimation sequence completed");
-        AnimationPlaying = 0;
-        PlayNextAnimation = 0;
-        stop_anims(llGetOwner());    
-        AnimationQueueStatus = 0; 
-        HUDTimerRestart();
-    }
-}
-
-// stick a call to this in the timer event
-handleAnimationQueue() {
-    if (PlayNextAnimation > 0) { 
-        HUDTimerIncrement(HUDTimerInterval + 1); // makes timer backup while animation is playing 
-            // HUDTimerInterval backs off what was added in accelerated timer
-            // 1 adds in the second for the accelerated timer
-            // the result is that while getting zapped time timer adds time. 
-        if ((PlayNextAnimation <= llGetUnixTime( )) && (AnimationPlaying < NumberOfAnimations)){
-                startAnimations(++AnimationPlaying);
-        }
-    }
-} 
-
-// llOwnerSay(avatarName + " fainted from the pain");
-// agonyduraton = agonyduraton + 5; 
-// faintduration = faintduration + 5;  // make it last long next time
  
-stop_anims( key agent )
+// =====================
+// Zap
+
+// got menu command: play charge sound and ask for zap permission
+startZap(string zapLevel) {
+    llPlaySound(soundCharging, 1.0);
+    llSleep(1.5);
+    llLoopSound(soundShock, 1.0);
+    if (haveAnimatePermissions) {
+        stop_anims();
+        llStartAnimation("Zap");
+    }
+    if (zapLevel == "Low") {
+        llSleep(2);
+    } else if (zapLevel == "Med") {
+        llSleep(5);
+    } else if (zapLevel == "Hig") {
+        llSleep(10);
+    }
+    llStopSound();
+    if (haveAnimatePermissions) {
+        stop_anims();
+        llStartAnimation("Stand");
+    }
+}
+
+stop_anims()
 {
-    if (agent != NULL_KEY) {
-        list animationList = llGetAnimationList( agent );
-        integer    lsize = llGetListLength( animationList );
-        integer i;
-        for ( i = 0; i < lsize; i++ )
-        {
-            //sayDebug("stopping an animation");
-            llStopAnimation( llList2Key( animationList, i ) );
-        }
+    list animationList = llGetAnimationList(llGetOwner());
+    integer lsize = llGetListLength(animationList);
+    integer i;
+    for ( i = 0; i < lsize; i++ )
+    {
+        llStopAnimation(llList2Key(animationList, i));
     }
 }
 
@@ -410,9 +357,9 @@ default
         rlvPresent = 0;
         HudFunctionState = 0;
         SafewordListen = 0;
-        initAnimationQueue();
-        llPreloadSound("electricshock");
         checkRLV();
+        llPreloadSound(soundCharging);
+        llPreloadSound(soundShock);
         sayDebug("state_entry done");
     }
 
@@ -420,13 +367,12 @@ default
      {
         if (id) {
             sayDebug("attach");
-
             hudAttached = 1;
             rlvPresent = 0;
             HudFunctionState = 0;
             checkRLV();
             registerWithDB();    // inmate, offline  
-            llOwnerSay("Black Gazza" + hudTitle + " (development version). Click the collar for a menu.");
+            llOwnerSay("Black Gazza" + hudTitle + ". Click the collar for a menu.");
             sayDebug("attach done");
         } else {
             sayDebug("attach but no ID");
@@ -441,10 +387,9 @@ default
 
     run_time_permissions(integer permissions)
     {
-        sayDebug("run_time_permissions " + (string)theAnimation);
+        sayDebug("run_time_permissions");
         if (permissions & PERMISSION_TRIGGER_ANIMATION) {
-            stop_anims(llGetOwner());
-            llStartAnimation(theAnimation);
+            haveAnimatePermissions = 1;
         }
     }
     
@@ -464,14 +409,7 @@ default
         }
         if (num == 1302) {
             // message is like "Zap Low" 
-            string variation = llGetSubString(message, 4,6);
-            if (variation == "Low") {
-            }
-            if (variation == "Med") {
-            }
-            if (variation == "Hig") {
-                startAnimations(1);
-            }
+            startZap(llGetSubString(message, 4,6));
         }
    }
 
@@ -520,9 +458,6 @@ default
             HUDTimerRestart();
             llMessageLinked(LINK_THIS, 1401, "Off", "");
             llMessageLinked(LINK_THIS, 1401, "NoRLV", "");
-        } else {
-            // can only have come from an animation event
-            handleAnimationQueue();
         } 
                    
         HUDTimer();
