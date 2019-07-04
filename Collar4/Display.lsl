@@ -248,7 +248,7 @@ default
         }
     }
 
-    http_response( key request_id, integer status, list metadata, string message )
+    http_response(key request_id, integer status, list metadata, string message)
     // handle the response from the crime database
     {
         displayCentered("status "+(string)status);
@@ -261,7 +261,7 @@ default
             string number = llList2String(returned, 4);
             
             // send this data on to anyone who's interested
-            llMessageLinked(LINK_THIS, 2001, message, "");
+            llMessageLinked(LINK_THIS, 2000, message, "");
             
             if (theKey == llGetOwner()) {
                 displayCentered(number);
@@ -278,7 +278,7 @@ default
         sayDebug("link_message "+(string)num+" "+message);
 
         // IC/OOC Mood sets frame color and blinky 1
-        if (num == 1101) {
+        if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
@@ -288,7 +288,7 @@ default
         }
         
         // Prisoner Class sets text color and blinky 2
-        else if (num == 1201) {
+        else if (num == 1200) {
             Class = message;
             integer classi = llListFindList(classNames, [Class]);
             classColor = llList2Vector(classColors, classi);
@@ -303,7 +303,7 @@ default
             }
         
         // Zap Level sets blinky 3
-        else if (num == 1301) {
+        else if (num == 1300) {
             // message contains a json list of settings
             sayDebug("zaplevel message:"+message);
             list zapLevels = llJson2List(message);
@@ -316,7 +316,7 @@ default
         }
         
         // Threat level sets blinky 4
-        else if (num == 1501) {
+        else if (num == 1500) {
             list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
             list threatColors = [GREEN, YELLOW, ORANGE, RED];
             integer threati = llListFindList(threatLevels, [message]);
@@ -326,14 +326,14 @@ default
         }
         
         // Battery Level Report
-        else if (num == 1701) {
+        else if (num == 1700) {
             sayDebug("link_message "+(string)num+" "+message);
             sayDebug("battery "+message);
             displayBattery((integer)message);
         }
         
         // Someone wants database update
-        else if (num == 2000) {
+        else if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
             sendDatabaseQuery();
         }
