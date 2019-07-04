@@ -39,12 +39,8 @@ dischargeBattery(float seconds)
         sayDebug("dischargeBattery: recharged battery");
     }
     sayDebug("dischargeBattery:"+(string)seconds+" seconds leaves "+(string)batteryCharge+" charge.");
-    sendBatteryStatus();
-}
-
-sendBatteryStatus(){
     integer displayLevel = (integer)llFloor(batteryCharge/basicCharge*100);
-    llMessageLinked(LINK_THIS, 1701, (string)displayLevel, "");
+    llMessageLinked(LINK_THIS, 1700, (string)displayLevel, ""); // send status message
 }
 
 default
@@ -68,37 +64,33 @@ default
         sayDebug("initialized");
     }
 
-    link_message( integer sender_num, integer num, string message, key id ){ 
-        if (num != 1701) {
-            sayDebug("link_message "+(string)num+" "+message);
-            float chargeUsed = 0;
-            if (num == 1100 || num == 1301 || num == 1500) { // set icooc, zap level, threat level
-                chargeUsed = 10 * 60; // 10 minutes for a small adjustment
-            } else if (num == 1200 || num == 1800) { // set prisoner class, crime
-                chargeUsed = 20 * 60; // 20 minutes for database access
-            } else if (num == 1400) { // set lock level
-                // Based on new RLV setting, change discharge rate
-                theRLVstate = message; 
-                chargeUsed = 20 * 60; // 20 minutes for database access
-                currentDischargeRate = calculateDischargeRate();
-                dischargeBattery(timerInterval * currentDischargeRate);// *** why?
-            } else if (num == 1302) {
-                // message is like "Zap Low" 
-                string variation = llGetSubString(message, 4,6);
-                if (variation == "Low") {
-                    chargeUsed = 60 * 60; // 1 hour for light zap
-                } else if (variation == "Med") {
-                    chargeUsed = 2 * 60 * 60; // 2 hours for medium zap
-                } else if (variation == "Hig") {
-                    chargeUsed = 4 * 60 * 60; // 4 hours for heavy zap
-                }
+    link_message( integer sender_num, integer num, string message, key id ){
+        sayDebug("link_message "+(string)num+" "+message);
+        float chargeUsed = 0;
+        if (num == 1100 || num == 1300 || num == 1500) { // set icooc, zap level, threat level
+            chargeUsed = 10 * 60; // 10 minutes for a small adjustment
+        } else if (num == 1200 || num == 1800) { // set prisoner class, crime
+            chargeUsed = 20 * 60; // 20 minutes for database access
+        } else if (num == 1400) { // set lock level
+            // Based on new RLV setting, change discharge rate
+            theRLVstate = message; 
+            chargeUsed = 20 * 60; // 20 minutes for database access
+            currentDischargeRate = calculateDischargeRate();
+        } else if (num == 1301) {
+            // message is like "Zap Low" 
+            string variation = llGetSubString(message, 4,6);
+            if (variation == "Low") {
+                chargeUsed = 60 * 60; // 1 hour for light zap
+            } else if (variation == "Med") {
+                chargeUsed = 2 * 60 * 60; // 2 hours for medium zap
+            } else if (variation == "Hig") {
+                chargeUsed = 4 * 60 * 60; // 4 hours for heavy zap
             }
-            dischargeBattery(chargeUsed);
         }
+        if (chargeUsed) dischargeBattery(chargeUsed);
     }
 
     timer() {
         dischargeBattery(timerInterval * currentDischargeRate);
-        sendBatteryStatus();
     }
 }
