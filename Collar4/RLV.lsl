@@ -2,10 +2,10 @@
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
 
-// Receives menu commands on link number 1400
+// Receives menu commands on link number 1401
 // Sends RLVstatus commands on link number 1401
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -132,22 +132,24 @@ sendRLVRestrictCommand(string level) {
             "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
         } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:3=n," +
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
         } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:3=n," + 
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
+        sayDebug(rlvcommand);
         llOwnerSay(rlvcommand);
         llOwnerSay("RLV lock level has been set to "+level);
         llSleep(2);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
-        llMessageLinked(LINK_THIS, 1401, "Off", "");
-        llMessageLinked(LINK_THIS, 1401, "NoRLV", "");
+        // send RLV statuses
+        llMessageLinked(LINK_THIS, 1400, "Off", "");
+        llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
     }
 }
 
@@ -182,7 +184,7 @@ SafewordSucceeded() {
     SafewordChannel = 0;
     SafewordListen = 0;
     sendRLVRestrictCommand("Off");
-    llMessageLinked(LINK_THIS, 1401, "Off", "");
+    llMessageLinked(LINK_THIS, 1400, "Off", "");
     //registerWithDB(); // prisoner, off
 }
  
@@ -199,11 +201,11 @@ startZap(string zapLevel) {
         llStartAnimation("Zap");
     }
     if (zapLevel == "Low") {
-        llSleep(2);
+        llSleep(1);
     } else if (zapLevel == "Med") {
-        llSleep(5);
+        llSleep(4);
     } else if (zapLevel == "Hig") {
-        llSleep(10);
+        llSleep(12);
     }
     llStopSound();
     if (haveAnimatePermissions) {
@@ -394,21 +396,21 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-    // We listen in on all ink messages and pick the ones we're interested in
-        if (num == 1400) {
+    // We listen in on link messages and pick the ones we're interested in
+        if (num == 1401) {
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
                 sayDebug("link_message "+(string)num+" "+message);
                 sendRLVRestrictCommand("Off");
                 sendRLVRestrictCommand(message);
                 if (message == "Off") {
-                    llMessageLinked(LINK_THIS, 1401, "Off", "");
+                    llMessageLinked(LINK_THIS, 1400, "Off", "");
                 }
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
             }
         }
-        if (num == 1302) {
-            // message is like "Zap Low" 
+        if (num == 1301) {
+            // command message is like "Zap Low" 
             startZap(llGetSubString(message, 4,6));
         }
    }
@@ -434,12 +436,11 @@ default
             sayDebug("status:" + message);   
             rlvPresent = 1;
             llListenRemove(RLVStatusListen);
-            llMessageLinked(LINK_THIS, 1401, "YesRLV", "");
+            llMessageLinked(LINK_THIS, 1400, "YesRLV", "");
             RLVStatusListen = 0;
             HUDTimerRestart();
             llOwnerSay(message+"; RLV is present.");
         }
-        
     }
 
 
@@ -456,10 +457,9 @@ default
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             HUDTimerRestart();
-            llMessageLinked(LINK_THIS, 1401, "Off", "");
-            llMessageLinked(LINK_THIS, 1401, "NoRLV", "");
+            llMessageLinked(LINK_THIS, 1400, "Off", "");
+            llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
         } 
-                   
         HUDTimer();
     }
 
