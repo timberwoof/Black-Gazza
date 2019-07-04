@@ -37,14 +37,21 @@ setUpMenu(key avatarKey, string message, list buttons)
 leashMenuFilter(key avatarKey) {
     // If an inmate wants to leash you, ask your permission. 
     // If you or anybody esle wants to leash you, just present the leash menu. 
+    sayDebug("leashMenuFilter leasherAvatar:"+(string)leasherAvatar);
+    sayDebug("leashMenuFilter avatarKey:"+(string)avatarKey);
+    sayDebug("leashMenuFilter llGetOwner:"+(string)llGetOwner());
     if (avatarKey != llGetOwner() && llSameGroup(avatarKey)) {
+        // another inmate wants to mess with the leash
         sayDebug("leashMenuFilter ask");
         leashMenuAsk(avatarKey);
-    } else {
-        sayDebug("leashMenuFilter do");
+    } else if (leasherAvatar == llGetOwner() || avatarKey != llGetOwner()) {
+        sayDebug("leashMenuFilter okay");
         leashMenu(avatarKey);
+    } else {
+        llInstantMessage(avatarKey, "You are not permitted to mess with the leash.");
+        llSay (0, prisonerNumber + " tugs on the leash.");
     }
-    leasherAvatar = avatarKey;
+
 }
 
 key leashMenuAsk(key avatarKey) {
@@ -126,7 +133,7 @@ default
     link_message( integer sender_num, integer num, string message, key id ){ 
         if (num == 1901 && message == "Leash"){
             // leash command
-            sayDebug("link_message("+(string)num+","+message+")");
+            sayDebug("link_message("+(string)num+","+message+")");;
             leashMenuFilter(id);
         } else if (num == 2000) {
             // database status
@@ -142,12 +149,14 @@ default
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
+        leasherAvatar = avatarKey;
         sayDebug("listen:"+message);
         if (message == "Okay"){
             leashMenu(leasherAvatar);
         } else if (message == "No"){
             llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
         } else if (message == "Grab Leash") {
+            leasherAvatar = avatarKey;
             leashTarget = avatarKey;
             sensorState = "Leash";
             leashParticlesOn(leashTarget);
@@ -161,12 +170,14 @@ default
         } else if (llGetSubString(message,0,4) == "Point") {
             sensorState = "Leash";
             integer pointi = (integer)llGetSubString(message,6,7);
+            leasherAvatar = avatarKey;
             key leashTarget = llList2Key(leashPoints,pointi);
             leashParticlesOn(leashTarget);
             llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
         } else if (message == "Unleash") {
             llSensorRemove();
             leashParticlesOff();
+            leasherAvatar = llGetOwner();
         } else {
             llOwnerSay("Error: Unhandled listem: "+name+" :"+message);
         }
