@@ -126,12 +126,12 @@ sendRLVRestrictCommand(string level) {
             "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
         } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:1=n," +
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:3=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
         } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
-            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:1=n," + 
+            "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:3=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
         }
@@ -185,15 +185,6 @@ SafewordSucceeded() {
 // Animation Queue
 string theAnimation;
 integer AnimationQueueStatus = 0;
-
-oldTouch(){
-    if (HudFunctionState > 0) {   // must be prison-locked *** comment out for debug
-        if (llGetOwner() != llDetectedKey(0)) { // must be someone else *** comment out for debug
-            startAnimations(1);
-            }   // *** comment out for debug
-        }   // *** comment out for debug
-}
-
 
 list AnimationList = [
 "bogus",0,
@@ -421,7 +412,6 @@ default
         SafewordListen = 0;
         initAnimationQueue();
         llPreloadSound("electricshock");
-        
         checkRLV();
         sayDebug("state_entry done");
     }
