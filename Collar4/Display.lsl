@@ -153,7 +153,6 @@ displayCentered(string text){
 displayScroll(string text){
 // display a string of more than 12 characters in a lovely scrolling manner. 
     string displayText = "            "; // 12 spaces
-    //llMessageLinked(LINK_ALL_CHILDREN, 555, displayText, "");
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
     scrollPos = 0;
     scrollLimit = llStringLength(text);
@@ -205,13 +204,23 @@ displayBattery(integer percent)
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
+// fire off a request to the crime database for this wearer. 
+sendDatabaseQuery() {
+    displayCentered("Accessing DB");
+    string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+    crimeRequest= llHTTPRequest(URL,[],"");
+}
+
 default
 {
     state_entry()
     {
+        sayDebug("state_entry");
+        
         // set up lists and shit
         moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
         moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
+        Mood = "OOC";
         
         classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, GRAY];
@@ -221,20 +230,21 @@ default
             BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
         classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
             BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
+        Class = "White";
         classColor = WHITE;
         setTextColor(CYAN);
         
         batteryLevel = 0;
+        
+        if (llGetAttached() != 0) {
+            sendDatabaseQuery();
+        }
     }
 
-     attach(key id)
-     {
+    attach(key id)
+    {
         if (id) {
-            sayDebug("attach"); // *** debug
-            displayCentered("attach");
-            // fire off a request to the crime database for this wearer. 
-            string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-            crimeRequest= llHTTPRequest(URL,[],"");
+            sendDatabaseQuery();
         }
     }
 
@@ -250,8 +260,8 @@ default
             string theKey = llList2Key(returned, 3);
             string number = llList2String(returned, 4);
             
-            // send this data on to the menu system
-            llMessageLinked(LINK_THIS, 2000, message, "");
+            // send this data on to anyone who's interested
+            llMessageLinked(LINK_THIS, 2001, message, "");
             
             if (theKey == llGetOwner()) {
                 displayCentered(number);
@@ -262,15 +272,13 @@ default
                 displayCentered("Key Error");
             }
         }
-        else {
-        }
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
         sayDebug("link_message "+(string)num+" "+message);
-        
+
         // IC/OOC Mood sets frame color and blinky 1
-        if (num == 1100) {
+        if (num == 1101) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
@@ -280,7 +288,7 @@ default
         }
         
         // Prisoner Class sets text color and blinky 2
-        else if (num == 1200) {
+        else if (num == 1201) {
             Class = message;
             integer classi = llListFindList(classNames, [Class]);
             classColor = llList2Vector(classColors, classi);
@@ -308,20 +316,26 @@ default
         }
         
         // Threat level sets blinky 4
-        else if (num == 1500) {
+        else if (num == 1501) {
             list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
             list threatColors = [GREEN, YELLOW, ORANGE, RED];
             integer threati = llListFindList(threatLevels, [message]);
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
-            }
+        }
         
         // Battery Level Report
-        else if (num == 1700) {
+        else if (num == 1701) {
+            sayDebug("link_message "+(string)num+" "+message);
             sayDebug("battery "+message);
             displayBattery((integer)message);
-            }
-            
+        }
+        
+        // Someone wants database update
+        else if (num == 2000) {
+            sayDebug("link_message "+(string)num+" "+message);
+            sendDatabaseQuery();
+        }
     }
 }
