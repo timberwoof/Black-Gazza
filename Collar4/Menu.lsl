@@ -72,7 +72,7 @@ setUpMenu(key avatarKey, string message, list buttons)
     llSetTimerEvent(30);
 }
 
-list menuCheckbox(string title, integer onOff)
+string menuCheckbox(string title, integer onOff)
 // make checkbox menu item out of a button title and boolean state
 {
     string checkbox;
@@ -84,7 +84,7 @@ list menuCheckbox(string title, integer onOff)
     {
         checkbox = "☐";
     }
-    return [checkbox + " " + title];
+    return checkbox + " " + title;
 }
 
 list menuRadioButton(string title, string match)
@@ -113,7 +113,7 @@ mainMenu(key avatarKey) {
     
     string message = "Main";
     list buttons = ["Info", "Settings", "Leash", "Hack"];
-    if (!llSameGroup(avatarKey)) {
+    if (!llSameGroup(avatarKey) || (ICOOCMood == "OOC")) {
         // inmates don't get Zap commands
         buttons = buttons + ["Zap"];
     }
@@ -171,9 +171,9 @@ zapMenu(key avatarKey)
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string ZapLevels = "";
-    if (allowZapLow) ZapLevels = ZapLevels + "Low ";
-    if (allowZapMed) ZapLevels = ZapLevels + "Medium ";
-    if (allowZapHigh) ZapLevels = ZapLevels + "High ";
+    ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
+    menuCheckbox("Medium", allowZapMed) +  "  " +
+    menuCheckbox("High", allowZapHigh);
 
     string message = "Prisoner Information \n"+
     "Number: " + prisonerNumber + "\n" +
