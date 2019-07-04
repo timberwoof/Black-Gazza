@@ -105,6 +105,12 @@ list menuRadioButton(string title, string match)
 // Menus and Handlers ****************
 
 mainMenu(key avatarKey) {
+    // Sometimes this happens, so fix it. 
+    // Respose won't come in time but it will be there for the next menu.
+    if (prisonerNumber == "Unknown") {
+         llMessageLinked(LINK_THIS, 2000, "Request", avatarKey);
+    }
+    
     string message = "Main";
     list buttons = ["Info", "Settings", "Leash", "Hack"];
     if (!llSameGroup(avatarKey)) {
@@ -127,7 +133,7 @@ doMainMenu(key avatarKey, string message) {
             zapMenu(avatarKey);
         }
         else if (message == "Leash"){
-            llMessageLinked(LINK_THIS, 2000, "Leash", avatarKey);
+            llMessageLinked(LINK_THIS, 1900, "Leash", avatarKey);
         }
         else if (message == "Info"){
             infoGive(avatarKey);
@@ -177,7 +183,7 @@ infoGive(key avatarKey){
     "Zap Levels: " + ZapLevels + "\n"; 
     
     if (rlvPresent) {
-        message = message + "Restriction: " + RLVLevel + "\n";
+        message = message + "RLV Restriction: " + RLVLevel + "\n";
     } else {
         message = message + "RLV is not detected.\n";
     }
@@ -325,7 +331,7 @@ moodMenu(key avatarKey)
 
 crimeDialog(key avatarKey) {
     llWhisper(0,prisonerCrime);
-    llMessageLinked(LINK_THIS, 1800, prisonerCrime, ""); // communicate the crime
+    //llMessageLinked(LINK_THIS, 1800, prisonerCrime, ""); // communicate the crime
 }
 
 classMenu(key avatarKey)
@@ -353,7 +359,12 @@ lockMenu(key avatarKey)
 {
     if (avatarKey == llGetOwner())
     {
-        string message = "Lock";
+        string message = "Set your Lock Level\n" +
+            "• Each level applies heavier RLV restrictions.\n" +
+            "• Off has no RLV restrictions.\n" +
+            "• Light and Medium can be switched to Off any time.\n" +
+            "• Heavy equires you to actvely Safeword out.\n" +
+            "• Hardcore has the Heavy restrictions but no safeword option. To be released from this level, you must ask a Guard.";
         list buttons = [];
         buttons = buttons + menuRadioButton("Off", RLVLevel);
         
@@ -443,14 +454,14 @@ default
         else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
             sayDebug("listen: Mood:"+messageNoButtons);
             ICOOCMood = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1100, ICOOCMood, "");
+            llMessageLinked(LINK_THIS, 1101, ICOOCMood, "");
         }
         
         //Class
         else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageNoButtons) > -1){
             sayDebug("listen: Class:"+messageNoButtons);
             prisonerClass = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
+            llMessageLinked(LINK_THIS, 1201, prisonerClass, "");
         }
         
         // Set Zap Level
@@ -469,14 +480,14 @@ default
         else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageNoButtons) > -1){
             sayDebug("listen: RLVLevel:"+messageNoButtons);
             RLVLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1400, RLVLevel, "");
+            llMessageLinked(LINK_THIS, 1401, RLVLevel, "");
         }
 
         // Threat Level
         else if (llSubStringIndex("None Moderate Dangerous Extreme", messageNoButtons) > -1){
             sayDebug("listen: threatLevel:"+messageNoButtons);
             threatLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1500, threatLevel, "");
+            llMessageLinked(LINK_THIS, 1501, threatLevel, "");
         }
         
         // Document
@@ -495,11 +506,11 @@ default
     link_message( integer sender_num, integer num, string message, key id ){ 
     // We listen in on all ink messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 2000) {
+        if (num == 2001) {
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
             prisonerNumber = llList2String(returned, 4);
-        } else if (num == 1700) {
+        } else if (num == 1701) {
             batteryLevel = message;
         } else if (num == 1401) {
             if (message == "NoRLV") {
