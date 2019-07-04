@@ -124,10 +124,11 @@ default
      }
 
      link_message( integer sender_num, integer num, string message, key id ){ 
-          sayDebug("link_message("+(string)num+","+message+")");
-          if (num == 2000 && message == "Leash"){
+          if (num == 1900 && message == "Leash"){
+                sayDebug("link_message("+(string)num+","+message+")");
                 leashMenuFilter(id);
           } else if (num == 2000) {
+                sayDebug("link_message("+(string)num+","+message+")");
                 list returned = llParseString2List(message, [","], []);
                 prisonerNumber = llList2String(returned, 4);
           }
