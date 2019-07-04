@@ -117,10 +117,10 @@ mainMenu(key avatarKey) {
         // inmates don't get Zap commands
         buttons = buttons + ["Zap"];
     }
-    if (RLVLevel != "Hardcore" && RLVLevel != "Off") {
+    //if (RLVLevel != "Hardcore" && RLVLevel != "Off") { // ***
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Safeword"];
-    }
+    //} // ***
     if (RLVLevel == "Hardcore" && !llSameGroup(avatarKey)) {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Release"];
@@ -133,7 +133,7 @@ doMainMenu(key avatarKey, string message) {
             zapMenu(avatarKey);
         }
         else if (message == "Leash"){
-            llMessageLinked(LINK_THIS, 1900, "Leash", avatarKey);
+            llMessageLinked(LINK_THIS, 1901, "Leash", avatarKey);
         }
         else if (message == "Info"){
             infoGive(avatarKey);
@@ -142,14 +142,14 @@ doMainMenu(key avatarKey, string message) {
             hackMenu(avatarKey);
         }
         else if (message == "Safeword"){
-            llMessageLinked(LINK_THIS, 1400, "Safeword", "");
+            llMessageLinked(LINK_THIS, 1401, "Safeword", "");
         }
         else if (message == "Settings"){
             settingsMenu(avatarKey);
         }
         else if (message == "Release"){
             RLVLevel = "Off";
-            llMessageLinked(LINK_THIS, 1400, "Off", "");
+            llMessageLinked(LINK_THIS, 1401, "Off", "");
         }
     }
 
@@ -249,7 +249,6 @@ settingsMenu(key avatarKey) {
             message = message + "You can set the inmate's Crime, Class, Threat Level, and Zap level.";
             buttons = buttons + ["SetZap"];
         }
-
         setUpMenu(avatarKey, message, buttons);
     }
 }
@@ -297,14 +296,15 @@ doSetZapLevels(key avatarKey, string message)
             allowZapLow = invert(allowZapLow);
         } else if (message == "Zap Med") {
             allowZapMed = invert(allowZapMed);
-        } else if (message == "Zap Hi") {
+        } else if (message == "Zap High") {
             allowZapHigh = invert(allowZapHigh);
         }
         if (allowZapLow + allowZapMed + allowZapHigh == 0) {
             allowZapHigh = 1;
         }
+        // Send the zap status message
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
-        llMessageLinked(LINK_THIS, 1301, zapJsonList, "");
+        llMessageLinked(LINK_THIS, 1300, zapJsonList, "");
     }
 }
 
@@ -385,7 +385,7 @@ lockMenu(key avatarKey)
 }
 
 threatMenu(key avatarKey) {
-    if (avatarKey == llGetOwner())
+    if (avatarKey != llGetOwner())
     {
         string message = "Threat";
         list buttons = [];
@@ -394,10 +394,6 @@ threatMenu(key avatarKey) {
         buttons = buttons + menuRadioButton("Dangerous", threatLevel);
         buttons = buttons + menuRadioButton("Extreme", threatLevel);
         setUpMenu(avatarKey, message, buttons);
-    }
-    else
-    {
-        ;
     }
 }
 
@@ -435,8 +431,8 @@ default
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
-        string messageNoButtons = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
-        sayDebug("listen:"+message+" messageNoButtons:"+messageNoButtons);
+        string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
+        sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         
         //Main
         if (llSubStringIndex("Zap Hack Leash Info Safeword Settings Release", message) > -1){
@@ -451,43 +447,43 @@ default
         }
 
         // Mood
-        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageNoButtons) > -1){
-            sayDebug("listen: Mood:"+messageNoButtons);
-            ICOOCMood = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1101, ICOOCMood, "");
+        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageButtonsTrimmed) > -1){
+            sayDebug("listen: Mood:"+messageButtonsTrimmed);
+            ICOOCMood = messageButtonsTrimmed;
+            llMessageLinked(LINK_THIS, 1100, ICOOCMood, "");
         }
         
         //Class
-        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageNoButtons) > -1){
-            sayDebug("listen: Class:"+messageNoButtons);
-            prisonerClass = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1201, prisonerClass, "");
+        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageButtonsTrimmed) > -1){
+            sayDebug("listen: Class:"+messageButtonsTrimmed);
+            prisonerClass = messageButtonsTrimmed;
+            llMessageLinked(LINK_THIS, 1200, prisonerClass, "");
         }
         
-        // Set Zap Level
+        // Zap the inmate
         else if (llSubStringIndex("Zap Low Zap Med Zap High", message) > -1){
             sayDebug("listen: Zap:"+message);
-            llMessageLinked(LINK_THIS, 1302, message, "");
+            llMessageLinked(LINK_THIS, 1301, message, "");
         }
 
         // Set Zap Level
-        else if (llSubStringIndex("Zap Low Zap Med Zap High", messageNoButtons) > -1){
+        else if (llSubStringIndex("Zap Low Zap Med Zap High", messageButtonsTrimmed) > -1){
             sayDebug("listen: Set Zap:"+message);
-            doSetZapLevels(avatarKey, messageNoButtons);
+            doSetZapLevels(avatarKey, messageButtonsTrimmed);
         }
 
         // Lock Level
-        else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageNoButtons) > -1){
-            sayDebug("listen: RLVLevel:"+messageNoButtons);
-            RLVLevel = messageNoButtons;
+        else if (llSubStringIndex("Off Light Medium Heavy Hardcore", messageButtonsTrimmed) > -1){
+            sayDebug("listen: RLVLevel:"+messageButtonsTrimmed);
+            RLVLevel = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1401, RLVLevel, "");
         }
 
         // Threat Level
-        else if (llSubStringIndex("None Moderate Dangerous Extreme", messageNoButtons) > -1){
-            sayDebug("listen: threatLevel:"+messageNoButtons);
-            threatLevel = messageNoButtons;
-            llMessageLinked(LINK_THIS, 1501, threatLevel, "");
+        else if (llSubStringIndex("None Moderate Dangerous Extreme", messageButtonsTrimmed) > -1){
+            sayDebug("listen: threatLevel:"+messageButtonsTrimmed);
+            threatLevel = messageButtonsTrimmed;
+            llMessageLinked(LINK_THIS, 1500, threatLevel, "");
         }
         
         // Document
@@ -504,15 +500,17 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-    // We listen in on all ink messages and pick the ones we're interested in
+    // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 2001) {
+        if (num == 2000) {
+            // database status message
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
             prisonerNumber = llList2String(returned, 4);
-        } else if (num == 1701) {
+        } else if (num == 1700) {
             batteryLevel = message;
-        } else if (num == 1401) {
+        } else if (num == 1400) {
+            // RLV/Lock status
             if (message == "NoRLV") {
                 rlvPresent = 0;
                 RLVLevel = "Off";
