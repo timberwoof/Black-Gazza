@@ -112,15 +112,15 @@ mainMenu(key avatarKey) {
     }
     
     string message = "Main";
-    list buttons = ["Info", "Settings", "Leash", "Hack"];
+    list buttons = ["Info", "Settings", "Leash"]; // *** , "Hack" // not yet implemented
     if (!llSameGroup(avatarKey) || (ICOOCMood == "OOC")) {
         // inmates don't get Zap commands
         buttons = buttons + ["Zap"];
     }
-    //if (RLVLevel != "Hardcore" && RLVLevel != "Off") { // ***
+    if (avatarKey == llGetOwner() && RLVLevel != "Hardcore" && RLVLevel != "Off") {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Safeword"];
-    //} // ***
+    }
     if (RLVLevel == "Hardcore" && !llSameGroup(avatarKey)) {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Release"];
@@ -336,23 +336,16 @@ crimeDialog(key avatarKey) {
 
 classMenu(key avatarKey)
 {
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Set Prisoner Class";
-        list buttons = [];
-        buttons = buttons + menuRadioButton("White", prisonerClass);
-        buttons = buttons + menuRadioButton("Pink", prisonerClass);
-        buttons = buttons + menuRadioButton("Red", prisonerClass);
-        buttons = buttons + menuRadioButton("Orange", prisonerClass);
-        buttons = buttons + menuRadioButton("Green", prisonerClass);
-        buttons = buttons + menuRadioButton("Blue", prisonerClass);
-        buttons = buttons + menuRadioButton("Black", prisonerClass);
-        setUpMenu(avatarKey, message, buttons);
-    }
-    else
-    {
-        ; // guards can set Unclassified/Orange/Blue/Pink/Green/Black
-    }
+    string message = "Set Prisoner Class";
+    list buttons = [];
+    buttons = buttons + menuRadioButton("White", prisonerClass);
+    buttons = buttons + menuRadioButton("Pink", prisonerClass);
+    buttons = buttons + menuRadioButton("Red", prisonerClass);
+    buttons = buttons + menuRadioButton("Orange", prisonerClass);
+    buttons = buttons + menuRadioButton("Green", prisonerClass);
+    buttons = buttons + menuRadioButton("Blue", prisonerClass);
+    buttons = buttons + menuRadioButton("Black", prisonerClass);
+    setUpMenu(avatarKey, message, buttons);
 }
 
 lockMenu(key avatarKey)
