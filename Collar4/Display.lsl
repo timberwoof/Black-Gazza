@@ -223,7 +223,7 @@ default
         Mood = "OOC";
         
         classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
-        classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, GRAY];
+        classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
             BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
         classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
