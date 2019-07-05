@@ -5,7 +5,7 @@
 // Receives menu commands on link number 1401
 // Sends RLVstatus commands on link number 1401
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -31,6 +31,7 @@ integer RLVStatusListen = 0;
 
 key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
 key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
+key soundZapLoop = "27a18333-a425-30b1-1ab6-c9a3a3554903";
 integer haveAnimatePermissions = 0;
 
 sayDebug(string message)
@@ -195,7 +196,7 @@ SafewordSucceeded() {
 startZap(string zapLevel) {
     llPlaySound(soundCharging, 1.0);
     llSleep(1.5);
-    llLoopSound(soundShock, 1.0);
+    llLoopSound(soundZapLoop, 1.0);
     if (haveAnimatePermissions) {
         stop_anims();
         llStartAnimation("Zap");
@@ -212,6 +213,8 @@ startZap(string zapLevel) {
         stop_anims();
         llStartAnimation("Stand");
     }
+    llSleep(1); // Some people reported that the sound didn't stop looping.
+    llStopSound();
 }
 
 stop_anims()
@@ -361,7 +364,7 @@ default
         SafewordListen = 0;
         checkRLV();
         llPreloadSound(soundCharging);
-        llPreloadSound(soundShock);
+        llPreloadSound(soundZapLoop);
         sayDebug("state_entry done");
     }
 
