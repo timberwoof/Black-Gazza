@@ -436,16 +436,13 @@ lockMenu(key avatarKey)
 }
 
 threatMenu(key avatarKey) {
-    if (avatarKey != llGetOwner())
-    {
-        string message = "Threat";
-        list buttons = [];
-        buttons = buttons + menuRadioButton("None", threatLevel);
-        buttons = buttons + menuRadioButton("Moderate", threatLevel);
-        buttons = buttons + menuRadioButton("Dangerous", threatLevel);
-        buttons = buttons + menuRadioButton("Extreme", threatLevel);
-        setUpMenu(avatarKey, message, buttons);
-    }
+    string message = "Threat";
+    list buttons = [];
+    buttons = buttons + menuRadioButton("None", threatLevel);
+    buttons = buttons + menuRadioButton("Moderate", threatLevel);
+    buttons = buttons + menuRadioButton("Dangerous", threatLevel);
+    buttons = buttons + menuRadioButton("Extreme", threatLevel);
+    setUpMenu(avatarKey, message, buttons);
 }
 
 // Event Handlers ***************************
