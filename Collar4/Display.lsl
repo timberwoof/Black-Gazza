@@ -233,11 +233,15 @@ default
         Class = "White";
         classColor = WHITE;
         setTextColor(CYAN);
-        
-        batteryLevel = 0;
-        
+
+        // turn off lingering battery animations
+        llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
+
+        batteryLevel = 0; // remove when we do "real" battery levels
+                
         if (llGetAttached() != 0) {
             sendDatabaseQuery();
+            llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
         }
     }
 
@@ -245,6 +249,8 @@ default
     {
         if (id) {
             sendDatabaseQuery();
+            llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
+            batteryLevel = 0;  // remove when we do "real" battery levels      
         }
     }
 
@@ -277,42 +283,42 @@ default
     link_message( integer sender_num, integer num, string message, key id ){ 
         sayDebug("link_message "+(string)num+" "+message);
 
-        // IC/OOC Mood sets frame color and blinky 1
+        // IC/OOC Mood sets frame color
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
         }
         
-        // Prisoner Class sets text color and blinky 2
+        // Prisoner Class sets text color and blinky 3
         else if (num == 1200) {
             Class = message;
             integer classi = llListFindList(classNames, [Class]);
             classColor = llList2Vector(classColors, classi);
             setTextColor(classColor);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, classColor, 1.0]);
-            llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), 
-                <1,1,0>, <0,0,0>, 0]);
-            llSetPrimitiveParams([ PRIM_SPECULAR,FaceFrame, llList2Key(classSpeculars, classi), 
-                <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
-            llSetPrimitiveParams([ PRIM_NORMAL,FaceFrame, llList2Key(classBumpmaps, classi), 
-                <1,1,0>, <0,0,0>, 0]);
+            // set the blinky color
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, classColor, 1.0]);
+            
+            // set the collar frame texture, reflectivity, and bumpiness
+            llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
+            llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
+            llSetPrimitiveParams([PRIM_NORMAL, FaceFrame, llList2Key(classBumpmaps, classi), <1,1,0>, <0,0,0>, 0]);
             }
         
-        // Zap Level sets blinky 3
+        // Zap Level sets blinky 1
         else if (num == 1300) {
             // message contains a json list of settings
             sayDebug("zaplevel message:"+message);
             list zapLevels = llJson2List(message);
             sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
-            if (llList2Integer(zapLevels,0)) lightcolor = lightcolor + BLUE;
-            if (llList2Integer(zapLevels,1)) lightcolor = lightcolor + GREEN;
-            if (llList2Integer(zapLevels,2)) lightcolor = lightcolor + RED;
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, lightcolor, 1.0]);            
+            // color tells the highest allowed zap level
+            if (llList2Integer(zapLevels,0)) lightcolor = YELLOW;
+            if (llList2Integer(zapLevels,1)) lightcolor = ORANGE;
+            if (llList2Integer(zapLevels,2)) lightcolor = RED;
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, lightcolor, 1.0]);            
         }
         
         // Threat level sets blinky 4
@@ -323,6 +329,16 @@ default
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
+        }
+        
+        // Lock level sets blinky 2
+        else if (num == 1400) {
+            list threatLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
+            list threatColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
+            integer threati = llListFindList(threatLevels, [message]);
+            vector threatcolor = llList2Vector(threatColors, threati);
+            sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, threatcolor, 1.0]);
         }
         
         // Battery Level Report
