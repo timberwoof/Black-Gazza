@@ -2,8 +2,10 @@
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
 
+// Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
-// Sends RLVstatus commands on link number 1401
+// Receives status requests on link number 1402
+// Sends RLVstatus status on link number 1403
 
 integer OPTION_DEBUG = 0;
 
@@ -25,13 +27,16 @@ string avatarName;
 key primKey;
 string primKeyString;
 
-integer rlvPresent = 0;
+integer RLVpresent;
+string RLVlevel;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
 
 key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
 key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
 key soundZapLoop = "27a18333-a425-30b1-1ab6-c9a3a3554903";
+key soundLatch = "cd386eb2-037a-e774-04d1-fd8161ffc2ba";
+key soundUnlatch="2f327bf4-a07f-2314-58bc-9443073a3065";
 integer haveAnimatePermissions = 0;
 
 sayDebug(string message)
@@ -69,7 +74,7 @@ registerWithDB() {
     if (HudFunctionState > 0) {
         hudActive = 1;
         }
-    if (rlvPresent == 1) {
+    if (RLVpresent == 1) {
         hudActive = hudActive * 10;
     }
     
@@ -116,41 +121,44 @@ checkRLV() {
 
 sendRLVRestrictCommand(string level) {
     // level can be Off Light Medium Heavy Hardcore
-    if (rlvPresent == 1) {
+    if (RLVpresent == 1) {
         sayDebug("sendRLVRestrictCommand("+level+")");
-        string rlvcommand; 
+        RLVlevel = level;
+        llOwnerSay("@clear");
+        string rlvcommand = ""; 
         if (level == "Off") {
-            rlvcommand = "@clear";
+            llPlaySound(soundUnlatch, 1);
+            llOwnerSay("RLV has been unlocked.");
+            return;
         }else if (level == "Light") {
-            rlvcommand = "@tplm=n,tploc=n,tplure=y," +          
-            "showworldmap=y,showminimap=y,showloc=y," + 
-            "fly=n,detach=n,edit=y,rez=y," +
-            "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y";
+            rlvcommand = "@tplm=n,tploc=n,showworldmap=y,showminimap=y,showloc=y,fly=n,detach=n";
+            // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
         } else if (level == "Medium") {
-            rlvcommand = "@tplm=n,tploc=n,tplure=y," +          
-            "showworldmap=n,showminimap=n,showloc=y," + 
-            "fly=n,detach=n,edit=y,rez=y," +
-            "chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=n,fartouch=n";
+            rlvcommand = "@tplm=n,tploc=n,showworldmap=n,showminimap=n,showloc=y,fly=n,detach=n,sittp=n,fartouch=n";
+            // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,
         } else if (level == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," +
             "fly=n,detach=n,edit=n,rez=n," +
-            "chatshout=n,chatnormal=y,chatwhisper=y,sittp=n,fartouch=n";
+            "chatshout=n,sittp=n,fartouch=n";
+            // chatnormal=y,chatwhisper=y,
         } else if (level == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
-            "chatshout=n,chatnormal=n,chatwhisper=y,sittp=n,fartouch=n";
+            "chatshout=n,chatnormal=n,sittp=n,fartouch=n";
+            // chatwhisper=y,
         }
+        llPlaySound(soundLatch, 1);
         sayDebug(rlvcommand);
         llOwnerSay(rlvcommand);
+        llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
         llOwnerSay("RLV lock level has been set to "+level);
-        llSleep(2);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
         // send RLV statuses
+        llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
         llMessageLinked(LINK_THIS, 1400, "Off", "");
-        llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
     }
 }
 
@@ -193,7 +201,8 @@ SafewordSucceeded() {
 // Zap
 
 // got menu command: play charge sound and ask for zap permission
-startZap(string zapLevel) {
+startZap(string zapLevel, string who) {
+    llWhisper(0, who+" zaps the inmate.");
     llPlaySound(soundCharging, 1.0);
     llSleep(1.5);
     llLoopSound(soundZapLoop, 1.0);
@@ -359,12 +368,16 @@ default
     {
         sayDebug("state_entry");
         llStopSound();
-        rlvPresent = 0;
+        RLVpresent = 0;
+        RLVlevel = "Off";
         HudFunctionState = 0;
         SafewordListen = 0;
         checkRLV();
         llPreloadSound(soundCharging);
         llPreloadSound(soundZapLoop);
+        if (llGetAttached() != 0) {
+            checkRLV();
+        }
         sayDebug("state_entry done");
     }
 
@@ -373,18 +386,18 @@ default
         if (id) {
             sayDebug("attach");
             hudAttached = 1;
-            rlvPresent = 0;
+            RLVpresent = 0;
             HudFunctionState = 0;
             checkRLV();
             registerWithDB();    // inmate, offline  
-            llOwnerSay("Black Gazza" + hudTitle + ". Click the collar for a menu.");
+            sendRLVRestrictCommand(RLVlevel);
             sayDebug("attach done");
         } else {
             sayDebug("attach but no ID");
             hudAttached = 0;
             HudFunctionState = 0;
             sendRLVRestrictCommand("Off");
-            sendRLVRestrictCommand("Light");
+            sendRLVRestrictCommand("NoRLV");
             registerWithDB();    // inmate, offline  
             sayDebug("attach but no ID done");
         }
@@ -403,7 +416,6 @@ default
         if (num == 1401) {
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
                 sayDebug("link_message "+(string)num+" "+message);
-                sendRLVRestrictCommand("Off");
                 sendRLVRestrictCommand(message);
                 if (message == "Off") {
                     llMessageLinked(LINK_THIS, 1400, "Off", "");
@@ -411,10 +423,17 @@ default
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
             }
-        }
-        if (num == 1301) {
+        } else if (num == 1402) { // status request
+            sayDebug("link_message sending RLVlevel:"+RLVlevel);
+            if (RLVpresent) {
+                llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
+            } else {
+                llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
+            }
+            llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
+        } else if (num == 1301) {
             // command message is like "Zap Low" 
-            startZap(llGetSubString(message, 4,6));
+            startZap(llGetSubString(message, 4,6), llKey2Name(id));
         }
    }
 
@@ -437,9 +456,10 @@ default
         
         if (channel == RLVStatusChannel) {
             sayDebug("status:" + message);   
-            rlvPresent = 1;
+            RLVpresent = 1;
             llListenRemove(RLVStatusListen);
-            llMessageLinked(LINK_THIS, 1400, "YesRLV", "");
+            llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
+            llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
             RLVStatusListen = 0;
             HUDTimerRestart();
             llOwnerSay(message+"; RLV is present.");
@@ -456,12 +476,12 @@ default
         } else if (RLVStatusListen != 0) {
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
-            rlvPresent = 0;
+            RLVpresent = 0;
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             HUDTimerRestart();
+            llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
             llMessageLinked(LINK_THIS, 1400, "Off", "");
-            llMessageLinked(LINK_THIS, 1400, "NoRLV", "");
         } 
         HUDTimer();
     }
