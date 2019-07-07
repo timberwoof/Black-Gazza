@@ -30,14 +30,13 @@ string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
 
-
-//if (rlvPresent == 0)
-
-
 string prisonerCrime = "Unknown";
 string prisonerNumber = "Unknown";
 string threatLevel = "None";
 string batteryLevel = "Unknown";
+
+string approveCrime;
+key approveAvatar;
 
 integer LinkBlinky = 17;
 integer FaceBlinky1 = 1;
@@ -374,8 +373,36 @@ moodMenu(key avatarKey)
 }
 
 crimeDialog(key avatarKey) {
-    llWhisper(0,prisonerCrime);
-    //llMessageLinked(LINK_THIS, 1800, prisonerCrime, avatarKey); // communicate the crime
+    string completeMessage = "Set " + prisonerNumber + "'s Crime";
+    menuChannel = -(llFloor(llFrand(10000)+1000));
+    llTextBox(avatarKey, completeMessage, menuChannel);
+    menuListen = llListen(menuChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+}
+
+askToApproveCrime(key avatarKey, string message) {
+    sayDebug("askToApproveCrime("+message+")");
+    approveCrime = message;
+    approveAvatar = avatarKey;
+    message = llKey2Name(avatarKey) + " wants to set your crime to \"" + message + "\"";
+    setUpMenu(llGetOwner(), message, ["Approve", "Disapprove"]);
+}
+
+approveTheCrime() {
+    // approveCrime
+    if (approveAvatar != llGetOwner()) {
+        llInstantMessage(approveAvatar, "Your request to set a new crime has been approved.");
+    }
+    llOwnerSay("Submitting request to database. New crime will read \""+approveCrime+"\"");
+    string URL = "http://sl.blackgazza.com/add_inmate.cgi?key=";
+    llHTTPRequest(URL+(string)llGetOwner()+"&name="+llKey2Name(llGetOwner())+"&crime="+approveCrime+"&sentence=0",[],"");
+    llSleep(10);
+    llOwnerSay("Requesting update from database. In a moment, verify the update with Collar > Info.");
+    llMessageLinked(LINK_THIS, 2002, "", "");
+}
+
+disapproveTheCrime() {
+    llInstantMessage(approveAvatar, "Your request to set a new crime has been disapproved.");
 }
 
 classMenu(key avatarKey)
@@ -452,7 +479,8 @@ default
     state_entry()
     {
         string theLocklevel = "Off";
-        llMessageLinked(LINK_THIS, 1402, "", "");
+        llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
+        llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
     }
 
     touch_start(integer total_number)
@@ -544,15 +572,25 @@ default
         }
         
         // Document
-        else if ((llGetSubString(message,0,2) == "Doc") > -1){
-            sayDebug("listen: message:"+message);
+        else if (llGetSubString(message,0,3) == "Doc "){
             integer inumber = (integer)llGetSubString(message,4,4) - 1;
-            llInstantMessage(llGetOwner(),"Offering '"+llGetInventoryName(INVENTORY_NOTECARD,inumber)+"' to "+llGetDisplayName(avatarKey)+".");
-            llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber) );            
+            sayDebug("listen: message:"+message+ " inumber:"+(string)inumber);
+            if (inumber > -1) {
+                llOwnerSay("Offering '"+llGetInventoryName(INVENTORY_NOTECARD,inumber)+"' to "+llGetDisplayName(avatarKey)+".");
+                llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber) );    
+            }        
         }
-
+        
+        // Crime
+        else if (message == "Approve") {
+            approveTheCrime();
+        }
+        else if (message == "Disapprove") {
+            disapproveTheCrime();
+        }
         else {
-            sayDebug("Error: Unhandled Dialog Message: "+message);
+            sayDebug("listen: Crime:"+message);
+            askToApproveCrime(avatarKey, message);
         } 
     }
     
