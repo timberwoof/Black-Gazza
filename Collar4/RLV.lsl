@@ -14,6 +14,7 @@ string hudTitle = "BG Inmate Collar4 Alpha 0";
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
 integer Safeword = 0;
+integer ZapChannel = -106969;
 
 integer hudAttached = 0;    //0 = unattached; 1 = attached
 integer HudFunctionState = 0;
@@ -378,6 +379,7 @@ default
         if (llGetAttached() != 0) {
             checkRLV();
         }
+        llListen(ZapChannel, "", "", "");
         sayDebug("state_entry done");
     }
 
@@ -463,6 +465,12 @@ default
             RLVStatusListen = 0;
             HUDTimerRestart();
             llOwnerSay(message+"; RLV is present.");
+        }
+        
+        if (channel == ZapChannel) {
+            if (message == (string)llGetOwner()) {
+                startZap("Low", name);
+            }
         }
     }
 
