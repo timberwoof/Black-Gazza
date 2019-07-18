@@ -204,14 +204,35 @@ displayBattery(integer percent)
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
+string name;
+string start_date;
+string registrationNumber;
+string crime;
+string class;
+string shocks;
+string rank;
+string specialty;
+
+
 // fire off a request to the crime database for this wearer. 
 sendDatabaseQuery() {
     displayCentered("Accessing DB");
     // Old DB
     //string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
     // New DB
-    string URL = "https://api.blackgazza.com/asset/?identity=" + (string)llGetOwner();
+    string UUID = (string)llGetOwner();
+    // test uuids
+    // 00000000-0000-0000-0000-000000000010 Loot Boplace
+    // 00000000-0000-0000-0000-000000000011 Marmour Bovinecow
+    // 00000000-0000-0000-0000-000000000012 LUP-8462
+    // 00000000-0000-0000-0000-000000000013 Melkor Schmerzlos
+    //UUID = "00000000-0000-0000-0000-000000000013";
+    string URL = "https://api.blackgazza.com/asset/?identity=" + UUID;
     crimeRequest= llHTTPRequest(URL,[],"");
+}
+
+string getListThing(list theList, string theKey){
+    return llList2String(theList, llListFindList(theList, [theKey])+1);
 }
 
 default
@@ -260,7 +281,7 @@ default
     http_response(key request_id, integer status, list metadata, string message)
     // handle the response from the crime database
     {
-        displayCentered("status "+(string)status);
+        displayCentered("status "+(string)status);        
         if (status == 200) {
             // body looks like 
             // {"roles": 
@@ -273,17 +294,25 @@ default
             //  "_start_date_": "2008-12-28 03:30:58"}"
             //
             // keys: 
-            // roles - inmate
+            // roles - inmate mechanic medic guard
+            //  inmate - name, start_date, crime, class, shocks
+            //  guard - name, star_date
+            //  medic - name, start_date, specialty
+            //  mechanic - name, start_date
             // _name_
             // _start_date_
+            
+            //sayDebug("http_response got message from server: " + message);
             
             list list1 = llJson2List(message);
             
             // debug the first-level list
             integer i;
+            //sayDebug("------------------------------");
+            //sayDebug("http_response first-level list");
             for (i=0; i < llGetListLength(list1); i++){
                 string item = llList2String(list1,i);
-                sayDebug("list1 item "+(string)i+":"+item);
+                //sayDebug("list1 item "+(string)i+":"+item);
             }
             
             // find the canonical name: first finr the _name_ key
@@ -304,15 +333,47 @@ default
             // find the roles. 
             integer rolesIndex = llListFindList(list1, ["roles"]);
             list list2 = llJson2List(llList2String(list1, rolesIndex+1));
-            sayDebug("list2:"+(string)list2);
-            for (i=0; i < llGetListLength(list2); i++){
+            //sayDebug("------------------------------");
+            //sayDebug("http_response second-level list");
+            for (i=0; i < llGetListLength(list2); i=i+2){
                 string item = llList2String(list2,i);
-                sayDebug("list2 item "+(string)i+":"+item);
+                list list3 = llJson2List(llList2String(list2,i+1));
+                //sayDebug("raw list3:"+(string)list3);
+                
+                string registrationNumber = llList2String(list3,0);
+                //sayDebug("registrationNumber="+registrationNumber);
+                list list4 =llJson2List(llList2String(list3,1));
+                
+                integer j;
+                for (j = 0; j < llGetListLength(list4); j=j+2){
+                    string theKey = llList2String(list4,j);
+                    string theValue = llList2String(list4,j+1);
+                    //sayDebug("Key:"+theKey+"="+theValue);
                 }
-            // These appear to be pairs of tag-list where tag can be "inmate" and presumably "guard" etc. 
-            
-            // I need to know how multiple sets of roles will be formatted. 
-            // I need to know how multiple instances of <role> will be formatted. 
+                
+                name = getListThing(list4, "name");
+                start_date = getListThing(list4, "start_date");
+                
+                if (item == "inmate") {
+                    crime = getListThing(list4, "crime");
+                    class = getListThing(list4, "class");
+                    shocks = getListThing(list4, "shocks");
+                    sayDebug("inmate "+name+" "+registrationNumber+" Class:"+class+" Crime:"+crime+" "+shocks+" shocks "+start_date);
+                } else if (item == "guard") {
+                    rank = getListThing(list4, "rank");
+                    sayDebug("guard "+rank+" "+name+" "+registrationNumber+" "+start_date);
+                } else if (item == "medic") {
+                    specialty = getListThing(list4, "specialty");
+                    sayDebug("medic "+name+" "+specialty+" "+registrationNumber+" "+start_date);
+                } else if (item == "mechanic") {
+                    sayDebug("mechanic "+name+" "+registrationNumber+" "+start_date);
+                } else if (item == "robot") {
+                    sayDebug("robot "+name+" "+registrationNumber+" "+start_date);
+                }
+                
+            }
+                
+
             
             string number = "P-00000";
             displayCentered(number);
