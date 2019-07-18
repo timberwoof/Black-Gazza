@@ -26,6 +26,8 @@ integer allowZapHigh = 1;
 
 string ICOOCMood = "OOC";
 string prisonerClass = "White";
+list prisonerClasses = ["White", "Pink", "Red", "Orange", "Green", "Blue", "Black"];
+list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
@@ -35,7 +37,6 @@ string prisonerNumber = "Unknown";
 string threatLevel = "None";
 string batteryLevel = "Unknown";
 
-string approveCrime;
 key approveAvatar;
 
 integer LinkBlinky = 17;
@@ -172,6 +173,10 @@ zapMenu(key avatarKey)
     setUpMenu(avatarKey, message, buttons);
 }
 
+string class2Description(string class) {
+    return llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
+}
+
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string ZapLevels = "";
@@ -182,7 +187,7 @@ infoGive(key avatarKey){
     string message = "Prisoner Information \n"+
     "Number: " + prisonerNumber + "\n" +
     "Crime: " + prisonerCrime + "\n" +
-    "Class: " + prisonerClass + "\n" +
+    "Class: " + prisonerClass + ": "+class2Description(prisonerClass)+"\n" +
     "Threat: " + threatLevel + "\n" +
     "Zap Levels: " + ZapLevels + "\n"; 
     
@@ -224,7 +229,7 @@ hackMenu(key avatarKey)
 }
 
 // Settings Menus and Handlers ************************
-// Sets Collar State: Mood, Crime, Class, Threat, Lock, Zap levels 
+// Sets Collar State: Mood, Threat, Lock, Zap levels 
 
 settingsMenu(key avatarKey) {
     // What this menu can present depends on a number of things: 
@@ -234,11 +239,10 @@ settingsMenu(key avatarKey) {
     
     // 1. Assume nothing is allowed
     integer setMood = 0;
-    integer setCrime = 0;
-    integer setClass = 0;
     integer setThreat = 0;
     integer setLock = 0;
     integer setZaps = 0;
+    integer setTimer = 0;
     
     // Add some things depending on who you are. 
     // What wearer can change
@@ -252,10 +256,9 @@ settingsMenu(key avatarKey) {
         if ((ICOOCMood == "OOC") || (ICOOCMood == "DnD")) {
             sayDebug("settingsMenu: ooc");
             // IC or DnD you change everything
-            setCrime = 1;
-            setClass = 1;
             setThreat = 1;
             setZaps = 1;
+            setTimer = 1;
         }
     }
     // What a guard can change
@@ -269,8 +272,7 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: ooc");
             // OOC, guards can change some things
             // DnD means Do Not Disturb
-            setCrime = 1;
-            setClass = 1;
+            // Oh, there's nothing because Class and Crime can only be set by the Crime Setter.
         }
     }
     
@@ -279,32 +281,27 @@ settingsMenu(key avatarKey) {
         if (avatarKey == llGetOwner()) {
             sayDebug("settingsMenu: heavy-owner");
             setZaps = 0;
+            setTimer = 0;
         } else {
             sayDebug("settingsMenu: heavy-guard");
             setZaps = 1;
+            setTimer = 1;
         }
     }
     
     string message = "Settings";
     list buttons = [];
     if (setMood) buttons = buttons + "Mood";
-    if (setCrime) buttons = buttons + "Crime";
-    if (setClass) buttons = buttons + "Class";
     if (setThreat) buttons = buttons + "Threat";
     if (setLock) buttons = buttons + "Lock";
     if (setZaps) buttons = buttons + "SetZap";
+    if (setTimer) buttons = buttons + "Timer";
     setUpMenu(avatarKey, message, buttons);
 }
     
 doSettingsMenu(key avatarKey, string message) {
         if (message == "Mood"){
             moodMenu(avatarKey);
-        }
-        else if (message == "Crime"){
-            crimeDialog(avatarKey);
-        }
-        else if (message == "Class"){
-            classMenu(avatarKey);
         }
         else if (message == "Lock"){
             lockMenu(avatarKey);
@@ -314,6 +311,9 @@ doSettingsMenu(key avatarKey, string message) {
         }
         else if (message == "SetZap"){
             ZapLevelMenu(avatarKey);
+        }
+        else if (message == "Timer"){
+            llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
 }
 
@@ -370,53 +370,6 @@ moodMenu(key avatarKey)
     {
         ; // no one else gets a thing
     }
-}
-
-crimeDialog(key avatarKey) {
-    string completeMessage = "Set " + prisonerNumber + "'s Crime";
-    menuChannel = -(llFloor(llFrand(10000)+1000));
-    llTextBox(avatarKey, completeMessage, menuChannel);
-    menuListen = llListen(menuChannel, "", avatarKey, "");
-    llSetTimerEvent(30);
-}
-
-askToApproveCrime(key avatarKey, string message) {
-    sayDebug("askToApproveCrime("+message+")");
-    approveCrime = message;
-    approveAvatar = avatarKey;
-    message = llKey2Name(avatarKey) + " wants to set your crime to \"" + message + "\"";
-    setUpMenu(llGetOwner(), message, ["Approve", "Disapprove"]);
-}
-
-approveTheCrime() {
-    // approveCrime
-    if (approveAvatar != llGetOwner()) {
-        llInstantMessage(approveAvatar, "Your request to set a new crime has been approved.");
-    }
-    llOwnerSay("Submitting request to database. New crime will read \""+approveCrime+"\"");
-    string URL = "http://sl.blackgazza.com/add_inmate.cgi?key=";
-    llHTTPRequest(URL+(string)llGetOwner()+"&name="+llKey2Name(llGetOwner())+"&crime="+approveCrime+"&sentence=0",[],"");
-    llSleep(10);
-    llOwnerSay("Requesting update from database. In a moment, verify the update with Collar > Info.");
-    llMessageLinked(LINK_THIS, 2002, "", "");
-}
-
-disapproveTheCrime() {
-    llInstantMessage(approveAvatar, "Your request to set a new crime has been disapproved.");
-}
-
-classMenu(key avatarKey)
-{
-    string message = "Set Prisoner Class";
-    list buttons = [];
-    buttons = buttons + menuRadioButton("White", prisonerClass);
-    buttons = buttons + menuRadioButton("Pink", prisonerClass);
-    buttons = buttons + menuRadioButton("Red", prisonerClass);
-    buttons = buttons + menuRadioButton("Orange", prisonerClass);
-    buttons = buttons + menuRadioButton("Green", prisonerClass);
-    buttons = buttons + menuRadioButton("Blue", prisonerClass);
-    buttons = buttons + menuRadioButton("Black", prisonerClass);
-    setUpMenu(avatarKey, message, buttons);
 }
 
 lockMenu(key avatarKey)
@@ -500,7 +453,7 @@ default
                 llInstantMessage(avatarKey, prisonerNumber+" Zap: "+ZapLevels);
                 }
             else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, prisonerNumber+" Lock Level: "+theLocklevel);}
-            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, prisonerNumber+" Class: "+prisonerClass);}
+            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, prisonerNumber+" Class: "+prisonerClass + ": "+class2Description(prisonerClass));}
             else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, prisonerNumber+" Threat: "+threatLevel);}
             else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, prisonerNumber+" Battery level: "+batteryLevel+"%");
         } else if (touchedLink == batteryCoverLink) {
@@ -525,7 +478,7 @@ default
         }
         
         //Settings
-        else if (llSubStringIndex("Play Level Class Threat Crime Lock Mood SetZap", message) > -1){
+        else if (llSubStringIndex("Play Level Threat Lock Mood SetZap Timer", message) > -1){
             sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message);
         }
@@ -535,13 +488,6 @@ default
             sayDebug("listen: Mood:"+messageButtonsTrimmed);
             ICOOCMood = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1100, ICOOCMood, avatarKey);
-        }
-        
-        //Class
-        else if (llSubStringIndex("White Pink Red Orange Green Blue Black", messageButtonsTrimmed) > -1){
-            sayDebug("listen: Class:"+messageButtonsTrimmed);
-            prisonerClass = messageButtonsTrimmed;
-            llMessageLinked(LINK_THIS, 1200, prisonerClass, avatarKey);
         }
         
         // Zap the inmate
@@ -581,24 +527,13 @@ default
             }        
         }
         
-        // Crime
-        else if (message == "Approve") {
-            approveTheCrime();
-        }
-        else if (message == "Disapprove") {
-            disapproveTheCrime();
-        }
-        else {
-            sayDebug("listen: Crime:"+message);
-            askToApproveCrime(avatarKey, message);
-        } 
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
         if (num == 2000) {
-            // database status message
+            // database status message *** this will be parsed by the Database module and distributed. 
             list returned = llParseString2List(message, [","], []);
             prisonerCrime = llList2String(returned, 2);
             prisonerNumber = llList2String(returned, 4);
