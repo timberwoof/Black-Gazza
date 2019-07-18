@@ -8,7 +8,7 @@
 // • blinky lights
 // • battery display
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -207,7 +207,10 @@ displayBattery(integer percent)
 // fire off a request to the crime database for this wearer. 
 sendDatabaseQuery() {
     displayCentered("Accessing DB");
-    string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+    // Old DB
+    //string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+    // New DB
+    string URL = "https://api.blackgazza.com/asset/?identity=" + (string)llGetOwner();
     crimeRequest= llHTTPRequest(URL,[],"");
 }
 
@@ -259,24 +262,63 @@ default
     {
         displayCentered("status "+(string)status);
         if (status == 200) {
-            // body looks like "Timberwoof Lupindo,0,Piracy,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361"
-            list returned = llParseString2List(message, [","], []);
-            string name = llList2String(returned, 0);
-            string crime = llList2String(returned, 2);
-            string theKey = llList2Key(returned, 3);
-            string number = llList2String(returned, 4);
+            // body looks like 
+            // {"roles": 
+            //      {"inmate": 
+            //      {"P-60361": 
+            //          {"name": "Timberwoof Lupindo", 
+            //          "start_date": "2008-12-28 03:30:58", 
+            //          "crime": "Piracy"}}}, 
+            //  "_name_": "Timberwoof Lupindo", 
+            //  "_start_date_": "2008-12-28 03:30:58"}"
+            //
+            // keys: 
+            // roles - inmate
+            // _name_
+            // _start_date_
             
-            // send this data on to anyone who's interested
-            llMessageLinked(LINK_THIS, 2000, message, "");
+            list list1 = llJson2List(message);
             
-            if (theKey == llGetOwner()) {
-                displayCentered(number);
+            // debug the first-level list
+            integer i;
+            for (i=0; i < llGetListLength(list1); i++){
+                string item = llList2String(list1,i);
+                sayDebug("list1 item "+(string)i+":"+item);
+            }
+            
+            // find the canonical name: first finr the _name_ key
+            integer nameIndex = llListFindList(list1, ["_name_"]);
+            if (nameIndex < 0) {
+                sayDebug("Error: did not find key _name_ in returned JSON");
+                displayCentered("Key Error");
+                return;
+                }
+            string nameInDB = llList2String(list1, nameIndex+1);
+            string ownerName = llKey2Name(llGetOwner());
+            if (nameInDB != ownerName) {
+                sayDebug("Error: returned name "+nameInDB+" did not match owner name "+ownerName);
+                displayCentered("Name Error");
+                return;
+                }
+            
+            // find the roles. 
+            integer rolesIndex = llListFindList(list1, ["roles"]);
+            list list2 = llJson2List(llList2String(list1, rolesIndex+1));
+            sayDebug("list2:"+(string)list2);
+            for (i=0; i < llGetListLength(list2); i++){
+                string item = llList2String(list2,i);
+                sayDebug("list2 item "+(string)i+":"+item);
+                }
+            // These appear to be pairs of tag-list where tag can be "inmate" and presumably "guard" etc. 
+            
+            // I need to know how multiple sets of roles will be formatted. 
+            // I need to know how multiple instances of <role> will be formatted. 
+            
+            string number = "P-00000";
+            displayCentered(number);
                 // test the scrolling display function
                 //displayScroll(number+" *"+name+"* "+crime+". ");
-            }
-            else {
-                displayCentered("Key Error");
-            }
+
         }
     }
     
