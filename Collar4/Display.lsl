@@ -285,13 +285,16 @@ default
         if (status == 200) {
             // body looks like 
             // {"roles": 
-            //      {"inmate": 
-            //      {"P-60361": 
-            //          {"name": "Timberwoof Lupindo", 
-            //          "start_date": "2008-12-28 03:30:58", 
-            //          "crime": "Piracy"}}}, 
-            //  "_name_": "Timberwoof Lupindo", 
-            //  "_start_date_": "2008-12-28 03:30:58"}"
+            //  {"inmate": 
+            //    {"P-40631": 
+            //      {"name": "Marmour Bovinecow", "start_date": "2019-07-17 03:00:00", "crime": "Identity Theft", "class": "orange", "shocks": "22"}}, 
+            //   "guard": {"G-90673": {"name": "Timberwoof Lupindo", "start_date": "2009-08-10 01:39:05", "rank": "Captain"}, 
+            //             "G-3631": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}, 
+            //   "medic": {"M-15981": {"name": "Melkor Schmerzlos", "start_date": "2019-07-17 17:49:15", "specialty": "Neurology"}, 
+            //             "M-9991": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}, 
+            //   "mechanic": {"X-1241": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}}, 
+            // "_name_": "Timberwoof Lupindo", 
+            // "_start_date_": "2009-08-10 01:39:05"}
             //
             // keys: 
             // roles - inmate mechanic medic guard
