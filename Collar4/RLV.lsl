@@ -185,7 +185,7 @@ SafewordFailed() {
     llListenRemove(SafewordListen);
     SafewordChannel = 0;
     SafewordListen = 0;
-    //HUDTimerRestart();
+    //lockTimerRestart();
 }
 
 SafewordSucceeded() {
@@ -240,30 +240,30 @@ stop_anims()
 
 
 // =================================
-// Timer
+// Lock Timer
 
-// This timer controls how long the HUD stays active
+// This timer controls how long the lock stays active
 // This works like a kitchen timer: "30 minutes from now"
 // It has non-obvious states that need to be announced and displayed
-integer HUDTimerInterval = 5; // 5 seconds ;for all timers
-integer HUDTimeremaining = 1800; // seconds remaining on timer: half an hour by default
-integer HUDTimerunning = 0; // 0 = stopped; 1 = running
-integer HUDTimeStart = 1800; // seconds it was set to so we can set it again 
+integer lockTimerInterval = 5; // 5 seconds ;for all timers
+integer lockTimeremaining = 1800; // seconds remaining on timer: half an hour by default
+integer lockTimerunning = 0; // 0 = stopped; 1 = running
+integer HUDTimeStart = 20; // seconds it was set to so we can set it again 
     // *** set to 20 for debug, 1800 for production
 
-string HUDTimerDisplay() {
-    // parameter: HUDTimeremaining global
+string lockTimerDisplay() {
+    // parameter: lockTimeremaining global
     // returns: a string in the form of "1 Days 3 Hours 5 Minutes 7 Seconds"
     // or "(no timer)" if seconds is less than zero
     
-    if (HUDTimeremaining <= 0) {
+    if (lockTimeremaining <= 0) {
         return "";// "Timer not set."
     } else {
 
     // Calculate
-    //llWhisper(0,"time_display received "+(string)seconds+" seconds."); 
+    sayDebug("lockTimerDisplay received "+(string)lockTimeremaining+" seconds."); 
     string display_time = ""; // "Unlocks in ";
-    integer days = HUDTimeremaining/86400;
+    integer days = lockTimeremaining/86400;
     integer hours;
     integer minutes;
     integer seconds;
@@ -272,93 +272,78 @@ string HUDTimerDisplay() {
         display_time += (string)days+" Days ";   
     }
     
-    integer carry_over_hours = HUDTimeremaining - (86400 * days);
+    integer carry_over_hours = lockTimeremaining - (86400 * days);
     hours = carry_over_hours / 3600;
-    //if (hours > 0) {
-        display_time += (string)hours+":"; // " Hours ";
-    //}
+    display_time += (string)hours+":"; // " Hours ";
     
     integer carry_over_minutes = carry_over_hours - (hours * 3600);
-    
     minutes = carry_over_minutes / 60;
-    //if (minutes > 0) {
-        display_time += (string)minutes+":"; // " Minutes ";
-    //}
+    display_time += (string)minutes+":"; // " Minutes ";
     
     seconds = carry_over_minutes - (minutes * 60);
     
-    //if (seconds > 0) {
-        display_time += (string)seconds; //+" Seconds";
-    //}
-    
-    //if (HUDTimerunning == 1) {
-    //    display_time += " …";
-    //} else {
-    //    display_time += " .";
-    //}    
-    
+    display_time += (string)seconds; //+" Seconds";    
     return display_time; 
     }
 }
 
-HUDTimerReset() {
+lockTimerReset() {
     // reset the timer to the value previously set for it. init and finish countdown. 
-    HUDTimeremaining = HUDTimeStart; 
-    HUDTimerunning = 0; // timer is stopped
-    //llWhisper(0,thisCell+" Timelock Has Been Cleared.");
+    lockTimeremaining = HUDTimeStart; 
+    lockTimerunning = 0; // timer is stopped
+    llOwnerSay("Timelock Has Been Cleared.");
 }
 
-HUDTimerSet(integer set_time) {
+lockTimerSet(integer set_time) {
     // set the timer to the desired time, remember that time
-    HUDTimeremaining = set_time; // set it to that 
+    lockTimeremaining = set_time; // set it to that 
     HUDTimeStart = set_time; // remember what it was set to
-    // HUDTimerunning = 0; // timer is stopped *** fix bug 58. 
-    //llWhisper(0,thisCell+" Timelock Has Been Set.");
+    llOwnerSay("Timelock has been set to "+lockTimerDisplay());
 }
 
-HUDTimerRun() {
+lockTimerRun() {
     // make the timer run. Init and finish countdown. 
-    HUDTimerunning = 1; // timer is running
+    lockTimerunning = 1; // timer is running
     llSetTimerEvent(5.0);
-    //llWhisper(0,thisCell+" Timer has started.");
+    llOwnerSay("Timer has started.");
 }
 
-HUDTimerRestart() {
-    if (HUDTimerunning == 1) {
+lockTimerRestart() {
+    if (lockTimerunning == 1) {
         llSetTimerEvent(5.0);
     } else {
         llSetTimerEvent(0.0);
     }
 }
 
-HUDTimerStop() {
+lockTimerStop() {
     // stop the timer. Nobody calls this ... yet. 
     // *** perhaps use this while prisoner is being schoked
-    HUDTimerunning = 0; // timer is stopped
-    //llWhisper(0,thisCell+" Timer has stopped.");
+    lockTimerunning = 0; // timer is stopped
+    llOwnerSay("Timer has stopped.");
 }
 
 
-HUDTimerIncrement(integer interval) {
-    HUDTimeremaining += interval;
+lockTimerIncrement(integer interval) {
+    lockTimeremaining += interval;
     // *** use this to increase the time every time someone gets shocked for touching the box
-    // perhaps ... HUDTimerIncrement(HUDTimeremaining / 10);
+    // perhaps ... lockTimerIncrement(lockTimeremaining / 10);
 }
 
-HUDTimer() {
-    //llWhisper(0, "HUDTimerunning=" + (string)HUDTimerunning + " HUDTimeremaining=" + (string)HUDTimeremaining);
-    if (HUDTimerunning == 1 && HUDTimeremaining <= HUDTimerInterval) {
+lockTimer() {
+    //llWhisper(0, "lockTimerunning=" + (string)lockTimerunning + " lockTimeremaining=" + (string)lockTimeremaining);
+    if (lockTimerunning == 1 && lockTimeremaining <= lockTimerInterval) {
         // time has run out...
-        //llWhisper(0,thisCell+" has finished timelock. Opening.");
+        llOwnerSay("Timelock has ended. Releasing.");
         sendRLVRestrictCommand("Off");
         HudFunctionState = 0;
         registerWithDB(); // prisoner, off
-        HUDTimerReset();
+        lockTimerReset();
     }   
 
-    if (HUDTimerunning == 1) {
+    if (lockTimerunning == 1) {
         // timer's on, door's closed, someone's in here
-        HUDTimeremaining -= HUDTimerInterval;
+        lockTimeremaining -= lockTimerInterval;
     }
 }
 
@@ -436,6 +421,12 @@ default
         } else if (num == 1301) {
             // command message is like "Zap Low" 
             startZap(llGetSubString(message, 4,6), llKey2Name(id));
+        } else if (num == 3002) {
+            if (message == "") {
+                lockTimerReset();
+            } else {
+                lockTimerSet((integer)message);
+            }
         }
    }
 
@@ -463,7 +454,7 @@ default
             llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
             llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
             RLVStatusListen = 0;
-            HUDTimerRestart();
+            lockTimerRestart();
             llOwnerSay(message+"; RLV is present.");
         }
         
@@ -487,11 +478,11 @@ default
             RLVpresent = 0;
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
-            HUDTimerRestart();
+            lockTimerRestart();
             llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
             llMessageLinked(LINK_THIS, 1400, "Off", "");
         } 
-        HUDTimer();
+        lockTimer();
     }
 
 }
