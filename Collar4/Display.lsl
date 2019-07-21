@@ -330,9 +330,8 @@ default
         }
         
         // text to display
-        else if (num == 2000) {
+        else if ((num == 2000) || (num == 2001)) {
             displayCentered(message);
         }
-        
     }
 }
