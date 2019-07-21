@@ -298,7 +298,7 @@ default
         // Someone wants database update
         if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
-            sendDatabaseQuery(0, "");
+            getPlayerRoles();
         }
     }
 }
