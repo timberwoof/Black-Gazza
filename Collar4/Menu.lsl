@@ -532,13 +532,8 @@ default
     link_message( integer sender_num, integer num, string message, key id ){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 2000) {
-            // database status message *** this will be parsed by the Database module and distributed. 
-            list returned = llParseString2List(message, [","], []);
-            prisonerCrime = llList2String(returned, 2);
-            prisonerNumber = llList2String(returned, 4);
-        } else if (num == 1700) {
-            batteryLevel = message;
+        if (num == 1200) {
+            prisonerClass = message;
         } else if (num == 1400) {
             // RLV/Lock status
             if (message == "NoRLV") {
@@ -550,6 +545,12 @@ default
                 theLocklevel = message;
             }
             sayDebug("link_message set theLocklevel:"+theLocklevel);
+        } else if (num == 1700) {
+            batteryLevel = message;
+        } else if (num == 1800) {
+            prisonerCrime = message;
+        } else if (num == 2000) {
+            prisonerNumber = message;
         }
     }
     
