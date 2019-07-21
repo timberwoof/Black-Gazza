@@ -236,6 +236,7 @@ string generateUpsertJson() {
         values = values + [thekey, thevalue];
     }
     return llList2Json(JSON_OBJECT, values);
+    // looks like {"name":"Dread Pirate Timby","crime":"Unpermitted transport of biogenic weapons, piracy, murder","class":"blue","threat":"Moderate","identity":"284ba63f-378b-4be6-84d9-10db6ae48b8d"}
 }
 
 // Put together the HTTP request and JSON body and throw it at the server. 
