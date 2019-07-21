@@ -5,6 +5,7 @@
 
 // Takes the user through a series of questions to set up one character in the new database.
 // Resulting data is sent as an upsert operation to the new database.
+// JSON looks like {"name":"Flimbertwoof Utini","crime":"Stealing hubcaps off landspeeeders","class":"orange","threat":"Moderate"}
 
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
@@ -31,7 +32,8 @@ string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
 string threatLevel = "None";
 
-key approveAvatar;
+string textBoxParameter = "";
+key databaseQuery;
 
 sayDebug(string message)
 {
@@ -52,12 +54,19 @@ integer invert(integer boolie)
 setUpMenu(key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
-    string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
-    llDialog(avatarKey, completeMessage, buttons, menuChannel);
+    llDialog(avatarKey, message, buttons, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
     llSetTimerEvent(30);
 }
+
+setUpTextBox(key avatarKey, string message) {
+    menuChannel = -(llFloor(llFrand(10000)+1000));
+    llTextBox(avatarKey, message, menuChannel);
+    menuListen = llListen(menuChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+}
+
 
 string menuCheckbox(string title, integer onOff)
 // make checkbox menu item out of a button title and boolean state
@@ -185,6 +194,9 @@ roleKeyDialog(key avatarKey, string parameterKey) {
     
     if (llSubStringIndex(parameterKey, "_text") > -1) {
         // get some freeform text
+        textBoxParameter = llGetSubString(parameterKey, 0, -6);
+        message = message + "Enter your " + textBoxParameter;
+        setUpTextBox(avatarKey, message);
     } else {
         // pick from a picklist
         message = message + "Select a value for your " + parameterKey;
@@ -214,6 +226,11 @@ setRoleKeyValue(string theValue) {
     }
 }
 
+setTextParameter(string message) {
+    // sanitize message
+    upsertRoleKeyValue(textBoxParameter, message);
+    }    
+
 string generateUpsertJson() {
     list values = [];
     integer i;
@@ -225,13 +242,22 @@ string generateUpsertJson() {
         values = values + [thekey, thevalue];
     }
     return llList2Json(JSON_OBJECT, values);
-    }
+}
 
+registerNewCharacter(key avatarKey) {
+    upsertRoleKeyValue("identity",(string)avatarKey);
+    string json = generateUpsertJson();
+    sayDebug("registerNewCharacter:"+json);
+    string URL = "https://api.blackgazza.com/asset/?identity=" + (string)avatarKey;
+    databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
+}
+    
 default
 {
     state_entry()
     {
         sayDebug("state_entry");
+        textBoxParameter = "";
         RoleKeyValues = ["class"] + PrisonerClasses + ["***class"] +
             ["threat"] + PrisonerThreatLevels + ["***threat"]; 
 
@@ -243,15 +269,13 @@ default
         key avatarKey  = llDetectedKey(0); 
         upsertRoleKeyValue("name_text", llKey2Name(avatarKey));
         mainMenu(avatarKey);
-
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
-        //string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
-        sayDebug("listen message:"+message); //+" messageButtonsTrimmed:"+messageButtonsTrimmed);
+        sayDebug("listen message:"+message);
         
         if (llListFindList(PlayerRoleNames, [message]) > -1){
             playerRole = message;
@@ -267,9 +291,13 @@ default
             keyMenu(avatarKey, playerRole);
         }
         
-            
         else if (message == "Finish") {
-            sayDebug(generateUpsertJson());
+            registerNewCharacter(avatarKey);
+        }
+        
+        else {
+            setTextParameter(message);
+            keyMenu(avatarKey, playerRole);
         }
     }
 
@@ -278,4 +306,12 @@ default
         llListenRemove(menuListen);
         menuListen = 0;    
     }
+    
+    http_response(key request_id, integer status, list metadata, string message)
+    // handle the response from the crime database
+    {
+        sayDebug("http_response status:"+(string)status);
+        sayDebug(message);
+    }
+
 }
