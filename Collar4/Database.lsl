@@ -63,6 +63,7 @@ sayDebug(string message)
 
 // fire off a request to the crime database for this wearer. 
 sendDatabaseQuery(integer queryStatus, string command) {
+    sayDebug("sendDatabaseQuery(\""+command+"\")");
     displayCentered("Accessing DB");
     // Old DB
     //string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
@@ -103,6 +104,12 @@ addKeyValuePair(string theKey, string theValue) {
     inmateAssetValues = inmateAssetValues + [theValue];
 }
 
+sendKeyValuePair(string theKey) {
+    integer index = llListFindList(inmateAssetKeys, [theKey]);
+    string theValue = llList2String(inmateAssetValues, index);
+    llMessageLinked(LINK_THIS, 1021, theKey+"="+theValue, "");
+}
+
 string getListThing(list theList, string theKey){
     return llList2String(theList, llListFindList(theList, [theKey])+1);
 }
@@ -117,15 +124,14 @@ default
 {
     state_entry()
     {
-        sayDebug("state_entry");
-        //sendDatabaseQuery(0, "");
+        sayDebug("state_entry with asset number="+assetNumber);
         getPlayerRoles();
     }
 
     http_response(key request_id, integer status, list metadata, string message)
     // handle the response from the crime database
     {
-        //sayDebug("http_response message="+message);
+        sayDebug("http_response message="+message);
         displayCentered("status "+(string)status);
         if (status == 200) {
             if (myQueryStatus == 0) {
@@ -255,7 +261,7 @@ default
                 } else {
                     string theString = llList2String(list1,1);
                     list theList = llJson2List(llList2String(list1,1));
-                    assetNumber = llList2String(theList,0);
+                    assetNumber = llList2String(theList,1);
                     sayDebug("assetNumber:"+assetNumber);
                     addKeyValuePair("assetNumber", assetNumber);
                     getPlayerInmateKeys(assetNumber);
@@ -269,12 +275,15 @@ default
                 if (what != "keys") {
                     sayDebug("response was "+what+", not keys");
                 } else {
-                    string theString = llList2String(list1,1);
+                    string theString = llList2String(list1,0);
                     list theList = llJson2List(llList2String(list1,1));
                     integer i;
-                    for (i = 0; i < llGetListLength(theList); i++){
-                        //sayDebug("key:"+llList2String(theList, i));
-                        getPlayerInmateAssetKey(assetNumber,llList2String(theList, i));
+                    for (i = 0; i < llGetListLength(theList); i=i+2){
+                        string theKey = llList2String(theList,i);
+                        string theValue = llList2String(theList,i+1);
+                        sayDebug("key-value: "+theKey+"="+theValue);
+                        addKeyValuePair(theKey, theValue);
+                        sendKeyValuePair(theKey);
                     }
                 }
             }
