@@ -8,7 +8,7 @@
 // • blinky lights
 // • battery display
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -205,17 +205,12 @@ displayBattery(integer percent)
 
 string name;
 string start_date;
-string registrationNumber;
+string assetNumber;
 string crime;
 string class;
 string shocks;
 string rank;
 string specialty;
-
-sendDatabaseQuery() {
-    llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
-    }
-
 
 default
 {
@@ -228,7 +223,7 @@ default
         moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
         Mood = "OOC";
         
-        classNames = ["White","Pink","Red","Orange","Green","Blue","Black"];
+        classNames = ["white","pink","red","orange","green","blue","black"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
             BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
@@ -246,7 +241,6 @@ default
         batteryLevel = 0; // remove when we do "real" battery levels
                 
         if (llGetAttached() != 0) {
-            sendDatabaseQuery();
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
         }
     }
@@ -254,17 +248,15 @@ default
     attach(key id)
     {
         if (id) {
-            sendDatabaseQuery();
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
             batteryLevel = 0;  // remove when we do "real" battery levels      
         }
     }
 
-    
     link_message( integer sender_num, integer num, string message, key id ){ 
-        //sayDebug("link_message "+(string)num+" "+message);
+        sayDebug("link_message "+(string)num+" "+message);
 
-        // IC/OOC Mood sets frame color
+        // IC/OOC Mood sets frame color 
         if (num == 1100) {
             Mood = message;
             integer moodi = llListFindList(moodNames, [Mood]);
@@ -276,6 +268,7 @@ default
         // Prisoner Class sets text color and blinky 3
         else if (num == 1200) {
             Class = message;
+            sayDebug("receiving class "+Class);
             integer classi = llListFindList(classNames, [Class]);
             classColor = llList2Vector(classColors, classi);
             setTextColor(classColor);
@@ -324,14 +317,28 @@ default
         
         // Battery Level Report
         else if (num == 1700) {
-            sayDebug("link_message "+(string)num+" "+message);
             sayDebug("battery "+message);
             displayBattery((integer)message);
         }
         
-        // text to display
-        else if ((num == 2000) || (num == 2001)) {
-            displayCentered(message);
+        // set and display asset number
+        else if (num == 2000) {
+            assetNumber = message;
+            sayDebug("set and display assetNumber "+assetNumber);
+            displayCentered(assetNumber);
         }
+        
+        // temporarily display a message
+        else if (num == 2001) {
+            sayDebug("display "+message);
+            displayCentered(message);
+            llSetTimerEvent(5);
+        }
+    }
+    
+    timer() {
+        sayDebug("display assetNumber "+assetNumber);
+        displayCentered(assetNumber);
+        llSetTimerEvent(0);  
     }
 }
