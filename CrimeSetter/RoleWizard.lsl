@@ -16,14 +16,15 @@ integer menuListen = 0;
 
 list PlayerRoleNames = ["inmate", "guard", "medic", "mechanic", "robot", "k9", "bureaucrat"];
 list AssetPrefixes = ["P", "G", "M", "X", "R", "K", "B"];
-list PlayerRoleKeys = ["inmate", "name_text", "crime_text", "class", "threat", "inmate***", 
-                        "guard", "name_text", "rank", "guard***"];
-list PlayerRoleKeyValues = [];
+list PlayerRoleKeys = ["inmate", "name_text", "crime_text", "class", "threat", "***inmate", 
+                        "guard", "name_text", "rank", "***guard"];
+list playerRoleKeyValues = [];
 
-list prisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
-list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
-list prisonerThreatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
-list medicalSpecialties = ["General", "Surgery", "Neurology", "Psychiatry", "Pharmacology"];
+list PrisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
+list PrisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
+list PrisonerThreatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
+list MedicalSpecialties = ["General", "Surgery", "Neurology", "Psychiatry", "Pharmacology"];
+list RoleKeyValues = []; // set up during initilizaitons
 
 string playerRole = "Unknown";
 string prisonerCrime = "Unknown";
@@ -97,14 +98,14 @@ mainMenu(key avatarKey) {
 }
 
 upsertRoleKeyValue(string theKey, string theValue) {
-    sayDebug("upsertRoleKeyValue "+theKey+"="+theValue);
+    //sayDebug("upsertRoleKeyValue "+theKey+"="+theValue);
     // sets global PlayerRoleKeyValues
     integer where = -1;
     integer i;
-    for (i = 0; i < llGetListLength(PlayerRoleKeyValues); i++) {
-        string keyValue = llList2String(PlayerRoleKeyValues, i);
+    for (i = 0; i < llGetListLength(playerRoleKeyValues); i++) {
+        string keyValue = llList2String(playerRoleKeyValues, i);
         integer theIndex = llSubStringIndex(keyValue, theKey);
-        sayDebug("upsertRoleKeyValue keyValue:"+keyValue+ " theIndex:"+(string)theIndex);
+        //sayDebug("upsertRoleKeyValue keyValue:"+keyValue+ " theIndex:"+(string)theIndex);
         if (theIndex == 0) {
             where = i;
             }
@@ -116,19 +117,42 @@ upsertRoleKeyValue(string theKey, string theValue) {
     // is it in our list?
     if (where == -1) {
         // nope. Add it to the list.
-        PlayerRoleKeyValues = PlayerRoleKeyValues + [newKeyValue];
+        sayDebug("upsertRoleKeyValue adding "+newKeyValue);
+        playerRoleKeyValues = playerRoleKeyValues + [newKeyValue];
     } else {
         // yup. Replace it.
-        PlayerRoleKeyValues = llListReplaceList(PlayerRoleKeyValues, [newKeyValue], where, where);
+        sayDebug("upsertRoleKeyValue updating "+newKeyValue);
+        playerRoleKeyValues = llListReplaceList(playerRoleKeyValues, [newKeyValue], where, where);
     }
 }
 
+string getRoleKeyValue(string lookupKey) {
+    sayDebug("getRoleKeyValue(\""+lookupKey+"\")");
+    // gets something out of global PlayerRoleKeyValues
+    string result = "";
+    integer where = -1;
+    integer i;
+    for (i = 0; i < llGetListLength(playerRoleKeyValues); i++) {
+        string onePair = llList2String(playerRoleKeyValues, i);
+        list keyValue = llParseString2List(onePair, ["="], []);
+        string thekey = llList2String(keyValue, 0);
+        string thevalue = llList2String(keyValue, 1);
+        //sayDebug("getRoleKeyValue retrieved onePair:"+onePair+ " keyValue:" + (string)keyValue + " thekey:" + thekey + " thevalue:" + thevalue);
+        
+        if (thekey == lookupKey){
+            result = thevalue;        
+        }
+    }
+    return result;
+}
+
 string CharacterInfoList() {
+    sayDebug("CharacterInfoList");
     // Adds all the key-value pairs in PlayerRoleKeyValues to a string
     string message = "";
     integer i;
-    for (i = 0; i < llGetListLength(PlayerRoleKeyValues); i++) {
-        string onePair = llList2String(PlayerRoleKeyValues, i);
+    for (i = 0; i < llGetListLength(playerRoleKeyValues); i++) {
+        string onePair = llList2String(playerRoleKeyValues, i);
         list keyValue = llParseString2List(onePair, ["="], []);
         string thekey = llList2String(keyValue, 0);
         string thevalue = llList2String(keyValue, 1);
@@ -139,25 +163,78 @@ string CharacterInfoList() {
 }
 
 keyMenu(key avatarKey, string playerRole) {
+    sayDebug("keyMenu");
     // Gather up the additional keys for the playerRole
-    // Some of these are free-form text
-    // Some of these are picklists
-    integer indexStart = llListFindList(PlayerRoleKeys, [playerRole]);
-    integer indexEnd = llListFindList(PlayerRoleKeys, [playerRole+"***"]);
     string message = "Continue setting up your Black Gazza character. \n" +
     "Your setup so far: \n" + 
     CharacterInfoList() +
     "Next, choose additional parameters:";
+    integer indexStart = llListFindList(PlayerRoleKeys, [playerRole]);
+    integer indexEnd = llListFindList(PlayerRoleKeys, ["***"+playerRole]);
     list buttons = llList2List(PlayerRoleKeys, indexStart+1, indexEnd-1);
     buttons = buttons + ["Finish"];
     setUpMenu(avatarKey, message, buttons);
 }
+
+roleKeyDialog(key avatarKey, string parameterKey) {
+    sayDebug("roleKeyDialog");
+        // let player enter text or select from chocies
+    // Some of these are free-form text; the keys end in "_text"
+    // Some of these are picklists
+    string message = "Continue setting up your Black Gazza character. \n";
+    
+    if (llSubStringIndex(parameterKey, "_text") > -1) {
+        // get some freeform text
+    } else {
+        // pick from a picklist
+        message = message + "Select a value for your " + parameterKey;
+        
+        // Gather up the additional keys for the playerRole
+        integer indexStart = llListFindList(RoleKeyValues, [parameterKey]);
+        integer indexEnd = llListFindList(RoleKeyValues, ["***"+parameterKey]);
+        list buttons = llList2List(RoleKeyValues, indexStart+1, indexEnd-1);
+        buttons = buttons + ["Finish"];
+        setUpMenu(avatarKey, message, buttons);
+    }
+}
+
+setRoleKeyValue(string theValue) {
+    sayDebug("setRoleKeyValue("+theValue+")");
+    // player has selected a key value; 
+    // find out what it was a list of and upsert it in the player key-value pairs. 
+    integer startIndex = llListFindList(RoleKeyValues,[theValue]);
+    integer i;
+    for (i = startIndex; i < llGetListLength(RoleKeyValues); i++) {
+        string listItem = llList2String(RoleKeyValues, i);
+        if (llSubStringIndex(listItem, "***") > -1) {
+            string theKey = llGetSubString(listItem, 3, -1);
+            upsertRoleKeyValue(theKey, theValue);
+            i = 999; // break
+        }
+    }
+}
+
+string generateUpsertJson() {
+    list values = [];
+    integer i;
+    for (i = 0; i < llGetListLength(playerRoleKeyValues); i++) {
+        string onePair = llList2String(playerRoleKeyValues, i);
+        list keyValue = llParseString2List(onePair, ["="], []);
+        string thekey = llList2String(keyValue, 0);
+        string thevalue = llList2String(keyValue, 1);
+        values = values + [thekey, thevalue];
+    }
+    return llList2Json(JSON_OBJECT, values);
+    }
 
 default
 {
     state_entry()
     {
         sayDebug("state_entry");
+        RoleKeyValues = ["class"] + PrisonerClasses + ["***class"] +
+            ["threat"] + PrisonerThreatLevels + ["***threat"]; 
+
     }
 
     touch_start(integer total_number)
@@ -173,13 +250,27 @@ default
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
-        string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
-        sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
+        //string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
+        sayDebug("listen message:"+message); //+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         
         if (llListFindList(PlayerRoleNames, [message]) > -1){
             playerRole = message;
             keyMenu(avatarKey, playerRole);
-            }
+        }
+            
+        else if (llListFindList(PlayerRoleKeys, [message]) > -1){
+            roleKeyDialog(avatarKey, message);
+        }
+        
+        else if (llListFindList(RoleKeyValues, [message]) > -1) {
+            setRoleKeyValue(message);
+            keyMenu(avatarKey, playerRole);
+        }
+        
+            
+        else if (message == "Finish") {
+            sayDebug(generateUpsertJson());
+        }
     }
 
     timer() 
