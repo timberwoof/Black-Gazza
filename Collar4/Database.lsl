@@ -49,10 +49,6 @@ string shocks;
 string rank;
 string specialty;
 
-list inmateAssetKeys;
-list inmateAssetValues;
-
-
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
@@ -99,24 +95,13 @@ getPlayerInmateAssetKey(string assetNumber, string assetKey) {
     sendDatabaseQuery(4, "show_key&role=inmate&asset="+assetNumber+"&key="+assetKey);
 }
 
-addKeyValuePair(string theKey, string theValue) {
-    inmateAssetKeys = inmateAssetKeys + [theKey];
-    inmateAssetValues = inmateAssetValues + [theValue];
-}
-
-sendKeyValuePair(string theKey) {
-    integer index = llListFindList(inmateAssetKeys, [theKey]);
-    string theValue = llList2String(inmateAssetValues, index);
-    llMessageLinked(LINK_THIS, 1021, theKey+"="+theValue, "");
-}
-
 string getListThing(list theList, string theKey){
     return llList2String(theList, llListFindList(theList, [theKey])+1);
 }
 
 displayCentered(string message) {
     //sayDebug("displayCentered '"+message+"'");
-    llMessageLinked(LINK_THIS, 2000, message, "");
+    llMessageLinked(LINK_THIS, 2001, message, "");
 }
 
 
@@ -246,7 +231,6 @@ default
                     if (llListFindList(theList, ["inmate"]) < 0) {
                         sayDebug("roles did not contain inmate");
                     } else {
-                        addKeyValuePair("role", "inmate");
                         getPlayerInmateNumbers();
                     }
                }
@@ -263,7 +247,7 @@ default
                     list theList = llJson2List(llList2String(list1,1));
                     assetNumber = llList2String(theList,1);
                     sayDebug("assetNumber:"+assetNumber);
-                    addKeyValuePair("assetNumber", assetNumber);
+                    llMessageLinked(LINK_THIS, 2000, assetNumber, "");
                     getPlayerInmateKeys(assetNumber);
                 }
             }
@@ -282,8 +266,15 @@ default
                         string theKey = llList2String(theList,i);
                         string theValue = llList2String(theList,i+1);
                         sayDebug("key-value: "+theKey+"="+theValue);
-                        addKeyValuePair(theKey, theValue);
-                        sendKeyValuePair(theKey);
+                        if (theKey == "crime") {
+                            crime = theValue;
+                            sayDebug("sending crime "+crime);
+                            llMessageLinked(LINK_THIS, 1800, crime, "");
+                        } else if (theKey == "class") {
+                            class = theValue;
+                            sayDebug("sending class "+class);
+                            llMessageLinked(LINK_THIS, 1200, class, "");
+                        }
                     }
                 }
             }
@@ -294,7 +285,6 @@ default
                 string theKey = llList2String(list1,0);
                 string theValue = llList2String(list1,1);
                 sayDebug("key-value: "+theKey+"="+theValue);
-                addKeyValuePair(theKey, theValue);
             }
 
         }
