@@ -25,15 +25,15 @@ integer allowZapMed = 1;
 integer allowZapHigh = 1;
 
 string ICOOCMood = "OOC";
-string prisonerClass = "White";
-list prisonerClasses = ["White", "Pink", "Red", "Orange", "Green", "Blue", "Black"];
+string prisonerClass = "white";
+list prisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
 list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
 
 string prisonerCrime = "Unknown";
-string prisonerNumber = "Unknown";
+string assetNumber = "Unknown";
 string threatLevel = "None";
 string batteryLevel = "Unknown";
 
@@ -70,7 +70,7 @@ integer invert(integer boolie)
 setUpMenu(key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
-    string completeMessage = prisonerNumber + " Collar: " + message;
+    string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
     llDialog(avatarKey, completeMessage, buttons, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
@@ -112,8 +112,8 @@ list menuRadioButton(string title, string match)
 mainMenu(key avatarKey) {
     // Sometimes this happens, so fix it. 
     // Respose won't come in time but it will be there for the next menu.
-    if (prisonerNumber == "Unknown") {
-         llMessageLinked(LINK_THIS, 2000, "Request", avatarKey);
+    if (assetNumber == "Unknown") {
+         llMessageLinked(LINK_THIS, 2002, "Request", avatarKey);
     }
     
     string message = "Main";
@@ -185,7 +185,7 @@ infoGive(key avatarKey){
     menuCheckbox("High", allowZapHigh);
 
     string message = "Prisoner Information \n"+
-    "Number: " + prisonerNumber + "\n" +
+    "Number: " + assetNumber + "\n" +
     "Crime: " + prisonerCrime + "\n" +
     "Class: " + prisonerClass + ": "+class2Description(prisonerClass)+"\n" +
     "Threat: " + threatLevel + "\n" +
@@ -450,14 +450,14 @@ default
                 ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
                 menuCheckbox("Medium", allowZapMed) +  "  " +
                 menuCheckbox("High", allowZapHigh);
-                llInstantMessage(avatarKey, prisonerNumber+" Zap: "+ZapLevels);
+                llInstantMessage(avatarKey, assetNumber+" Zap: "+ZapLevels);
                 }
-            else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, prisonerNumber+" Lock Level: "+theLocklevel);}
-            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, prisonerNumber+" Class: "+prisonerClass + ": "+class2Description(prisonerClass));}
-            else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, prisonerNumber+" Threat: "+threatLevel);}
-            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, prisonerNumber+" Battery level: "+batteryLevel+"%");
+            else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, assetNumber+" Lock Level: "+theLocklevel);}
+            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, assetNumber+" Class: "+prisonerClass + ": "+class2Description(prisonerClass));}
+            else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, assetNumber+" Threat: "+threatLevel);}
+            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+batteryLevel+"%");
         } else if (touchedLink == batteryCoverLink) {
-            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, prisonerNumber+" Battery level: "+batteryLevel+"%");
+            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+batteryLevel+"%");
             mainMenu(avatarKey);
         } else {
             mainMenu(avatarKey);
@@ -550,7 +550,7 @@ default
         } else if (num == 1800) {
             prisonerCrime = message;
         } else if (num == 2000) {
-            prisonerNumber = message;
+            assetNumber = message;
         }
     }
     
