@@ -23,6 +23,9 @@ integer OPTION_DEBUG = 1;
 
 integer menuChannel = 0;
 integer menuListen = 0;
+string menuIdentifier;
+list menuChoices;
+key menuAvatar;
 
 list PlayerRoleNames = ["inmate", "guard", "medic", "mechanic", "robot", "k9", "bureaucrat"];
 list AssetPrefixes = ["P", "G", "M", "X", "R", "K", "B"];
@@ -61,8 +64,12 @@ sayDebug(string message)
 }
 
 // wrapper to set up a simple menu dialog.
-setUpMenu(key avatarKey, string message, list buttons)
+setUpMenu(string identifier, key avatarKey, string message, list buttons)
 {
+    sayDebug("setUpMenu "+identifier);
+    menuIdentifier = identifier;
+    menuChoices = buttons;
+    menuAvatar = avatarKey;
     menuChannel = -(llFloor(llFrand(10000)+1000));
     llDialog(avatarKey, message, buttons, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
@@ -70,7 +77,11 @@ setUpMenu(key avatarKey, string message, list buttons)
 }
 
 // wrapper to set up a simple text box dialog
-setUpTextBox(key avatarKey, string message) {
+setUpTextBox(string identifier, key avatarKey, string message) {
+    sayDebug("setUpTextBox "+identifier);
+    menuIdentifier = identifier;
+    menuChoices = [];
+    menuAvatar = avatarKey;
     menuChannel = -(llFloor(llFrand(10000)+1000));
     llTextBox(avatarKey, message, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
@@ -80,12 +91,18 @@ setUpTextBox(key avatarKey, string message) {
 // The main menu, the first that greets whoever clicks the box. 
 mainMenu(key avatarKey) {
     sayDebug("mainMenu");
+    if (menuAvatar != "" & menuAvatar != avatarKey) {
+        llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
+        sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
+        return;
+        }
+
     string message = "Welcome to the Black Gazza RPG Role Setter Upper Wizard. " +
         "Set up a Black Gazza character for your Second Life account. " + 
         "First, choose your Character Class:";
     
     // PlayerRoleNames is the button list and the list of messages to detect as the response
-    setUpMenu(avatarKey, message, PlayerRoleNames);
+    setUpMenu("Main", avatarKey, message, PlayerRoleNames);
 }
 
 // playerRoleKeyValues maintains actual user data that will get bundled up and sent to the database. 
@@ -170,7 +187,7 @@ keyMenu(key avatarKey, string playerRole) {
     integer indexEnd = llListFindList(PlayerRoleKeys, ["***"+playerRole]);
     list buttons = llList2List(PlayerRoleKeys, indexStart+1, indexEnd-1);
     buttons = buttons + ["Finish"];
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Key", avatarKey, message, buttons);
 }
 
 // Handles response to keyMenu. 
@@ -178,18 +195,19 @@ keyMenu(key avatarKey, string playerRole) {
 // Otherwise, present a menu of the value chocies for this specific key. 
 // For example, prisoners can set their crime or their classificaiton (color). 
 roleKeyDialog(key avatarKey, string parameterKey) {
-    sayDebug("roleKeyDialog");
     // let player enter text or select from chocies
     // Some of these are free-form text; the keys end in "_text"
     // Some of these are picklists
     string message = "Continue setting up your Black Gazza character. \n";
     
     if (llSubStringIndex(parameterKey, "_text") > -1) {
+        sayDebug("roleKeyDialog ("+parameterKey+"): text");
         // get some freeform text
         textBoxParameter = llGetSubString(parameterKey, 0, -6);
         message = message + "Enter your " + textBoxParameter;
-        setUpTextBox(avatarKey, message);
+        setUpTextBox("RoleKeyText", avatarKey, message);
     } else {
+        sayDebug("roleKeyDialog ("+parameterKey+"): pick");
         // pick from a picklist
         message = message + "Select a value for your " + parameterKey;
         // Gather up the additional keys for the playerRole
@@ -197,7 +215,7 @@ roleKeyDialog(key avatarKey, string parameterKey) {
         integer indexEnd = llListFindList(RoleKeyValues, ["***"+parameterKey]);
         list buttons = llList2List(RoleKeyValues, indexStart+1, indexEnd-1);
         buttons = buttons + ["Finish"];
-        setUpMenu(avatarKey, message, buttons);
+        setUpMenu("RoleKeyPick", avatarKey, message, buttons);
     }
 }
 
@@ -240,11 +258,11 @@ string generateUpsertJson() {
 }
 
 // Put together the HTTP request and JSON body and throw it at the server. 
-registerNewCharacter(key avatarKey) {
-    upsertRoleKeyValue("identity",(string)avatarKey);
+registerPlayer(key avatarKey) {
     string json = generateUpsertJson();
-    sayDebug("registerNewCharacter:"+json);
-    string URL = "https://api.blackgazza.com/asset/?identity=" + (string)avatarKey;
+    sayDebug("registerPlayer json:"+json);
+    string URL = "https://api.blackgazza.com/asset/"+(string)avatarKey;
+    sayDebug("registerPlayer URL:"+URL);
     databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
 }
     
@@ -257,7 +275,7 @@ default
         // compose the role key values list. 
         RoleKeyValues = ["class"] + PrisonerClasses + ["***class"] +
             ["threat"] + PrisonerThreatLevels + ["***threat"] +
-            ["rank"] + Ranks + ["***ranks"] +
+            ["rank"] + Ranks + ["***rank"] +
             ["specialty"] + MedicalSpecialties + ["***specialty"] ;
     }
 
@@ -265,7 +283,7 @@ default
     {
         sayDebug("touch_start");
         key avatarKey  = llDetectedKey(0); 
-        upsertRoleKeyValue("name_text", llKey2Name(avatarKey));
+        upsertRoleKeyValue("name", llKey2Name(avatarKey));
         mainMenu(avatarKey);
     }
     
@@ -274,28 +292,33 @@ default
         menuListen = 0;
         llSetTimerEvent(0);
         sayDebug("listen message:"+message);
+        sayDebug("listen menuIdentifier: "+menuIdentifier);
         
-        if (llListFindList(PlayerRoleNames, [message]) > -1){
+        if (menuIdentifier == "Main"){
             playerRole = message;
             keyMenu(avatarKey, message);
         }
             
-        else if (llListFindList(PlayerRoleKeys, [message]) > -1){
+        else if (message == "Finish") {
+            registerPlayer(avatarKey);
+        }
+       
+        else if (menuIdentifier == "Key"){
             roleKeyDialog(avatarKey, message);
         }
         
-        else if (llListFindList(RoleKeyValues, [message]) > -1) {
+        else if (menuIdentifier == "RoleKeyPick") {
             setRoleKeyValue(message);
             keyMenu(avatarKey, playerRole);
         }
-        
-        else if (message == "Finish") {
-            registerNewCharacter(avatarKey);
+
+        else if (menuIdentifier == "RoleKeyText") {
+            upsertRoleKeyValue(textBoxParameter, message);
+            keyMenu(avatarKey, playerRole);
         }
         
         else {
-            upsertRoleKeyValue(textBoxParameter, message);
-            keyMenu(avatarKey, playerRole);
+            sayDebug("ERROR: did not process menuIdentifier "+menuIdentifier);
         }
     }
 
