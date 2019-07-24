@@ -15,6 +15,18 @@ key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
+string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
+string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
+string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
+string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
+string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
+string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
+string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
+string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
+string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
+string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
+list touchTones;
+
 integer OPTION_DEBUG = 0;
 
 integer menuChannel = 0;
@@ -31,6 +43,10 @@ list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic",
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
+
+string menuIdentifier;
+list menuChoices;
+key menuAvatar;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -67,9 +83,14 @@ integer invert(integer boolie)
         return 1;
 }
 
-setUpMenu(key avatarKey, string message, list buttons)
+setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
+    sayDebug("setUpMenu "+identifier);
+    llMessageLinked(LINK_THIS, 2001, "menu access", avatarKey);
+    menuIdentifier = identifier;
+    menuChoices = buttons;
+    menuAvatar = avatarKey;
     string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
     llDialog(avatarKey, completeMessage, buttons, menuChannel);
@@ -110,6 +131,12 @@ list menuRadioButton(string title, string match)
 // Menus and Handlers ****************
 
 mainMenu(key avatarKey) {
+    if (menuAvatar != "" & menuAvatar != avatarKey) {
+        llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
+        sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
+        return;
+        }
+    
     // Sometimes this happens, so fix it. 
     // Respose won't come in time but it will be there for the next menu.
     if (assetNumber == "Unknown") {
@@ -130,7 +157,7 @@ mainMenu(key avatarKey) {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Release"];
     }
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Main", avatarKey, message, buttons);
 }
 
 doMainMenu(key avatarKey, string message) {
@@ -170,7 +197,7 @@ zapMenu(key avatarKey)
     if (allowZapLow) buttons = buttons + ["Zap Low"];
     if (allowZapMed) buttons = buttons + ["Zap Med"];
     if (allowZapHigh) buttons = buttons + ["Zap High"];
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Zap", avatarKey, message, buttons);
 }
 
 string class2Description(string class) {
@@ -211,7 +238,7 @@ infoGive(key avatarKey){
             buttons += ["Doc "+(string)inumber];
         }
     }
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Info", avatarKey, message, buttons);
 }
 
 hackMenu(key avatarKey)
@@ -220,7 +247,7 @@ hackMenu(key avatarKey)
     {
         string message = "Hack";
         list buttons = ["hack", "Maintenance", "Fix"];
-        setUpMenu(avatarKey, message, buttons);
+        setUpMenu("Hack", avatarKey, message, buttons);
     }
     else
     {
@@ -296,7 +323,7 @@ settingsMenu(key avatarKey) {
     if (setLock) buttons = buttons + "Lock";
     if (setZaps) buttons = buttons + "SetZap";
     if (setTimer) buttons = buttons + "Timer";
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Settings", avatarKey, message, buttons);
 }
     
 doSettingsMenu(key avatarKey, string message) {
@@ -327,7 +354,7 @@ ZapLevelMenu(key avatarKey)
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
     buttons = buttons + menuCheckbox("Zap High", allowZapHigh);
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("ZapLevel", avatarKey, message, buttons);
 }
 
 doSetZapLevels(key avatarKey, string message)
@@ -364,7 +391,7 @@ moodMenu(key avatarKey)
         buttons = buttons + menuRadioButton("Nonsexual", ICOOCMood);
         buttons = buttons + menuRadioButton("Story", ICOOCMood);
         buttons = buttons + menuRadioButton("DnD", ICOOCMood);
-        setUpMenu(avatarKey, message, buttons);
+        setUpMenu("Mood", avatarKey, message, buttons);
     }
     else
     {
@@ -395,7 +422,7 @@ lockMenu(key avatarKey)
         list lockListHeavy = [3, 4, -1, -1];
         list lockListHardcore = [-1, -1, -1, -1];
         list lockLists = lockListOff + lockListLight + lockListMedium + lockListHeavy + lockListHardcore; // strided list
-        list lockListMenu = llList2List(lockLists, iLockLevel*4, (iLockLevel+1)*4 ); // list of lock levels to add to menu
+        list lockListMenu = llList2List(lockLists, iLockLevel*4, (iLockLevel+1)*4); // list of lock levels to add to menu
         sayDebug("lockMenu lockListMenu:"+(string)lockListMenu); 
                
         //make the button list
@@ -407,7 +434,7 @@ lockMenu(key avatarKey)
                 buttons = buttons + [llList2String(LockLevels, lockindex)];
             }
         }
-        setUpMenu(avatarKey, message, buttons);
+        setUpMenu("Lock", avatarKey, message, buttons);
     }
     else
     {
@@ -422,7 +449,16 @@ threatMenu(key avatarKey) {
     buttons = buttons + menuRadioButton("Moderate", threatLevel);
     buttons = buttons + menuRadioButton("Dangerous", threatLevel);
     buttons = buttons + menuRadioButton("Extreme", threatLevel);
-    setUpMenu(avatarKey, message, buttons);
+    setUpMenu("Threat", avatarKey, message, buttons);
+}
+
+tone(integer number) {
+    string numbers = (string)number;
+    integer i;
+    for (i = 0; i < llStringLength(numbers); i++) {
+        integer digit = (integer)llGetSubString(numbers, i, i);
+        llPlaySound(llList2String(touchTones, digit), 1);
+    }
 }
 
 // Event Handlers ***************************
@@ -431,9 +467,14 @@ default
 {
     state_entry()
     {
-        string theLocklevel = "Off";
+        sayDebug("state_entry");
+        menuAvatar = "";
+        theLocklevel = "Off";
         llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
         llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
+        
+        touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
+            touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
     }
 
     touch_start(integer total_number)
@@ -464,46 +505,53 @@ default
         }
     }
     
-    listen( integer channel, string name, key avatarKey, string message ){
-        llListenRemove(menuListen);
-        menuListen = 0;
-        llSetTimerEvent(0);
+    listen(integer channel, string name, key avatarKey, string message){
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
+        sayDebug("listen menuIdentifier: "+menuIdentifier);
+        
+        tone(channel);
+
+        // reset the menu setup
+        llListenRemove(menuListen);
+        menuListen = 0;
+        menuAvatar = "";
+        llSetTimerEvent(0);
+
         
         //Main
-        if (llSubStringIndex("Zap Hack Leash Info Safeword Settings Release", message) > -1){
+        if (menuIdentifier == "Main") {
             sayDebug("listen: Main:"+message);
             doMainMenu(avatarKey, message);
         }
         
         //Settings
-        else if (llSubStringIndex("Play Level Threat Lock Mood SetZap Timer", message) > -1){
+        else if (menuIdentifier == "Settings") {
             sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message);
         }
 
         // Mood
-        else if (llSubStringIndex("OOC Submissive Versatile Dominant Nonsexual Story DnD",  messageButtonsTrimmed) > -1){
+        else if (menuIdentifier == "Mood") {
             sayDebug("listen: Mood:"+messageButtonsTrimmed);
             ICOOCMood = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1100, ICOOCMood, avatarKey);
         }
         
         // Zap the inmate
-        else if (llSubStringIndex("Zap Low Zap Med Zap High", message) > -1){
+        else if (menuIdentifier == "Zap") {
             sayDebug("listen: Zap:"+message);
             llMessageLinked(LINK_THIS, 1301, message, avatarKey);
         }
 
         // Set Zap Level
-        else if (llSubStringIndex("Zap Low Zap Med Zap High", messageButtonsTrimmed) > -1){
+        else if (menuIdentifier == "ZapLevel") {
             sayDebug("listen: Set Zap:"+message);
             doSetZapLevels(avatarKey, messageButtonsTrimmed);
         }
 
         // Lock Level
-        else if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1){
+        else if (menuIdentifier == "Lock") {
             sayDebug("listen: theLocklevel:"+message);
             theLocklevel = message;
             sayDebug("listen set theLocklevel:"+theLocklevel);
@@ -511,25 +559,28 @@ default
         }
 
         // Threat Level
-        else if (llSubStringIndex("None Moderate Dangerous Extreme", messageButtonsTrimmed) > -1){
+        else if (menuIdentifier == "Threat") {
             sayDebug("listen: threatLevel:"+messageButtonsTrimmed);
             threatLevel = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1500, threatLevel, avatarKey);
         }
         
         // Document
-        else if (llGetSubString(message,0,3) == "Doc "){
+        else if (menuIdentifier == "Info") {
             integer inumber = (integer)llGetSubString(message,4,4) - 1;
             sayDebug("listen: message:"+message+ " inumber:"+(string)inumber);
             if (inumber > -1) {
                 llOwnerSay("Offering '"+llGetInventoryName(INVENTORY_NOTECARD,inumber)+"' to "+llGetDisplayName(avatarKey)+".");
-                llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber) );    
+                llGiveInventory(avatarKey, llGetInventoryName(INVENTORY_NOTECARD,inumber));    
             }        
         }
         
+        else {
+            sayDebug("ERROR: did not process menuIdentifier "+menuIdentifier);
+        }
     }
     
-    link_message( integer sender_num, integer num, string message, key id ){ 
+    link_message(integer sender_num, integer num, string message, key id){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
         if (num == 1200) {
@@ -556,7 +607,9 @@ default
     
     timer() 
     {
+        // reset the menu setup
         llListenRemove(menuListen);
-        menuListen = 0;    
+        menuListen = 0;   
+        menuAvatar = ""; 
     }
 }
