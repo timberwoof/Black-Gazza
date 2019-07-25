@@ -29,6 +29,7 @@ key menuAvatar;
 string localState;
 
 list PlayerRoleNames = ["inmate", "guard", "medic", "mechanic", "robot", "k9", "bureaucrat"];
+list PlayerHasRoles = [0, 0, 0, 0, 0, 0, 0];
 list AssetPrefixes = ["P", "G", "M", "X", "R", "K", "B"];
 
 // irregularly strided list with start and stop markers that come from list PlayerRoleNames.
@@ -56,12 +57,51 @@ string playerRole = "Unknown"; // set by first dialog and kept for subsequent co
 string textBoxParameter = "";
 key databaseQuery;
 
+string charBoxX = "☒";
+string charBoxEmpty = "☐";
+string charCircleDot = "●";
+string charCircleEmpty = "○";
+
+
+// ==================================
+// Utilities
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
         llWhisper(0,message);
     }
+}
+
+string menuCheckbox(string title, integer onOff)
+// make checkbox menu item out of a button title and boolean state
+{
+    string checkbox;
+    if (onOff)
+    {
+        checkbox = charBoxX;
+    }
+    else
+    {
+        checkbox = charBoxEmpty;
+    }
+    return checkbox + " " + title;
+}
+
+list menuRadioButton(string title, string match)
+// make radio button menu item out of a button and the state text
+{
+    string radiobutton;
+    if (title == match)
+    {
+        radiobutton = charCircleDot;
+    }
+    else
+    {
+        radiobutton = charCircleEmpty;
+    }
+    return [radiobutton + " " + title];
 }
 
 // wrapper to set up a simple menu dialog.
@@ -89,35 +129,8 @@ setUpTextBox(string identifier, key avatarKey, string message) {
     llSetTimerEvent(30);
 }
 
-string menuCheckbox(string title, integer onOff)
-// make checkbox menu item out of a button title and boolean state
-{
-    string checkbox;
-    if (onOff)
-    {
-        checkbox = "☒";
-    }
-    else
-    {
-        checkbox = "☐";
-    }
-    return checkbox + " " + title;
-}
-
-list menuRadioButton(string title, string match)
-// make radio button menu item out of a button and the state text
-{
-    string radiobutton;
-    if (title == match)
-    {
-        radiobutton = "●";
-    }
-    else
-    {
-        radiobutton = "○";
-    }
-    return [radiobutton + " " + title];
-}
+// ===================================
+// Dialogs
 
 confirmLogin(key avatarKey, integer status, string message) {
     sayDebug("confirmLogin("+(string)status+","+message+")");
@@ -174,38 +187,107 @@ presentRoles(key avatarKey, integer status, string message) {
     if (status == 200) {
         list rolesList = llJson2List(message);
         list buttons = ["Cancel"];
-        string message = "Please select the character type you want to set up. "+
-            "☒ means you have a character of that type. "+
-            "☐ means you do not have a character of that type.";
+        string message = "Please select the character type you want to set up.\n"+
+            charBoxX+" means you have a character of that type:\n"+
+            charBoxEmpty+" means you do not have a character of that type.";
         integer i;
+        integer j;
         for (i = 0; i < llGetListLength(rolesList); i = i + 2) {
             string theRole = llList2String(rolesList, i);
             string theTruth = llList2String(rolesList, i+1);
             sayDebug("theRole:"+theRole+" theTruth:"+theTruth);
-            // Convert these into button textx with checkmarks to indicate which are active and which are not. 
-            buttons = buttons + menuCheckbox(theRole, theTruth=="﷖");
+            
+            j = llListFindList(PlayerRoleNames, [theRole]);
+            PlayerHasRoles = llListReplaceList(PlayerHasRoles, [1], j, j);
+            }
+        for (i = 0; i < llGetListLength(PlayerRoleNames); i = i + 1) {
+            buttons = buttons + menuCheckbox(llList2String(PlayerRoleNames, i), llList2Integer(PlayerHasRoles, i));
             }
         setUpMenu("PresentRoles", avatarKey, message, buttons);
         }
+    }
+    
+pickRole(key avatarKey, string message) {
+    sayDebug("pickRole("+message+")");
+    // if the first character is a checked box, we have characters in that role
+    // so we need to present the existing asset numbers in that role 
+    // and the option to make a new one
+    // otherwise, we need to present the option to make a new one
+    string theState = llGetSubString(message,0,0);
+    playerRole = llGetSubString(message,2,-1);
+    
+    if (theState == charBoxX) {
+        // Player already has one of these roles, let them choose which or make new
+        // https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate
+        localState = "PickAsset";
+        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles/"+playerRole;
+        sayDebug("getRoles URL:"+URL);
+        databaseQuery = llHTTPRequest(URL, [], "");
+        // -> presentAssets
+        }
+    else {
+        }
+        // player doesn't have one of these roles, let them make new
+    
+    
+    }
+    
+    
+presentAssets(key avatarKey, integer status, string message) {
+    sayDebug("presentAssets("+(string)status+","+message+")");
+    if (status == 200) {
+        list rolesList = llJson2List(message);
+        list buttons = ["New","Cancel"];
+        string message = "Please select the character asset you want to set up.";
+        integer i;
+        integer j;
+        for (i = 0; i < llGetListLength(rolesList); i = i + 2) {
+            string theAsset = llList2String(rolesList, i);
+            buttons = buttons + theAsset;
+            }
+        setUpMenu("PresentAssets", avatarKey, message, buttons);
+        }
+    }
+    
+pickAsset(key avatarKey, string message) {
+    sayDebug("pickAsset("+message+")");
+    // if the first character is a checked box, we have characters in that role
+    // so we need to present the existing asset numbers in that role 
+    // and the option to make a new one
+    // otherwise, we need to present the option to make a new one
+    
+        // Player already has one of these roles, let them choose which or make new
+        // https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate/P-60361
+        localState = "EditCreateAsset";
+        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles/"+playerRole+"/"+message;
+        sayDebug("getRoles URL:"+URL);
+        databaseQuery = llHTTPRequest(URL, [], "");
+        // -> presentAssets
 
+        // player doesn't have one of these roles, let them make new
+    
+    
+    }
+    
+presentValues(key avatarKey, integer status, string message) {
+    sayDebug("presentValues("+(string)status+","+message+")");
+    if (status == 200) {
+        list valuesList = llJson2List(message);
+        list buttons = [];
+        string message = "Please select the asset key-value you want to set up.\n";
+        integer i;
+        integer j;
+        for (i = 0; i < llGetListLength(valuesList); i = i + 2) {
+            string theKey = llList2String(valuesList, i);
+            string theValue = llList2String(valuesList, i+1);
+            buttons = buttons + theKey;
+            message = message + theKey + ": " + theValue + "\n";
+            }
+        setUpMenu("PresentValues", avatarKey, message, buttons);
+        }
     }
 
-// The main menu, the first that greets whoever clicks the box. 
-mainMenu(key avatarKey) {
-    sayDebug("mainMenu");
-    if (menuAvatar != "" & menuAvatar != avatarKey) {
-        llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
-        sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
-        return;
-        }
 
-    string message = "Welcome to the Black Gazza RPG Role Setter Upper Wizard. " +
-        "Set up a Black Gazza character for your Second Life account. " + 
-        "First, choose your Character Class:";
-    
-    // PlayerRoleNames is the button list and the list of messages to detect as the response
-    setUpMenu("Main", avatarKey, message, PlayerRoleNames);
-}
 
 // playerRoleKeyValues maintains actual user data that will get bundled up and sent to the database. 
 // upsertRoleKeyValue gets a key-value pair and inserts or updates it in that list. 
@@ -385,6 +467,14 @@ default
     {
         sayDebug("touch_start");
         menuAvatar = llDetectedKey(0); 
+
+        // eventually use this code for security and not collisons
+        //if (menuAvatar != "" & menuAvatar != avatarKey) {
+        //llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
+        //sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
+        //return;
+        //}
+
         localState = "Touch";
         string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar;
         sayDebug("touch_start URL:"+URL);
@@ -403,9 +493,12 @@ default
             getRoles(avatarKey, message);
         }
             
-        else if (menuIdentifier == "Main"){
-            playerRole = message;
-            keyMenu(avatarKey, message);
+        else if (menuIdentifier == "PresentRoles"){
+            pickRole(avatarKey, message);
+        }
+            
+        else if (menuIdentifier == "PresentAssets"){
+            pickAsset(avatarKey, message);
         }
             
         else if (message == "Finish") {
@@ -427,7 +520,7 @@ default
         }
         
         else {
-            sayDebug("ERROR: did not process menuIdentifier "+menuIdentifier);
+            sayDebug("ERROR: listen did not process menuIdentifier "+menuIdentifier);
         }
     }
 
@@ -448,7 +541,16 @@ default
         if (request_id == databaseQuery && localState == "GetRoles") {
             presentRoles(menuAvatar, status, message);
             }
+        if (request_id == databaseQuery && localState == "PickAsset") {
+            presentAssets(menuAvatar, status, message);
+            }
+        if (request_id == databaseQuery && localState == "EditCreateAsset") {
+            presentValues(menuAvatar, status, message);
+            }
       
     }
+            
+
+
 
 }
