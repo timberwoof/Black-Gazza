@@ -26,6 +26,7 @@ integer menuListen = 0;
 string menuIdentifier;
 list menuChoices;
 key menuAvatar;
+string localState;
 
 list PlayerRoleNames = ["inmate", "guard", "medic", "mechanic", "robot", "k9", "bureaucrat"];
 list AssetPrefixes = ["P", "G", "M", "X", "R", "K", "B"];
@@ -87,6 +88,107 @@ setUpTextBox(string identifier, key avatarKey, string message) {
     menuListen = llListen(menuChannel, "", avatarKey, "");
     llSetTimerEvent(30);
 }
+
+string menuCheckbox(string title, integer onOff)
+// make checkbox menu item out of a button title and boolean state
+{
+    string checkbox;
+    if (onOff)
+    {
+        checkbox = "☒";
+    }
+    else
+    {
+        checkbox = "☐";
+    }
+    return checkbox + " " + title;
+}
+
+list menuRadioButton(string title, string match)
+// make radio button menu item out of a button and the state text
+{
+    string radiobutton;
+    if (title == match)
+    {
+        radiobutton = "●";
+    }
+    else
+    {
+        radiobutton = "○";
+    }
+    return [radiobutton + " " + title];
+}
+
+confirmLogin(key avatarKey, integer status, string message) {
+    sayDebug("confirmLogin("+(string)status+","+message+")");
+    string playerName = llKey2Name(avatarKey);
+    
+    if (status == 200) {
+        list identityList = llJson2List(message);
+        // looks like {"roles": true, "_name_": "Timberwoof Lupindo", "_start_date_": "2009-08-10 01:39:05"}
+        integer whereRoles = llListFindList(identityList, ["roles"]);
+        integer whereName =  llListFindList(identityList, ["_name_"]);
+        integer whereDate = llListFindList(identityList, ["_start_date_"]);
+        if (whereRoles > -1  && whereDate > -1 && whereName > -1) {
+            string dbName = llList2String(identityList, whereName+1);
+            string startDate = llList2String(identityList, whereDate+1);
+            sayDebug("dbName: "+dbName);
+            sayDebug("startDate: "+startDate);
+            
+            if (dbName != playerName) {
+                string errorMessage = "Error from RoleWizard: database name '" + dbName + "' " + 
+                "did not match in-world account name '"+ playerName+"'"; 
+                llInstantMessage(menuAvatar, errorMessage);
+                llOwnerSay(errorMessage);
+                llResetScript();
+                return;
+            }
+            string message = "Hello, " + playerName + ". " + 
+            "You are known to us since " + startDate +". " +
+            "If you wish to continue setting up your Black Gazza character, please click Continue.";
+            list buttons = ["Cancel", "Continue"];
+            setUpMenu("confirmLogin", avatarKey, message, buttons);
+            // --> getRoles
+            }
+        }
+    }
+    
+getRoles(key avatarKey, string message){
+    // message is "Continue" or "Cancel";
+    if (message == "Continue") {
+        // retrieve existing character classes. 
+        localState = "GetRoles";
+        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles";
+        sayDebug("getRoles URL:"+URL);
+        databaseQuery = llHTTPRequest(URL, [], "");
+        // -> selectRole
+        }
+    else {
+        llInstantMessage(menuAvatar, "Thank you.");
+        llResetScript();
+        }
+    }
+
+presentRoles(key avatarKey, integer status, string message) {
+    sayDebug("presentRoles("+(string)status+","+message+")");
+    if (status == 200) {
+        list rolesList = llJson2List(message);
+        list buttons = ["Cancel"];
+        string message = "Please select the character type you want to set up. "+
+            "☒ means you have a character of that type. "+
+            "☐ means you do not have a character of that type.";
+        integer i;
+        for (i = 0; i < llGetListLength(rolesList); i = i + 2) {
+            string theRole = llList2String(rolesList, i);
+            string theTruth = llList2String(rolesList, i+1);
+            sayDebug("theRole:"+theRole+" theTruth:"+theTruth);
+            // Convert these into button textx with checkmarks to indicate which are active and which are not. 
+            buttons = buttons + menuCheckbox(theRole, theTruth=="﷖");
+            }
+        setUpMenu("PresentRoles", avatarKey, message, buttons);
+        }
+
+    }
 
 // The main menu, the first that greets whoever clicks the box. 
 mainMenu(key avatarKey) {
@@ -282,9 +384,11 @@ default
     touch_start(integer total_number)
     {
         sayDebug("touch_start");
-        key avatarKey  = llDetectedKey(0); 
-        upsertRoleKeyValue("name", llKey2Name(avatarKey));
-        mainMenu(avatarKey);
+        menuAvatar = llDetectedKey(0); 
+        localState = "Touch";
+        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar;
+        sayDebug("touch_start URL:"+URL);
+        databaseQuery = llHTTPRequest(URL, [], "");
     }
     
     listen( integer channel, string name, key avatarKey, string message ){
@@ -294,7 +398,12 @@ default
         sayDebug("listen message:"+message);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
         
-        if (menuIdentifier == "Main"){
+        if (menuIdentifier == "confirmLogin"){
+            // message is Cancel or Continue
+            getRoles(avatarKey, message);
+        }
+            
+        else if (menuIdentifier == "Main"){
             playerRole = message;
             keyMenu(avatarKey, message);
         }
@@ -331,11 +440,15 @@ default
     http_response(key request_id, integer status, list metadata, string message)
     // handle the response from the crime database
     {
-        sayDebug("http_response status:"+(string)status);
-        sayDebug(message);
-        // set assetNumber from the returned data
-        // tell the user what their asset number is. 
-        // The prisoner collar shoudl be able to access the data now. 
+        sayDebug("http_response localState:"+ localState+ " status:"+(string)status);
+        sayDebug("message: "+message);
+        if (request_id == databaseQuery && localState == "Touch") {
+            confirmLogin(menuAvatar, status, message);
+            }
+        if (request_id == databaseQuery && localState == "GetRoles") {
+            presentRoles(menuAvatar, status, message);
+            }
+      
     }
 
 }
