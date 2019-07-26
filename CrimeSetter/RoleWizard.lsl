@@ -225,12 +225,29 @@ pickRole(key avatarKey, string message) {
         databaseQuery = llHTTPRequest(URL, [], "");
         // -> presentAssets
         }
-    else {
+    else if (theState == charBoxEmpty) {
+        localState = "AskCreateAsset";
+        list buttons = ["Create", "Cancel"];
+        string message = "You do not have a " + playerRole + " set up yet. To create one, click Create.";
+        setUpMenu("AskCreateAsset", avatarKey, message, buttons);
         }
-        // player doesn't have one of these roles, let them make new
-    
-    
+    else {
+        sayDebug("ERROR: pickRole message '" + message + "' had wrong initial character.");
+        llResetScript();
+        }
     }
+    
+createAsset(key avatarKey, string message) {
+    sayDebug("createAsset("+message+")"); 
+    if (message == "Create") {
+        upsertRoleKeyValue("role", playerRole);
+        keyMenu(avatarKey, playerRole);
+    }
+    else {
+        llInstantMessage(menuAvatar, "Thank you.");
+        llResetScript();
+    }
+}
     
     
 presentAssets(key avatarKey, integer status, string message) {
@@ -445,8 +462,16 @@ string generateUpsertJson() {
 registerPlayer(key avatarKey) {
     string json = generateUpsertJson();
     sayDebug("registerPlayer json:"+json);
-    string URL = "https://api.blackgazza.com/asset/"+(string)avatarKey;
-    sayDebug("registerPlayer URL:"+URL);
+    string URL = "https://api.blackgazza.com/identity/"+(string)avatarKey;
+    sayDebug("registerPlayer POST URL:"+URL);
+    databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
+}
+    
+registerRole(key avatarKey, string playerRole) {
+    string json = generateUpsertJson();
+    sayDebug("registerRole json:"+json);
+    string URL = "https://api.blackgazza.com/identity/"+(string)avatarKey+"/role/"+playerRole;
+    sayDebug("registerRole POST URL:"+URL);
     databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
 }
     
@@ -501,8 +526,12 @@ default
             pickAsset(avatarKey, message);
         }
             
+        else if (menuIdentifier == "AskCreateAsset"){
+            createAsset(avatarKey, message);
+        }
+            
         else if (message == "Finish") {
-            registerPlayer(avatarKey);
+            registerRole(avatarKey, playerRole);
         }
        
         else if (menuIdentifier == "Key"){
@@ -545,6 +574,9 @@ default
             presentAssets(menuAvatar, status, message);
             }
         if (request_id == databaseQuery && localState == "EditCreateAsset") {
+            presentValues(menuAvatar, status, message);
+            }
+        if (request_id == databaseQuery && localState == "AskCreateAsset") {
             presentValues(menuAvatar, status, message);
             }
       
