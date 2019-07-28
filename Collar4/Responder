@@ -56,14 +56,16 @@ default
     {
         list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
         integer locki = llListFindList(lockLevels, [lockLevel]);
+        string response = "Zap";
         if (message == "Request Authorization") {
             if (locki <= 2) {
-                llSay(responderChannel, "Yes");
+                response = "Yes";
             } else if (locki == 3) {
-                llSay(responderChannel, "No");
+                response = "No";
             } else {
-                llSay(responderChannel, "Zap");
+                response = "Zap";
             }
         }
+        llSay(responderChannel,response);
     }
 }
