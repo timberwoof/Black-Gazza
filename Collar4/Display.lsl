@@ -106,6 +106,7 @@ displayText(string text){
 // Display a string of 12 characters on the collar display. 
 // If you supply less than 12 characters, the last ones don't get reset. 
 // Anything after 12 characters gets truncated. 
+    sayDebug("displaytext("+text+")");
 
     // The text map is in this jumbled order because the bitmap maps weirdly. 
     string textMap = 
@@ -145,12 +146,14 @@ setTextColor(vector classColor){
 
 displayCentered(string text){
 // display a string of less than 12 characters on the alphanumeric display, more or less centered
+    sayDebug("displayCentered("+text+")");
     integer pad = (12 - llStringLength(text)) / 2; 
     displayText(llInsertString("            ", pad, text));
 }
 
 displayScroll(string text){
 // display a string of more than 12 characters in a lovely scrolling manner. 
+    sayDebug("displayScroll("+text+")");
     string displayText = "            "; // 12 spaces
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
     scrollPos = 0;
@@ -161,6 +164,7 @@ displayScroll(string text){
 displayBattery(integer percent)
 // based on the percentage, display the correct icon and color
 {   
+    sayDebug("displayBattery("+(string)percent+")");
     // The battery icon has 5 states. Horizontal Offsets can be
     // -0.4 full charge 100% - 88%
     // -0.2 3/4 charge   87% - 75% - 62%
@@ -260,23 +264,17 @@ default
         // IC/OOC Mood sets frame color 
         if (num == 1100) {
             Mood = message;
+            sayDebug("link_message "+(string)num+" "+Mood+"->Mood");
             integer moodi = llListFindList(moodNames, [Mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
         }
         
-        // Asset Number
-        else if (num == 1013) {
-            sayDebug("link_message "+(string)num+" "+message);
-            assetNumber = message;
-            displayCentered(assetNumber);
-        }
-        
         // Prisoner Class sets text color and blinky 3
         else if (num == 1200) {
             Class = message;
-            sayDebug("receiving class "+Class);
+            sayDebug("link_message "+(string)num+" "+Class+"->Class");
             integer classi = llListFindList(classNames, [Class]);
             classColor = llList2Vector(classColors, classi);
             setTextColor(classColor);
@@ -292,8 +290,8 @@ default
         // Zap Level sets blinky 1
         else if (num == 1300) {
             // message contains a json list of settings
-            sayDebug("zaplevel message:"+message);
             list zapLevels = llJson2List(message);
+            sayDebug("link_message "+(string)num+" "+(string)zapLevels+"->message");
             sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
             // color tells the highest allowed zap level
@@ -315,12 +313,12 @@ default
         
         // Lock level sets blinky 2
         else if (num == 1400) {
-            list threatLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
-            list threatColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
-            integer threati = llListFindList(threatLevels, [message]);
-            vector threatcolor = llList2Vector(threatColors, threati);
-            sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, threatcolor, 1.0]);
+            list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
+            list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
+            integer locki = llListFindList(lockLevels, [message]);
+            vector lockcolor = llList2Vector(lockColors, locki);
+            sayDebug("lock level message:"+message+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, lockcolor, 1.0]);
         }
         
         // Battery Level Report
@@ -332,8 +330,12 @@ default
         // set and display asset number
         else if (num == 2000) {
             assetNumber = message;
-            sayDebug("set and display assetNumber "+assetNumber);
-            displayCentered(assetNumber);
+            if (assetNumber == "") {
+                llOwnerSay("Please select Settings > Asset.");
+            } else {
+                sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                displayCentered(assetNumber);
+            }
         }
         
         // temporarily display a message
@@ -345,8 +347,13 @@ default
     }
     
     timer() {
-        sayDebug("display assetNumber "+assetNumber);
-        displayCentered(assetNumber);
+        sayDebug("timer(): display assetNumber "+assetNumber);
+            if (assetNumber == "") {
+                llOwnerSay("Please select Settings > Asset.");
+            } else {
+                sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                displayCentered(assetNumber);
+            }
         llSetTimerEvent(0);  
     }
 }
