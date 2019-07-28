@@ -94,7 +94,7 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
     sayDebug("setUpMenu "+identifier);
     tempDisplay("menu access");
     menuIdentifier = identifier;
-    menuChoices = buttons;
+    menuChoices = ["Cancel"] + buttons;
     menuAvatar = avatarKey;
     string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
@@ -158,8 +158,7 @@ mainMenu(key avatarKey) {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Safeword"];
     }
-    if (theLocklevel == "Hardcore" && !llSameGroup(avatarKey)) {
-        // if wearer is in hardcore mode, no safeword
+    if (theLocklevel != "Off" && !llSameGroup(avatarKey)) {
         buttons = buttons + ["Release"];
     }
     setUpMenu("Main", avatarKey, message, buttons);
@@ -429,7 +428,6 @@ lockMenu(key avatarKey)
         // LockLevels: 0=Off 1=Light 2=Medium 3=Heavy 4=Hardcore
         // convert our locklevel to an integer
         sayDebug("lockMenu theLocklevel:"+theLocklevel);
-        sayDebug("lockMenu LockLevels:"+(string)LockLevels);
         integer iLockLevel = llListFindList(LockLevels, [theLocklevel]);
         sayDebug("lockMenu iLocklevel:"+(string)iLockLevel);
         // make a list of what lock levels are available from each lock level
@@ -448,14 +446,11 @@ lockMenu(key avatarKey)
         for (listsIndex = 0; listsIndex < 4; listsIndex++) {
             integer lockindex =  llList2Integer(lockListMenu, listsIndex);
             if (lockindex != -1) {
-                buttons = buttons + [llList2String(LockLevels, lockindex)];
+                string lockButton = llList2String(LockLevels, lockindex);
+                buttons = buttons + menuRadioButton(lockButton, theLocklevel); ;
             }
         }
         setUpMenu("Lock", avatarKey, message, buttons);
-    }
-    else
-    {
-        ;
     }
 }
 
@@ -526,7 +521,7 @@ default
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
-        tempDisplay(menuIdentifier);
+        tempDisplay(message);
         tone(channel);
 
         // reset the menu setup
@@ -534,10 +529,14 @@ default
         menuListen = 0;
         menuAvatar = "";
         llSetTimerEvent(0);
-
+        
+        // Cancel
+        if (message == "Cancel") {
+            menuAvatar = "";
+        }
         
         //Main
-        if (menuIdentifier == "Main") {
+        else if (menuIdentifier == "Main") {
             sayDebug("listen: Main:"+message);
             doMainMenu(avatarKey, message);
         }
@@ -577,10 +576,12 @@ default
 
         // Lock Level
         else if (menuIdentifier == "Lock") {
-            sayDebug("listen: theLocklevel:"+message);
-            theLocklevel = message;
-            sayDebug("listen set theLocklevel:"+theLocklevel);
-            llMessageLinked(LINK_THIS, 1401, theLocklevel, avatarKey);
+            sayDebug("listen: theLocklevel:"+messageButtonsTrimmed);
+            if (messageButtonsTrimmed != "") {
+                theLocklevel = messageButtonsTrimmed;
+                sayDebug("listen set theLocklevel:\""+theLocklevel+"\"");
+                llMessageLinked(LINK_THIS, 1401, theLocklevel, avatarKey);
+            }
         }
 
         // Threat Level
@@ -637,6 +638,7 @@ default
         // reset the menu setup
         llListenRemove(menuListen);
         menuListen = 0;   
-        menuAvatar = ""; 
+        menuAvatar = "";
+        llMessageLinked(LINK_THIS, 2000, "", ""); // ask for database update
     }
 }
