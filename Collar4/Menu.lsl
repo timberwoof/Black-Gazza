@@ -31,11 +31,15 @@ integer OPTION_DEBUG = 0;
 
 integer menuChannel = 0;
 integer menuListen = 0;
+string menuIdentifier;
+list menuChoices;
+key menuAvatar;
 
 integer allowZapLow = 1;
 integer allowZapMed = 1;
 integer allowZapHigh = 1;
 
+list assetNumbers;
 string ICOOCMood = "OOC";
 string prisonerClass = "white";
 list prisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
@@ -43,10 +47,6 @@ list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic",
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
-
-string menuIdentifier;
-list menuChoices;
-key menuAvatar;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -83,11 +83,16 @@ integer invert(integer boolie)
         return 1;
 }
 
+tempDisplay(string message) 
+{
+    llMessageLinked(LINK_THIS, 2001, message, "");
+}
+
 setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
     sayDebug("setUpMenu "+identifier);
-    llMessageLinked(LINK_THIS, 2001, "menu access", avatarKey);
+    tempDisplay("menu access");
     menuIdentifier = identifier;
     menuChoices = buttons;
     menuAvatar = avatarKey;
@@ -270,6 +275,7 @@ settingsMenu(key avatarKey) {
     integer setLock = 0;
     integer setZaps = 0;
     integer setTimer = 0;
+    integer setAsset = 0;
     
     // Add some things depending on who you are. 
     // What wearer can change
@@ -286,6 +292,7 @@ settingsMenu(key avatarKey) {
             setThreat = 1;
             setZaps = 1;
             setTimer = 1;
+            setAsset = 1;
         }
     }
     // What a guard can change
@@ -319,6 +326,7 @@ settingsMenu(key avatarKey) {
     string message = "Settings";
     list buttons = [];
     if (setMood) buttons = buttons + "Mood";
+    if (setAsset) buttons = buttons + "Asset";
     if (setThreat) buttons = buttons + "Threat";
     if (setLock) buttons = buttons + "Lock";
     if (setZaps) buttons = buttons + "SetZap";
@@ -339,9 +347,18 @@ doSettingsMenu(key avatarKey, string message) {
         else if (message == "SetZap"){
             ZapLevelMenu(avatarKey);
         }
+        else if (message == "Asset"){
+            assetMenu(avatarKey);
+        }
         else if (message == "Timer"){
             llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
+}
+
+assetMenu(key avatarKey)
+{
+    string message = "Choose which Asset Number your collar will show.";
+    setUpMenu("Asset", avatarKey, message, assetNumbers);
 }
 
 ZapLevelMenu(key avatarKey)
@@ -509,7 +526,7 @@ default
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
-        
+        tempDisplay(menuIdentifier);
         tone(channel);
 
         // reset the menu setup
@@ -531,6 +548,14 @@ default
             doSettingsMenu(avatarKey, message);
         }
 
+        // Asset
+        else if (menuIdentifier == "Asset") {
+            sayDebug("listen: Asset:"+message);
+            assetNumber = message;
+            llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
+            llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
+        }
+        
         // Mood
         else if (menuIdentifier == "Mood") {
             sayDebug("listen: Mood:"+messageButtonsTrimmed);
@@ -583,7 +608,9 @@ default
     link_message(integer sender_num, integer num, string message, key id){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 1200) {
+        if (num == 1011) {
+            assetNumbers = llJson2List(message);
+        } else if (num == 1200) {
             prisonerClass = message;
         } else if (num == 1400) {
             // RLV/Lock status
