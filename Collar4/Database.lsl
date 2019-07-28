@@ -34,7 +34,7 @@ Collar is interested in the role=inmate things.
 4. Fr each key, list the data. 
 */
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 key databaseQuery;
 string myQueryStatus;
 
@@ -150,9 +150,8 @@ default
                     string theAssetNumber = llList2String(theList,i); // index tells which asset number to grab
                     sayDebug("theAssetNumber:"+theAssetNumber);
                     assetNumbers = assetNumbers + [theAssetNumber];
-                    // now player must choose which asset
-                    sendAssetNumbers();
                 }
+                sendAssetNumbers();
             }
             
             else if (myQueryStatus == "GetAssetKeys") {
