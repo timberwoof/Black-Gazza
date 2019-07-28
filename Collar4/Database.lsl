@@ -36,10 +36,11 @@ Collar is interested in the role=inmate things.
 
 integer OPTION_DEBUG = 1;
 key databaseQuery;
-integer myQueryStatus = 0;
+string myQueryStatus;
 
 string name;
 string start_date;
+list assetNumbers;
 string assetNumber;
 string crime;
 string class;
@@ -56,7 +57,7 @@ sayDebug(string message)
 }
 
 // fire off a request to the crime database for this wearer. 
-sendDatabaseQuery(integer queryStatus, string command) {
+sendDatabaseQuery(string queryStatus, string command) {
     sayDebug("sendDatabaseQuery(\""+command+"\")");
     displayCentered("Accessing DB");
     // Old DB
@@ -80,22 +81,22 @@ sendDatabaseQuery(integer queryStatus, string command) {
 
 getPlayerRoles() {
     sayDebug("getPlayerRoles");
-    sendDatabaseQuery(1, "/roles");
+    sendDatabaseQuery("GetRoles", "/roles");
 }
 
 getPlayerInmateNumbers() {
     sayDebug("getPlayerInmateNumbers");
-    sendDatabaseQuery(2, "/roles/inmate");
+    sendDatabaseQuery("GetAssets", "/roles/inmate");
 }
 
 getPlayerInmateKeys(string assetNumber) {
     sayDebug("getPlayerInmateKeys("+assetNumber+")");
-    sendDatabaseQuery(3, "/roles/inmate/"+assetNumber);
+    sendDatabaseQuery("GetAssetKeys", "/roles/inmate/"+assetNumber);
 }
 
 getPlayerInmateAssetKey(string assetNumber, string assetKey) {
     sayDebug("getPlayerInmateAssetKey("+assetNumber+","+assetKey+")");
-    sendDatabaseQuery(4, "/roles/inmate/"+assetNumber+"/"+assetKey);
+    sendDatabaseQuery("GetOneKey", "/roles/inmate/"+assetNumber+"/"+assetKey);
 }
 
 string getListThing(list theList, string theKey){
@@ -107,12 +108,19 @@ displayCentered(string message) {
     llMessageLinked(LINK_THIS, 2001, message, "");
 }
 
+sendAssetNumbers() {
+    // Send the active asset numbers to Menu
+    string message = llList2Json(JSON_ARRAY, assetNumbers);
+    sayDebug("sendAssetNumbers:"+message);
+    llMessageLinked(LINK_THIS, 1011, message, "");
+}
+
 
 default
 {
     state_entry()
     {
-        sayDebug("state_entry with asset number="+assetNumber);
+        sayDebug("state_entry with asset number=\""+assetNumber+"\"");
         getPlayerRoles();
     }
 
@@ -122,106 +130,8 @@ default
         sayDebug("http_response message="+message);
         displayCentered("status "+(string)status);
         if (status == 200) {
-            if (myQueryStatus == 0) {
-                // The whole kitten kaboodle
-                
-            // body looks like 
-            // {"roles": 
-            //  {"inmate": 
-            //    {"P-40631": 
-            //      {"name": "Marmour Bovinecow", "start_date": "2019-07-17 03:00:00", "crime": "Identity Theft", "class": "orange", "shocks": "22"}}, 
-            //   "guard": {"G-90673": {"name": "Timberwoof Lupindo", "start_date": "2009-08-10 01:39:05", "rank": "Captain"}, 
-            //             "G-3631": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}, 
-            //   "medic": {"M-15981": {"name": "Melkor Schmerzlos", "start_date": "2019-07-17 17:49:15", "specialty": "Neurology"}, 
-            //             "M-9991": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}, 
-            //   "mechanic": {"X-1241": {"name": "LUP-8462", "start_date": "2015-02-01 11:16:15"}}}, 
-            // "_name_": "Timberwoof Lupindo", 
-            // "_start_date_": "2009-08-10 01:39:05"}
-            //
-            // keys: 
-            // roles - inmate mechanic medic guard
-            //  inmate - name, start_date, crime, class, shocks
-            //  guard - name, star_date
-            //  medic - name, start_date, specialty
-            //  mechanic - name, start_date
-            // _name_
-            // _start_date_
-            
-            //sayDebug("http_response got message from server: " + message);
-            
-            list list1 = llJson2List(message);
-            
-            // debug the first-level list
-            integer i;
-            sayDebug("------------------------------");
-            sayDebug("http_response first-level list");
-            for (i=0; i < llGetListLength(list1); i++){
-                string item = llList2String(list1,i);
-                //sayDebug("list1 item "+(string)i+":"+item);
-            }
-            
-            // find the canonical name: first find the _name_ key
-            integer nameIndex = llListFindList(list1, ["_name_"]);
-            if (nameIndex < 0) {
-                sayDebug("Error: did not find key _name_ in returned JSON");
-                displayCentered("Key Error");
-                return;
-                }
-            string nameInDB = llList2String(list1, nameIndex+1);
-            string ownerName = llKey2Name(llGetOwner());
-            if (nameInDB != ownerName) {
-                sayDebug("Error: returned name "+nameInDB+" did not match owner name "+ownerName);
-                displayCentered("Name Error");
-                return;
-                }
-            
-            // find the roles. 
-            integer rolesIndex = llListFindList(list1, ["roles"]);
-            list list2 = llJson2List(llList2String(list1, rolesIndex+1));
-            sayDebug("------------------------------");
-            sayDebug("http_response second-level list");
-            for (i=0; i < llGetListLength(list2); i=i+2){
-                string item = llList2String(list2,i);
-                list list3 = llJson2List(llList2String(list2,i+1));
-                sayDebug("raw list3:"+(string)list3);
-                
-                string assetNumber = llList2String(list3,0);
-                sayDebug("assetNumber="+assetNumber);
-                list list4 =llJson2List(llList2String(list3,1));
-                
-                integer j;
-                for (j = 0; j < llGetListLength(list4); j=j+2){
-                    string theKey = llList2String(list4,j);
-                    string theValue = llList2String(list4,j+1);
-                    sayDebug("Key:"+theKey+"="+theValue);
-                }
-                
-                name = getListThing(list4, "name");
-                start_date = getListThing(list4, "start_date");
-                
-                if (item == "inmate") {
-                    crime = getListThing(list4, "crime");
-                    class = getListThing(list4, "class");
-                    shocks = getListThing(list4, "shocks");
-                    sayDebug("inmate "+name+" "+assetNumber+" Class:"+class+" Crime:"+crime+" "+shocks+" shocks "+start_date);
-                } else if (item == "guard") {
-                    rank = getListThing(list4, "rank");
-                    sayDebug("guard "+rank+" "+name+" "+assetNumber+" "+start_date);
-                } else if (item == "medic") {
-                    specialty = getListThing(list4, "specialty");
-                    sayDebug("medic "+name+" "+specialty+" "+assetNumber+" "+start_date);
-                } else if (item == "mechanic") {
-                    sayDebug("mechanic "+name+" "+assetNumber+" "+start_date);
-                } else if (item == "robot") {
-                    sayDebug("robot "+name+" "+assetNumber+" "+start_date);
-                }
-                
-            } // end myQueryStatus = 0
-            
-            //getPlayerRoles();
-            }
-               
-            else if (myQueryStatus == 1) {
+              
+            if (myQueryStatus == "GetRoles") {
                 sayDebug("decode roles");
                 list theList = llJson2List(message);
                 if (llListFindList(theList, ["inmate"]) < 0) {
@@ -231,21 +141,21 @@ default
                }
             }
 
-            else if (myQueryStatus == 2) {
+            else if (myQueryStatus == "GetAssets") {
                 sayDebug("decode asset numbers");
                 list theList = llJson2List(message);
-                list assetList = [];
+                assetNumbers = [];
                 integer i;
                 for (i = 0; i < llGetListLength(theList); i = i + 2) {
-                    string assetNumber = llList2String(theList,i); // index tells which asset number to grab
-                    sayDebug("assetNumber:"+assetNumber);
-                    assetList = assetList + [assetNumber];
-                    llMessageLinked(LINK_THIS, 2000, assetNumber, "");
-                    getPlayerInmateKeys(assetNumber);
+                    string theAssetNumber = llList2String(theList,i); // index tells which asset number to grab
+                    sayDebug("theAssetNumber:"+theAssetNumber);
+                    assetNumbers = assetNumbers + [theAssetNumber];
+                    // now player must choose which asset
+                    sendAssetNumbers();
                 }
             }
             
-            else if (myQueryStatus == 3) {
+            else if (myQueryStatus == "GetAssetKeys") {
                 sayDebug("get list of asset keys");
                 list theList = llJson2List(message);
                 crime="";
@@ -271,7 +181,7 @@ default
                 }
             }
             
-            else if (myQueryStatus == 4) {
+            else if (myQueryStatus == "GetOneKey") {
                 sayDebug("get one asset key");
                 list list1 = llJson2List(message);
                 string theKey = llList2String(list1,0);
@@ -291,6 +201,9 @@ default
         if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
             getPlayerRoles();
+        } else if (num == 1013) {
+            sayDebug("link_message "+(string)num+" "+message);
+            getPlayerInmateKeys(message);
         }
     }
 }
