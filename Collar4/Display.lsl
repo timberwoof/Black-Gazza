@@ -247,6 +247,7 @@ default
 
     attach(key id)
     {
+        sayDebug("attach");
         if (id) {
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
             batteryLevel = 0;  // remove when we do "real" battery levels      
@@ -263,6 +264,13 @@ default
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
+        }
+        
+        // Asset Number
+        else if (num == 1013) {
+            sayDebug("link_message "+(string)num+" "+message);
+            assetNumber = message;
+            displayCentered(assetNumber);
         }
         
         // Prisoner Class sets text color and blinky 3
