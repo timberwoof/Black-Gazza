@@ -84,6 +84,7 @@ integer invert(integer boolie)
 }
 
 tempDisplay(string message) 
+// send the message to the alphanumeric Display
 {
     llMessageLinked(LINK_THIS, 2001, message, "");
 }
@@ -136,17 +137,15 @@ list menuRadioButton(string title, string match)
 // Menus and Handlers ****************
 
 mainMenu(key avatarKey) {
+    if (assetNumber == "Unknown") {
+        llMessageLinked(LINK_THIS, 2002, "", avatarKey);
+    }
+    
     if (menuAvatar != "" & menuAvatar != avatarKey) {
         llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
         sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
         return;
         }
-    
-    // Sometimes this happens, so fix it. 
-    // Respose won't come in time but it will be there for the next menu.
-    if (assetNumber == "Unknown") {
-         llMessageLinked(LINK_THIS, 2002, "Request", avatarKey);
-    }
     
     string message = "Main";
     list buttons = ["Info", "Settings", "Leash"]; // *** , "Hack" // not yet implemented
@@ -481,12 +480,11 @@ default
     {
         sayDebug("state_entry");
         menuAvatar = "";
-        theLocklevel = "Off";
-        llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
-        llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
-        
+        theLocklevel = "Off";        
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
+        llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
+        llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
     }
 
     touch_start(integer total_number)
@@ -521,8 +519,12 @@ default
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
-        tempDisplay(message);
         tone(channel);
+        if (llGetSubString(message,1,1) == " ") {
+            tempDisplay(messageButtonsTrimmed);
+        } else {
+            tempDisplay(message);
+        }    
 
         // reset the menu setup
         llListenRemove(menuListen);
@@ -550,9 +552,12 @@ default
         // Asset
         else if (menuIdentifier == "Asset") {
             sayDebug("listen: Asset:"+message);
-            assetNumber = message;
-            llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
-            llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
+            if (message != "OK") {
+                assetNumber = message;
+                // The wearer chose this asset number so transmit it and display it
+                llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
+                llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
+            }
         }
         
         // Mood
@@ -639,6 +644,5 @@ default
         llListenRemove(menuListen);
         menuListen = 0;   
         menuAvatar = "";
-        llMessageLinked(LINK_THIS, 2000, "", ""); // ask for database update
     }
 }
