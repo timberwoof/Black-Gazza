@@ -138,11 +138,7 @@ list menuRadioButton(string title, string match)
 
 mainMenu(key avatarKey) {
     if (assetNumber == "Unknown") {
-        llMessageLinked(LINK_THIS, 1012, "", avatarKey);
-    }
-    
-    if (prisonerCrime == "Unknown") {
-        llMessageLinked(LINK_THIS, 1000, "", avatarKey);
+        llMessageLinked(LINK_THIS, 2002, "", avatarKey);
     }
 
     if (menuAvatar != "" & menuAvatar != avatarKey) {
@@ -487,6 +483,8 @@ default
         theLocklevel = "Off";        
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
+        llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
+        llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
     }
 
     touch_start(integer total_number)
