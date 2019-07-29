@@ -140,7 +140,7 @@ mainMenu(key avatarKey) {
     if (assetNumber == "Unknown") {
         llMessageLinked(LINK_THIS, 2002, "", avatarKey);
     }
-    
+
     if (menuAvatar != "" & menuAvatar != avatarKey) {
         llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
         sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
