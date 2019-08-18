@@ -1396,4 +1396,272 @@ default
                 llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
             }else{
                 if(g_iChangedOwner){
+                    StatusUpdater( "failed,new_owner");
+                    i_sWearerNumber="E-9999";
+                    i_sWearerCrime="N/A";
+                    i_sWearerSentence="0";
+                   
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateName" + "=" + "E-9999", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateName" + "=" + "E-9999", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "OldName" + "=" + "[WAREDEN ERROR]", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "OldName" + "=" + "[WAREDEN ERROR]", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "DeviceName" + "=" + "E-9999"+"'s collar", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "DeviceName" + "=" + "E-9999"+"'s collar", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateTypeV" + "=0", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateTypeV" + "=0", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateThreatV" + "=0", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateThreatV" + "=0", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateType" + "=N/A", "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateType" + "=N/A", "");
+                    llMessageLinked(LINK_SAVE, LM_SETTING_SAVE, g_sGlobalToken + "InmateThreat" + "=N/A" , "");
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sGlobalToken + "InmateThreat" + "=N/A", "");
+                    
+                    string g_iCharacterSlot_Save="-1";
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_SAVE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"slotsave="+(string)g_iCharacterSlot_Save,"");
+                    llSleep(1.0);
+                    
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateType"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateTypeV"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateThreat"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateThreatV"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateSentence"+(string)g_iCharacterSlot_Save+"="+"0","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateCrime"+(string)g_iCharacterSlot_Save+"="+"N/A","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateName"+(string)g_iCharacterSlot_Save+"="+ "E-9999","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"OldName"+(string)g_iCharacterSlot_Save+"="+ "[WAREDEN ERROR]","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"InmateNumber"+(string)g_iCharacterSlot_Save+"="+"E-9999" ,"");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"DeviceName"+(string)g_iCharacterSlot_Save+"="+"E-9999"+"'s collar","");
+                    llMessageLinked(LINK_CHARACTER,CHARACTER_LM_SETTING_RESPONSE,g_sCharacterToken+"DeviceType"+(string)g_iCharacterSlot_Save+"="+"collar","");
+                    
+                    
+                }else{
+                    StatusUpdater( "failed");
+                }
+                llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=0", "");
+                if(g_iNew==0){
+                    g_iNew=1;
+                    g_iSlotSave=g_iSlotLoad;
+                    Database_Save();
+                }else
+                if(g_iNew==2){
+                    g_iSlotLoad=g_iSlotSave;
+                    g_iNew=3;
+                    g_iRequest=1;
+                    llSleep(1.0);
+                    Database_Read();
+                    
+                }else
+                if(g_iNew==3){
+                     if(g_iSilent==0)
+                     {
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Failed to access Black Gazza Correctional Facilities.", g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"It seams i cant manage to access the Black Gazza database. Please try again later.", g_kWearer);
+                     }
+                    if(iIgnoreCheckForUpdate){
+                        request_extra=llHTTPRequest(URL2+URL2_Get+(string)g_iSlotLoad,[],"");
+                    }else{
+                        request_update=llHTTPRequest(URL2+"getupdate.php?type="+g_sType,[],"");
+                    }
+                    llMessageLinked(LINK_SET, LM_SETTING_RESPONSE, g_sInmateToken + "checked" + "=1", "");
+                }else{
+                    if(g_iSilent==0)
+                    {
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"Failed to access Black Gazza Correctional Facilities.", g_kWearer);
+                        llMessageLinked(LINK_DIALOG,NOTIFY,"0"+"It seams i cant manage to access the Black Gazza database. Please try again later.", g_kWearer);
+                    }
+                }
+                
+            }
+            if(g_iSilent){
+             g_iSilent=0;
+            }
+            g_iChangedOwner=0;
+        }
+    }    
+    
+
+    
+    link_message(integer iSender, integer iNum, string sStr, key kID) {
+        if (iNum >= CMD_OWNER && iNum <= CMD_WEARER)
+        {
+             UserCommand(iNum,sStr,kID);
+        }  
+        else if (iNum == LM_SETTING_RESPONSE) {
+            
+            
+            list lParams = llParseString2List(sStr, ["="], []);
+            string sToken = llList2String(lParams, 0);
+            string sValue = llList2String(lParams, 1);
+            
+            if (llSubStringIndex(sToken,g_sGlobalToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sGlobalToken),-1);
+                
+
+                if (sToken =="BGV1")
+                {
+                    sLConVersion=sValue;
+                }else
+                if (sToken =="BGB")
+                {
+                    sLConBuild=sValue;
+                }else
+                if (sToken =="moodvalue")
+                {
+                    iMood=(integer)sValue;
+                    if(1<=iMood){
+                       Database_SaveExtra();
+                    }else{
+                        llHTTPRequest(URL2+"sendev.php?key="+(string)g_kWearer+"&dev="+(string)llGetKey()+"&type="+g_sType+"&ver="+sLConVersion+"&buid="+sLConBuild+"&mood="+(string)iMood+"&slot="+(string)g_iSlotSave+"&reg="+llGetRegionName()+"&user="+llEscapeURL(llKey2Name(g_kWearer)),[],"");
+                    }
+                }
+                else if (sToken =="InmateNumber")
+                {
+                    g_sWearerNumber = sValue;
+                }
+                else if (sToken == "InmateCrime")
+                {
+                    g_sWearerCrime = sValue;
+                }
+                else if (sToken =="InmateSentence")
+                {
+                    g_sWearerSentence = sValue;
+                }
+                else if (sToken =="InmateTypeV")
+                {
+                    g_sWearerInmateTypeV = sValue;
+                }
+                else if (sToken =="InmateThreatV")
+                {
+                    g_sWearerInmateThreatV = sValue;
+                }
+                else if (sToken =="InmateMugshot")
+                {
+                    g_sWearerInmateMugshot = sValue;
+                }
+                else if (sToken =="InmateType")
+                {
+                    g_sWearerInmateType = sValue;
+                }
+                else if (sToken =="InmateThreat")
+                {
+                    g_sWearerInmateThreat = sValue;
+                }
+                else if (sToken =="InmateName")
+                {
+                    g_sWearerInmateName = sValue;
+                }
+                else if (sToken =="InmateTrustee")
+                {
+                    g_sWearerInmateTrustee = sValue;
+                }
+                else if (sToken =="InmateSlot"){
+                    g_iSlotSave = (integer)sValue;
+                }
+                else if (sToken =="OldName")
+                {
+                    
+                }
+            }else
+            if (llSubStringIndex(sToken,g_sInmateToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sInmateToken),-1);
+                
+                if (sToken =="runload")
+                {
+                    if(1<=(integer)sValue&&(integer)sValue<=6){
+                        g_iSlotLoad=(integer)sValue;
+                        g_iSilent=0;
+                        g_iRequest=1;
+                        g_iNew=0;
+                        Database_Read();
+                    }
+                }
+                else if (sToken =="runsave")
+                {
+                     if(1<=(integer)sValue&&(integer)sValue<=6){
+                        g_iSlotSave=(integer)sValue;
+                        g_iNew=0;
+                        Database_Save();
+                    }
+                }
+            }else 
+            if (llSubStringIndex(sToken,g_sCharacterToken)==0){
+                sToken=llGetSubString(sToken,llStringLength(g_sCharacterToken),-1);
+                if (sToken =="slotsave")
+                {
+                    g_iSlotSave = (integer)sValue;
+                }
+            }
+        } else if (iNum == LINK_UPDATE) {
+            
+            if (sStr == "LINK_DIALOG") LINK_DIALOG = iSender;
+            else if (sStr == "LINK_SAVE") LINK_SAVE = iSender; 
+            else if (sStr == "LINK_CHARACTER") LINK_CHARACTER = iSender;
+            else if (sStr == "LINK_AUTH") LINK_AUTH = iSender;
+        } 
+       
+    }
+
+    timer(){
+        llSetTimerEvent(0);
+        if(TIME_MODE=="new"){
+            TIME_MODE="";
+            g_iSlotLoad=new_slot;
+            g_iRequest=1;
+            Database_Read();
+        }else
+        if(TIME_MODE=="build_start"){
+            g_kWearer=llGetOwner();
+            TIME_MODE="";
+            InmateTitleCommand(CMD_OWNER, "reset",g_kWearer);
+        }else
+        if(TIME_MODE=="generate"){
+            string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=";
+            if(g_iGenerated==1){
+                g_lCrimeRequest=[];
+                g_lCrimeRequest+= [llHTTPRequest(URL+(string)g_kWearer+"",[],"")];
+            }else
+            if(g_iGenerated>1&&g_iGenerated<=6){
+                string after=llGetSubString((string)g_kWearer,0,22);
+                string before=llGetSubString((string)g_kWearer,24,-1);
+                g_lCrimeRequest+= [llHTTPRequest(URL+after+(string)g_iGenerated+before+"",[],"")];
+            }
+            else{
+                llMessageLinked(LINK_SET,CMD_OWNER,"character load 1",g_kWearer);
+            }
+        }else
+        if(TIME_MODE=="indexing"){
+            string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=";
+            if(g_iIndexed==1){
+                g_lCrimeRequest=[];
+                g_lCrimeRequest+= [llHTTPRequest(URL+(string)g_kWearer+"",[],"")];
+            }else
+            if(g_iIndexed>1&&g_iIndexed<=6){
+                string after=llGetSubString((string)g_kWearer,0,22);
+                string before=llGetSubString((string)g_kWearer,24,-1);
+                g_lCrimeRequest+= [llHTTPRequest(URL+after+(string)g_iIndexed+before+"",[],"")];
+            }
+            
+        }
         
+    }
+    
+    listen(integer iChannel, string sName, key kID, string sStr) {
+        if (iChannel == SYNC_CHANNEL) {
+            list sync_message = llCSV2List(sStr);
+            if((llList2String(sync_message,0) == (string)g_kWearer||llList2String(sync_message,0) == "EVERYONE")&&llList2String(sync_message,1) == "BLACK GAZZA"||llList2String(sync_message,1) == "RESYNC"){
+                sync_message=[];
+                llMessageLinked(LINK_SET,BGCOLLAR_AUTORIZATION,"character refresh",g_kWearer);
+            }
+        }
+    }
+    
+    changed(integer iChange) {
+        if (iChange & CHANGED_OWNER) {
+            iIgnoreCheckForUpdate=0;
+            TIME_MODE="build_start";
+            llSetTimerEvent(5);
+        }
+    }
+    
+}
+
