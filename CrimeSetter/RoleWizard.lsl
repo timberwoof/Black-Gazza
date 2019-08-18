@@ -221,7 +221,7 @@ pickRole(key avatarKey, string message) {
         // https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate
         localState = "PickAsset";
         string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles/"+playerRole;
-        sayDebug("getRoles URL:"+URL);
+        sayDebug("pickRole URL:"+URL);
         databaseQuery = llHTTPRequest(URL, [], "");
         // -> presentAssets
         }
