@@ -46,6 +46,12 @@ key crimesRequest;
 vector red= <1.0, 0.0, 0.0>;
 integer run;
 
+
+debug(string message){
+    llWhisper(0,message);
+}
+
+
 string COLLAR_GIVER="e4833429-22d9-a1cc-2e08-90f6562e8830";
 string COLLAR_GIVER_OFFLINE="80e7148b-9a18-fe07-2476-fdbcebab5fce";
 integer FACE=3;
@@ -60,10 +66,12 @@ Database_Read(integer g_iSlotLoad ){
         string before=llGetSubString(character_key,24,-1);
         character_key="";
         string final_url = URL+URL_READ+after+(string)g_iSlotLoad+before+"";
+        debug("Database_Read "+(string)g_iSlotLoad+" "+final_url);
         crimeRequest= llHTTPRequest(final_url,[],"");    
     }else
     if(g_iSlotLoad==1){
         string final_url = URL+URL_READ+(string)user_key+"";
+        debug("Database_Read "+(string)g_iSlotLoad+" "+final_url);
         crimeRequest= llHTTPRequest(final_url,[],"");    
     }
 }
@@ -73,12 +81,15 @@ crimes_generate(integer iValue){
     if(iValue>1&&iValue<=6){
         string after=llGetSubString((string)INMATE_KEY,0,22);
         string before=llGetSubString((string)INMATE_KEY,24,-1);
-        crimesRequest= llHTTPRequest(URL+URL_READ+after+(string)iValue+before+"",[],"");
+        string final_url = URL+URL_READ+after+(string)iValue+before+"";
+        debug("crimes_generate "+(string)iValue+" "+final_url);
+        crimesRequest= llHTTPRequest(final_url,[],"");
     }else{
         llMessageLinked(LINK_SET,5,INMATE_RESULT,INMATE_KEY);
     }
 }
 UserComand(key sID, string msg){
+    debug("UserComand:"+msg);
     if(msg=="main"){
         iFailed=0;
         iSetInmate=0;
@@ -178,6 +189,7 @@ UserComand(key sID, string msg){
         }
     }
 }
+
 Generate(key sID, string sStr){
     user_key=sID;
     llListenRemove(listener);
@@ -187,11 +199,14 @@ Generate(key sID, string sStr){
     llSetTimerEvent(60.0);
     UserComand(user_key,sStr);
 }
+
 Database_Save(integer iSlot,string sMsg){
     if(iSlot==1){
         sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
         sMsg=llEscapeURL(sMsg);
-        llHTTPRequest(URL+URL_ADD+(string)user_key+"&name="+llKey2Name(user_key)+"&crime="+sMsg+"&sentence=0",[],"");
+        string final_url = URL+URL_ADD+(string)user_key+"&name="+llKey2Name(user_key)+"&crime="+sMsg+"&sentence=0";
+        debug("Database_Save "+(string)iSlot+" "+final_url);
+        llHTTPRequest(final_url,[],"");
     }else
     if(iSlot>1&&iSlot<=6){
         
@@ -201,7 +216,9 @@ Database_Save(integer iSlot,string sMsg){
         character_key="";
         sMsg = llDumpList2String(llParseStringKeepNulls((sMsg = "") + sMsg, [";"], []), ",");
         sMsg=llEscapeURL(sMsg);
-        llHTTPRequest(URL+URL_ADD+after+(string)iSlot+before+"&name="+llKey2Name(user_key)+"&crime="+sMsg+"&sentence=0",[],"");
+        string final_url = URL+URL_ADD+after+(string)iSlot+before+"&name="+llKey2Name(user_key)+"&crime="+sMsg+"&sentence=0";
+        debug("Database_Save "+(string)iSlot+" "+final_url);
+        llHTTPRequest(final_url,[],"");
     }else{
         
     }
@@ -215,6 +232,7 @@ Clean(){
     user_key=NULL_KEY;
     llSetTimerEvent(5.0);
 }
+
 integer Authentification(key sID){
     if(llSameGroup(sID)){
         return 1;
@@ -250,14 +268,18 @@ default
             llSetTimerEvent(TIMER);
             iMenu=0;
             kKey=NULL_KEY;
-            statusRequest= llHTTPRequest(URL+URL_READ+"937996d5-654e-4aee-92ef-7375970f1249"+"",[],"");
-        }else{
+        //    string funal_url = URL+URL_READ+"937996d5-654e-4aee-92ef-7375970f1249"+"";
+        //    debug("timer: "+funal_url);
+        //    statusRequest= llHTTPRequest(funal_url,[],"");
+        }else
              Clean();
-        }
+        //}
        
     }
     http_response(key request_id, integer status, list metadata, string body) {
+        debug("http_response ["+(string)status+"] ("+(string)metadata+")"+body);
         if (request_id == crimeRequest) {
+            debug("http_response crimeRequest");
             list inmate_data = llCSV2List(body); 
             string inmate_number = llList2String(inmate_data,4);
          
@@ -270,6 +292,7 @@ default
             }
         }
         if (request_id == crimesRequest) {
+            debug("http_response crimesRequest");
             
             list inmate_data = llCSV2List(body); 
             string inmate_number = llList2String(inmate_data,4);
@@ -295,6 +318,7 @@ default
             }
         }
         if (request_id == statusRequest) {
+            debug("http_response statusRequest");
             list inmate_data = llCSV2List(body); 
             string inmate_number = llList2String(inmate_data,4);
          
@@ -303,13 +327,13 @@ default
                 if(iMenu){
                     llMessageLinked(LINK_SET,2,"1",kKey);
                 }
-                llSetTexture(COLLAR_GIVER,FACE);
+                //llSetTexture(COLLAR_GIVER,FACE);
             }else{            
                 if(iMenu){
                     llMessageLinked(LINK_SET,2,"0",kKey);
                 }
                 llMessageLinked(LINK_SET,3,"0","");
-                llSetTexture(COLLAR_GIVER_OFFLINE,FACE);
+                //llSetTexture(COLLAR_GIVER_OFFLINE,FACE);
             }
             iMenu=0;
             kKey=NULL_KEY;
@@ -462,7 +486,9 @@ default
                   run=1;
                   INMATE_KEY=kID;
                   INMATE_RESULT="";
-                  crimesRequest= llHTTPRequest(URL+URL_READ+(string)INMATE_KEY+"",[],"");
+                  string final_url = URL+URL_READ+(string)INMATE_KEY+"";
+                  debug("link_message URL: "+final_url);
+                  crimesRequest= llHTTPRequest(final_url,[],"");
                 }else{
                     llMessageLinked(LINK_SET,5,"<ERROR>",kID);
                 }
@@ -472,10 +498,13 @@ default
         }
         
         if(iNum==1&&sStr=="check"){
+            debug("database presence check");
             llSetTimerEvent(TIMER);
             iMenu=1;
             kKey=kID;
-            statusRequest= llHTTPRequest(URL+URL_READ+"937996d5-654e-4aee-92ef-7375970f1249"+"",[],"");
+            string final_url = URL+URL_READ+"937996d5-654e-4aee-92ef-7375970f1249"+"";
+            debug("link_message URL: "+final_url);
+            statusRequest= llHTTPRequest(final_url,[],"");
         }
     }
     changed(integer iChange) {
