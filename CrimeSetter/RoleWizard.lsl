@@ -21,6 +21,102 @@
 
 integer OPTION_DEBUG = 1;
 
+// when description is "DEBUG", this sends messages to wearer for debugging
+string OFF = "off";
+string ON = "on";
+integer ERROR = 0;
+integer INFO = 1;
+integer DEBUG = 2;
+integer TRACE = 3;
+list logLevelS = ["error","info","debug","trace"];
+integer logLevel = 1; // 1 = info
+
+sayLog(integer level, string message) 
+{
+    if (level <= logLevel) {
+        llOwnerSay(llList2String(logLevelS,level)+": "+message);
+    }
+}
+
+string configurationNotecardName= "Black Gazza Database Access Secrets";
+
+list symbols;
+list values;
+
+integer line;
+key notecardQueryId;
+
+string getSymbol(string symbol)
+{
+    string result = "";
+    integer index = llListFindList(symbols,[llToLower(symbol)]);
+    if (index > -1)
+    {
+        result = llList2String(values, index);
+    }
+    else
+    {
+        sayLog(ERROR,"getSymbol could not find symbol "+symbol);
+    }
+    sayLog(TRACE,"getSymbol("+symbol+") returns "+result);
+    return result;
+}
+
+setSymbol(string symbol, string value)
+// It's a pain in the ass to maintain symbol-list initialization with two long lists,
+// so this adds them in sequence. 
+{
+    sayLog(TRACE,"setSymbol("+symbol+","+value+")");
+    integer index = llListFindList(symbols, [symbol]);
+    if (-1 == index)
+    {
+    symbols = symbols + [symbol];
+        sayLog(TRACE,"setSymbol adding symbol "+symbol);
+        index = llListFindList(symbols, [symbol]);
+    }
+    values = llListReplaceList(values, [value], index, index);
+}
+
+
+initializePart2(string data)
+// Called by notecard dataserver event.
+{
+    sayLog(TRACE,"initializePart2("+data+")");
+    if ((EOF != data) & (data != ""))
+    {
+        if(llSubStringIndex(data, "#") != 0)
+        {
+            integer i = llSubStringIndex(data, "=");
+            if(i != -1)
+            {
+                string name = llGetSubString(data, 0, i - 1);
+                string value = llGetSubString(data, i + 1, -1);
+                list temp = llParseString2List(name, [" "], []);
+                name = llDumpList2String(temp, " ");
+                name = llToLower(name);
+                temp = llParseString2List(value, [" "], []);
+                value = llDumpList2String(temp, " ");
+                
+                sayLog(TRACE,"initializePart2 setting "+name+" to "+value);
+                setSymbol(name, value);
+            }
+            else
+            {
+                sayLog(ERROR,"initializePart2 could not read line " + (string)line);
+            }
+        }
+        notecardQueryId = llGetNotecardLine(configurationNotecardName, ++line);
+    }
+    
+    if (EOF == data)
+    {
+        logLevel = llListFindList(logLevelS,[getSymbol("loglevel")]);
+        sayLog(DEBUG,"initializePart2 finished reading the configuration.");
+        return;
+    }
+}
+ 
+
 integer menuChannel = 0;
 integer menuListen = 0;
 string menuIdentifier;
@@ -171,7 +267,7 @@ getRoles(key avatarKey, string message){
     if (message == "Continue") {
         // retrieve existing character classes. 
         localState = "GetRoles";
-        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles";
+        string URL = getSymbol("databaseUrl")+"identity/"+(string)menuAvatar+"/roles";
         sayDebug("getRoles URL:"+URL);
         databaseQuery = llHTTPRequest(URL, [], "");
         // -> selectRole
@@ -220,7 +316,7 @@ pickRole(key avatarKey, string message) {
         // Player already has one of these roles, let them choose which or make new
         // https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate
         localState = "PickAsset";
-        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles/"+playerRole;
+        string URL = getSymbol("databaseUrl")+"identity/"+(string)menuAvatar+"/roles/"+playerRole;
         sayDebug("pickRole URL:"+URL);
         databaseQuery = llHTTPRequest(URL, [], "");
         // -> presentAssets
@@ -276,7 +372,7 @@ pickAsset(key avatarKey, string message) {
         // Player already has one of these roles, let them choose which or make new
         // https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate/P-60361
         localState = "EditCreateAsset";
-        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar+"/roles/"+playerRole+"/"+message;
+        string URL = getSymbol("databaseUrl")+"identity/"+(string)menuAvatar+"/roles/"+playerRole+"/"+message;
         sayDebug("getRoles URL:"+URL);
         databaseQuery = llHTTPRequest(URL, [], "");
         // -> presentAssets
@@ -462,7 +558,7 @@ string generateUpsertJson() {
 registerPlayer(key avatarKey) {
     string json = generateUpsertJson();
     sayDebug("registerPlayer json:"+json);
-    string URL = "https://api.blackgazza.com/identity/"+(string)avatarKey;
+    string URL = getSymbol("databaseUrl")+"identity/"+(string)avatarKey;
     sayDebug("registerPlayer POST URL:"+URL);
     databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
 }
@@ -470,7 +566,7 @@ registerPlayer(key avatarKey) {
 registerRole(key avatarKey, string playerRole) {
     string json = generateUpsertJson();
     sayDebug("registerRole json:"+json);
-    string URL = "https://api.blackgazza.com/identity/"+(string)avatarKey+"/role/"+playerRole;
+    string URL = getSymbol("databaseUrl")+"identity/"+(string)avatarKey+"/role/"+playerRole;
     sayDebug("registerRole POST URL:"+URL);
     databaseQuery = llHTTPRequest(URL,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/json"], json);
 }
@@ -480,12 +576,38 @@ default
     state_entry()
     {
         sayDebug("state_entry");
+        
+        setSymbol("loglevel","debug");
+        setSymbol("databaseUrl","http://bitbucket.com");
+
         textBoxParameter = "";
         // compose the role key values list. 
         RoleKeyValues = ["class"] + PrisonerClasses + ["***class"] +
             ["threat"] + PrisonerThreatLevels + ["***threat"] +
             ["rank"] + Ranks + ["***rank"] +
             ["specialty"] + MedicalSpecialties + ["***specialty"] ;
+
+        if(llGetInventoryType(configurationNotecardName) != INVENTORY_NOTECARD)
+        {
+            sayLog(ERROR, "Missing inventory notecard: "+configurationNotecardName);
+            llSetTimerEvent(1);
+            sayLog(DEBUG,"initializePart1 done. Using default settings.");    
+        }
+        else
+        {
+            line = 0;
+            notecardQueryId = llGetNotecardLine(configurationNotecardName, line);
+            sayLog(INFO,"Reading configuration notecard.");
+        }
+
+    }
+
+    dataserver(key request_id, string data)
+    {
+        if(request_id == notecardQueryId)
+        {
+            initializePart2(data);
+        }
     }
 
     touch_start(integer total_number)
@@ -501,8 +623,7 @@ default
         //}
 
         localState = "Touch";
-        string URL = "https://api.blackgazza.com/identity/"+(string)menuAvatar;
-        sayDebug("touch_start URL:"+URL);
+        string URL = getSymbol("databaseUrl")+"identity/"+(string)menuAvatar;
         databaseQuery = llHTTPRequest(URL, [], "");
     }
     
