@@ -207,6 +207,19 @@ string class2Description(string class) {
     return llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
 }
 
+string batteryGraph(string batteryLevel) {
+    integer iBattery = (integer)batteryLevel / 10;
+    integer i;
+    string graph = "";
+    for (i=0; i<iBattery; i++) {
+        graph = graph + "◼";
+    }
+    for (; i<10; i++) {
+        graph = graph + "◻";
+    }
+    return graph;
+}
+
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string message = "\n------------------\nPrisoner Information \n" +
@@ -229,7 +242,7 @@ infoGive(key avatarKey){
         "Threat: " + restricted + "\n" +
         "Zap Levels: " + restricted + "\n"; 
     }
-    message = message + "Battery Level: " + batteryLevel + "% \n";
+    message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
     message = message + "------------------\nOOC Information:\n";
     message = message + "Mood: " + ICOOCMood + "\n";
     if (rlvPresent) {
