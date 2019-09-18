@@ -140,7 +140,7 @@ mainMenu(key avatarKey) {
     if (assetNumber == "Unknown") {
         llMessageLinked(LINK_THIS, 2002, "", avatarKey);
     }
-
+    
     if (menuAvatar != "" & menuAvatar != avatarKey) {
         llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
         sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
@@ -209,25 +209,34 @@ string class2Description(string class) {
 
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
-    string ZapLevels = "";
-    ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
-    menuCheckbox("Medium", allowZapMed) +  "  " +
-    menuCheckbox("High", allowZapHigh);
-
-    string message = "Prisoner Information \n"+
-    "Number: " + assetNumber + "\n" +
-    "Crime: " + prisonerCrime + "\n" +
-    "Class: " + prisonerClass + ": "+class2Description(prisonerClass)+"\n" +
-    "Threat: " + threatLevel + "\n" +
-    "Zap Levels: " + ZapLevels + "\n"; 
-    
-    if (rlvPresent) {
-        message = message + "RLV Restriction: " + theLocklevel + "\n";
+    string message = "\n------------------\nPrisoner Information \n" +
+    "Number: " + assetNumber + "\n";
+    if (!llSameGroup(avatarKey) || avatarKey == llGetOwner()) {
+        string ZapLevels = "";
+        ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
+        menuCheckbox("Medium", allowZapMed) +  "  " +
+        menuCheckbox("High", allowZapHigh);
+        message = message + 
+        "Crime: " + prisonerCrime + "\n" +
+        "Class: "+class2Description(prisonerClass)+"\n" +
+        "Threat: " + threatLevel + "\n" +
+        "Zap Levels: " + ZapLevels + "\n"; 
     } else {
-        message = message + "RLV is not detected.\n";
+        string restricted = "RESTRICTED INFO";
+        message = message + 
+        "Crime: " + restricted + "\n" +
+        "Class: "+restricted+"\n" +
+        "Threat: " + restricted + "\n" +
+        "Zap Levels: " + restricted + "\n"; 
     }
-    message = message + "Battery Level: " + batteryLevel + "% \n" +
-    "Mood: " + ICOOCMood + "\n";
+    message = message + "Battery Level: " + batteryLevel + "% \n";
+    message = message + "------------------\nOOC Information:\n";
+    message = message + "Mood: " + ICOOCMood + "\n";
+    if (rlvPresent) {
+        message = message + "RLV: " + theLocklevel + "\n";
+    } else {
+        message = message + "RLV: not detected.\n";
+    }
     
     // Prepare a list of documents to hand out 
     list buttons = []; 
