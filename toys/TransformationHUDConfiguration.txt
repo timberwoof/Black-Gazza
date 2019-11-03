@@ -1,0 +1,189 @@
+# TWL's Transformation HUD configuration
+
+# Introduction
+# This note-card configures and explains the features of  TWL's Transformation HUD.
+# Author: Timberwoof Lupindo
+
+# The name of this note card must be "TWL's Transformation HUD configuration".
+# Lines beginning with # are ignored by the HUD but take time to process, about 33 seconds. 
+# Make a backup copy of this notecard. 
+# Once you have the configuration how you want it, delete all the lines that begin with #. 
+
+# The HUD uses RLV to do the transformation. RLV in the viewer must be on for it to work.
+# Attach the hud. It should be white. Depending on the logging level, it will tell you its state. 
+# The HUD changes images and colors depending on what it will do. 
+# If it shows a werewolf, you will transform to a were.
+# If it shows a statue, you will transform into stone. 
+# White: starting up.
+# Red: you have transformed into your were form. 
+# Orange: you are transforming. 
+# Yellow: Armed and ready.
+# Green: tou are transformed into your flesh form. 
+# Blue: you have transformed into your stone form. 
+# While "armed" you can click it to cancel it. It will then reread this configuration note-card. 
+# While you are transformed into werewolf or statue, you cannot cancel it. 
+# You have to wait until you are once again in your flesh form. 
+
+# triggermode can be seen, unseen, day, or night. 
+# Set this the way you want it to work. 
+# seen means that you will transform when someone one is looking at you.
+# unseen means that you will transform when no one is looking at you.
+# day means you will transform when the sun comes up (the mooon sets).
+# night means you will transform when the sun goes down (the moon comes out). 
+triggermode=day
+
+# transform can be stone or were. Set this the way you want it to work. 
+# This option gives the name of the folder whose contents you will transform to.  
+# If you are using the stgargoyle folders, use stone or were
+transforminto=were
+
+# By default, this HUD uses the same folder as the Gargoyle and Were HUD, #RLV/~stgargoyle. 
+# If you have already set that up, then you're good to go. 
+# If you want this HUD to use a different folder, set the name here.
+# You need to set up these folders: 
+# #RLV/~stgargoyle/flesh
+# #RLV/~stgargoyle/stone
+# #RLV/~stgargoyle/were
+rlvfolder=stgargoyle
+
+# loglevel can be set to error, info, debug, or trace. 
+# Only log messages of the set level or higher are displayed. 
+# info is useful but not necessary.  When set  to error, only errors are displayed. 
+# If something is going weird with the HUD, set this to info or debug; it will tell you a lot about what it's doing. 
+# When reporting a bug, log information is useful. The log will be sent only to you; it will not spam everyone else. 
+loglevel=debug 
+
+# restrict can be on or off. This is usually on for stone, off for were.
+# on means that a stone statue cannot move. You will strike a pose randomly chosen from the ones in the HUD.
+restrict=off
+
+# pose can be none, any, or a specific name. It sets your pose when you are stone. 
+# If pose is none, then your AO will set your movements. 
+# If pose is any, then one of the animations in this HUD will be chosen randomly for you.
+# If pose is the name of a specific pose, then you will take on that animation. 
+pose=any
+
+# rlv can be on or off.  When on, and you are transformed, RLV restrictions are in place: 
+# @chatshout=n,chatnormal=n,fly=n,tploc=n,tplure_sec=n,emote=add,sendchat=n
+# @remattach=n,addattach=n,remoutfit=n,addoutfit=n,tploc=n
+# @rez=n,showinv=n,fartouch=n,touchall=n,touchattach=n,touchworld=n
+
+# You can set this on or off. This is usually on. 
+rlv=on
+
+# transform can be on or off.
+# You can set this on or off. This is usually on. This is the main point of the HUD, right? 
+transform=on
+
+# plinth can be off or a location coded like region/128/128/20
+# If it is set to a location, you will be teleported there when you transform. 
+# You must set this to your own plinth location. 
+# (If you're a werewolf, this could be inside your cage.) 
+# If the sim contains a telehub, you will land there instead of the desired point.
+plinth=Black Gazza/218/44/36
+# plinthangle is degrees counterclockwise from north.
+plinthrotation=0
+
+# beetlejuice can be a phrase which, repeated three times will summon you if you are not on a plinth.
+# When you hear someone say "<yourname> <yourname> <yourname>" you will teleport to them.
+# If they are more than 20 meters away, they have to shout. 
+# If they are more than 100 meters away, it won't work.
+# If the region has a telehub, you will be sent there instead of near them.
+beetlejuice=<yourname>
+
+# The following options are for the day or night trigger mode.
+
+# sunangle sets the duration you will be transformed.
+# 0 is the horizon;  1 is the zenith or nadir. 
+# If trigger mode is day, the sun must be at least this much higher than the horizon. 
+# 0 would be sunrise and sunset. 
+# .5 would be 9 am to 3 pm. 
+# If trigger mode is night, the sun must be at least this much lower than the horizon. 
+# 0 would be sunrise and sunset. 
+# .5 would be 9 pm to 3 am. 
+sunangle=0.1
+
+# The following options are for the unseen mode. 
+
+# seated can be on or off. Off means that seated avatars will not trigger you. 
+# Having a statue or someone who's not moving trigger you to become a statue can be annoying. 
+# SL can detect the relative angle of the prim the avatar is sitting on, but not the avatar. 
+# That makes it difficult to reliably determine where the avatar is looking. 
+# So statue transformations are rarely according to what you'd expect. 
+# This is usually off. 
+seated=off
+
+# sensorradius sets how close someone must be to "see" you.
+# Only people within this distance from you will trigger the HUD. 
+# It's not very playable to have anyone in the SIM trigger your transformation. 
+# A good value to start with is 10. 
+sensorradius=10
+
+# sensorrate is how often the sensor runs. 
+# Sensors are a drain on sim resources and people don't move very fast, 
+# so 2 seems to be a good compromise. 
+sensorrate=2
+
+# continuousLookThreshold is the number of sensor cycles that someone
+# must have been looking at you for you to transform. 
+# SL cannot instantaneously pop you back and forth between states
+# the way it worked in the Dr. Who episodes, so this adds a bit of hysteresis. 
+# With a sensorrate of 2 and a threshold of 4, that's about 8 seconds. 
+# That means someone has to look at you (or not) for 8 seconds before you transform.
+continuousLookThreshold=4
+
+# angleThreshold is half the assumed field of view of an avatar, in radians. 
+# If you are within that angle of the avatar's line of sight, the avatar can "see you" and you transform. 
+# 0 is straight ahead; 3.1 (Pi) is behind them. .5 is about 30° to the left or right of them. 
+# A smaller number means they have to be looking more accurately; 
+# a larger number means more general direction. 
+# A good value to start with is 0.5 
+angleThreshold=0.5
+
+# Presets:
+# The following are examples of how to set up this HUD. 
+# Uncomment all the settings lines in any of these sections. 
+
+# Gargoyle:  During the day you transform into a statue. 
+# triggermode=day
+# transforminto=stone
+# when=day
+# howlong=3.0
+# restrict=on
+# rlv=on
+# Optionally add a Plinth you return to. 
+
+# Weeping Angel:
+# When no one is looking, you transform into your Flesh form and can move about freely. 
+# When someone looks at you, you transform into a statue and are frozen until they stop looking. 
+# triggermode=seen
+# transforminto=stone
+# restrict=on
+# rlv=on
+
+# Werewolf: 
+# During the day, you transform into your flesh form. 
+# At night, you transform into your were form. 
+# triggermode=night
+# transforminto=were
+# howlong=1.0
+# restrict=off
+# rlv=on
+
+# Unseen Werewolf: 
+# When someone looks at you, you transform into your flesh form. 
+# When no one is looking at you, you transform into your were form. 
+# triggermode=unseen
+# transforminto=were
+# restrict=off
+# rlv=on
+
+# Beetlejuice:
+# When someone speaks your name three times wihtin your hearing,
+# you are transported to them. 
+# transform=off
+# rlv=off 
+# beetlejuice=Beetlejuice
+
+# The initializer must fetch and process every line of this note card. 
+# Once you have this set up, copy this for a backup, then edit to remove all # lines. 
