@@ -38,7 +38,7 @@ float PANEL_TEXTURE_ROTATION = 0.0;//-1.0*PI_BY_TWO;
 // Physical Sizes
 vector LEAF_SCALE = <0.83, 0.46, 0.933>;
 float CLOSE_FACTOR = 0.0;
-float OPEN_FACTOR = 3.9; // plus or minus
+float OPEN_FACTOR = 0.80; // plus or minus
 float ZOFFSET_FACTOR = -0.024;
 
 // colors
@@ -481,7 +481,7 @@ default
         // get  the size of the door frame and calculate the sizes of the leaves
         vector frameSize = llGetScale( );
         vector leafsize = <frameSize.x * LEAF_SCALE.x, frameSize.y * LEAF_SCALE.y, frameSize.z * LEAF_SCALE.z>; 
-        fwidth = frameSize.y;
+        fwidth = frameSize.x;
         fclose = fwidth * CLOSE_FACTOR;
         fopen = fwidth * OPEN_FACTOR;
         fdelta = .10;
@@ -528,11 +528,10 @@ default
 
     touch_start(integer total_number)
     {
-            integer touchedLink = llDetectedLinkNumber(0);
-            integer touchedFace = llDetectedTouchFace(0);
-            vector touchedUV = llDetectedTouchUV(0);
-            llSay(0, "Link "+(string)touchedLink+", Face "+(string)touchedFace+", UV "+(string)touchedUV);
-        debug("touch_start face "+(string)llDetectedTouchFace(0));
+        integer touchedLink = llDetectedLinkNumber(0);
+        integer touchedFace = llDetectedTouchFace(0);
+        vector touchedUV = llDetectedTouchUV(0);
+        debug("touch_start link "+(string)touchedLink+", face "+(string)touchedFace+", UV "+(string)touchedUV);
         if (OPTION_BUTTON & llDetectedTouchFace(0) == FACE_PANEL_1)
         {
             toggleDoor(checkAuthorization(llDetectedKey(0)), 0);
