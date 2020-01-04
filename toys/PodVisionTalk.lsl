@@ -1,4 +1,5 @@
 // PodVisionTalk.lsl
+// Companion to HiveMindRepeater.lsl
 // Timberwoof Lupindo
 // forces eyepoint of people who sit in an MD Pod to match their avatar
 // enables speech between pod prisoners
@@ -20,7 +21,7 @@ key avatar;
 
 // system variables
 integer hiveTalkChannel = 77683945; // this script causes avatar /0 to resend on this channel
-integer hiveHearChannel = 77683950; // thss script listens on this channel & repeats to avatar
+integer hiveHearChannel = 77683950; // this script listens on this channel & repeats to avatar
 integer hiveHearListen = 0;
 
 
