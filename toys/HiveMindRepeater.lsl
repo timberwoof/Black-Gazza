@@ -5,8 +5,8 @@
 // enables speech between pod prisoners
 
 // HiveTalk constants and variables
-integer hiveTalkChannel = -77683945; // avatars talk & resend; this scriopt listens  on this channel
-integer hiveHearChannel = -77683950; // this script talks; pod scripts listen & tell avatars on this channel
+integer hiveTalkChannel = 77683945; // avatars talk & resend; this scriopt listens  on this channel
+integer hiveHearChannel = 77683950; // this script talks; pod scripts listen & tell avatars on this channel
 integer hiveTalkListen = 0;
 
 default
