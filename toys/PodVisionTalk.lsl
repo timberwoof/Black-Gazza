@@ -1,20 +1,28 @@
+// PodVisionTalk.lsl
+// Timberwoof Lupindo
+// forces eyepoint of people who sit in an MD Pod to match their avatar
+// enables speech between pod prisoners
 
+// rlv notes
 // llRegionSayTo(targetUUID, -1812221819, (string)targetUUID+",@getinvworn:Folder=2225");
 // The relay message must be "ping,<object_uuid>,ping,ping" 
 // and the object message must be "ping,<user_uuid>,!pong". 
 
-integer RLVRelayPresent = 0;
+// rlv constants and variables
 integer RLVRelayChannel = -1812221819;
+integer RLVRelayPresent = 0;
 integer RLVStatusListen = 0;
 integer haveAnimatePermissions = 0;
+list rlvCommands = [];
+
 integer OPTION_DEBUG = 1;
 key avatar;
 
-integer hiveTalkChannel = 77683945; // avatars talk & resend
-integer hiveHearChannel = 77683950; // avatars listen & tell avatars
+// system variables
+integer hiveTalkChannel = 77683945; // this script causes avatar /0 to resend on this channel
+integer hiveHearChannel = 77683950; // thss script listens on this channel & repeats to avatar
 integer hiveHearListen = 0;
 
-list rlvCommands = [];
 
 // adds "command:parameter=n" to the rlvCommands list. 
 // use: rlvCommands = addRLVCommand("command","parameter")
@@ -27,6 +35,8 @@ addRLVCommand(string command, string parameter) {
     rlvCommands = rlvCommands + [completeCommand];
 }
 
+// builds a single RLV command string from the accumulated rlvCommands list
+// clears the list
 string makeRLVCommand(string tag, key avatar) {
     string result = tag + "," + (string)avatar + ",";
     string bar = "";
@@ -35,6 +45,7 @@ string makeRLVCommand(string tag, key avatar) {
         result = result + bar + "@" + llList2String(rlvCommands,i);
         bar = "|";
     }
+    rlvCommands = [];
     return result;
 }
 
@@ -46,6 +57,7 @@ sayDebug(string message)
     }
 }
 
+// rlv relay status query 
 checkRLVRelay() {
     sayDebug("checkRLVRelay");
     // message  ::= <cmd_name>,<user_uuid>,<list_of_commands>
@@ -55,6 +67,13 @@ checkRLVRelay() {
     llSetTimerEvent(30); 
 }
 
+// On: 
+// builds a list of of RLV settings, makes a commmand string, sends it to the relay
+// sends a "someone joined" message to the hive controller
+// Off:
+// !release
+// Pong:
+// !pong
 sendRLVRestrictCommand(string level) {
     sayDebug("sendRLVRestrictCommand("+level+")");
     if (RLVRelayPresent == 1) {
@@ -63,7 +82,7 @@ sendRLVRestrictCommand(string level) {
             //addRLVCommand("camdistmin","1"); // gets set
             //addRLVCommand("camunlock",""); // gets set
             //addRLVCommand("camzoommax","0.1"); // gets set
-            addRLVCommand("redirchat",(string)hiveTalkChannel);
+            addRLVCommand("redirchat",(string)hiveTalkChannel); // works
             //addRLVCommand("camdrawmin","1");
             //addRLVCommand("camdrawmax","10");
             //addRLVCommand("camdrawalphamin","0.1");
@@ -98,10 +117,12 @@ default
     state_entry()
     {
         RLVRelayPresent = 0;
+        // set the cryopod eyepoint
         //llSetCameraEyeOffset(<0.0, 0.0, 0.87>); // where the camera is
         //llSetCameraAtOffset(<0.0, -5.0, 0.87>); // where it's looking
-        llSetCameraEyeOffset(<0.0, 0.0, 0.0>); // where the camera is
-        llSetCameraAtOffset(<0.0, 0.0, 0.0>); // where it's looking
+        // clear any eyepoint
+        //llSetCameraEyeOffset(<0.0, 0.0, 0.0>); // where the camera is
+        //llSetCameraAtOffset(<0.0, 0.0, 0.0>); // where it's looking
     }
 
     // when someone sits on this
@@ -110,16 +131,23 @@ default
         if (change & CHANGED_LINK) 
         {
             key sittingAvatar = llAvatarOnSitTarget();
-            sayDebug("changed CHANGED_LINK");
             if (sittingAvatar != NULL_KEY) {
+                // someone sat on the pod, so
+                // set up RLV and hive listens, 
+                // check relay
                 avatar = sittingAvatar;
-                sayDebug("The number of links has changed.");
+                sayDebug("changed CHANGED_LINK sittingAvatar != NULL_KEY");
                 RLVRelayPresent = 0;
                 RLVStatusListen = llListen(RLVRelayChannel, "", "", "");
                 hiveHearListen = llListen(hiveHearChannel, "", "", "");
                 checkRLVRelay();
             } else {
+                // someone stood up, so
+                // clear RLV
+                // turn off listens
+                sayDebug("changed CHANGED_LINK sittingAvatar = NULL_KEY");
                 sendRLVRestrictCommand("Off");
+                llListenRemove(hiveHearListen);
                 avatar = NULL_KEY;
             }
         }    
@@ -146,6 +174,10 @@ default
                 sayDebug("got RLV ping");
                 RLVRelayPresent = 1;
                 sendRLVRestrictCommand("Pong");
+            }
+            if (cmdName == "Off") {
+                llListenRemove(RLVStatusListen);
+                RLVRelayPresent = 0;
             }
         }
         
