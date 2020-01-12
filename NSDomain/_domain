@@ -2,20 +2,20 @@ name BlackGazza
  
 organization Black Gazza
  
-candidates group 00000000-0000-0000-0000-000000000000
+candidates group ce9356ec-47b1-5690-d759-04d8c8921476
  
-admin 00000000-0000-0000-0000-000000000000 someperson
+admin 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
  
-role BGGuard
-prefix Guard
-policy-file bg-guard
+role BGCyborg
+prefix Cyborg
+policy-file bg-cyborg
 member 00000000-0000-0000-0000-000000000000 someperson
- 
-role BGMedic
-prefix Medic
-policy-file bg-medic
+
+role BGRobot
+prefix Robot
+policy-file bg-robot
 member 00000000-0000-0000-0000-000000000000 someperson
- 
+
 role BGInmate
 prefix Inmate
 flags NO_SELF
