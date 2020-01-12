@@ -1,38 +1,52 @@
+# the name of the domain (no spaces)
 name BlackGazza
- 
+
+# name of the organization
 organization Black Gazza
- 
-candidates group ce9356ec-47b1-5690-d759-04d8c8921476
- 
+
+# candidates must be one of: 'private', 'group <id>', or 'public'
+#candidates private
+#candidates public
+#candidates group <key>
+candidates public
+#candidates group ce9356ec-47b1-5690-d759-04d8c8921476
+
+# domain admins (in addition to the server object's owner)
 admin 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
- 
+
 role PodPrisonCaretaker
 prefix Care
 flags USERS_POOL MANAGE_SELF
 policy-file bg-pod-caretaker
-member 00000000-0000-0000-0000-000000000000 someperson
+manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGCyborg
-prefix Cyborg
+prefix Cyb
 policy-file bg-cyborg
 flags USERS_POOL MANAGE_SELF
-member 00000000-0000-0000-0000-000000000000 someperson
+manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGRobot
-prefix Robot
+prefix Rob
 policy-file bg-robot
 flags USERS_POOL MANAGE_SELF
-member 00000000-0000-0000-0000-000000000000 someperson
+manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGInmate
-prefix Inmate
+prefix P
 flags NO_SELF LOCK_USERS
 policy-file bg-inmate
-member 00000000-0000-0000-0000-000000000000 someperson
- 
-role Pod
-prefix Prisoner
+manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#member 00000000-0000-0000-0000-000000000000 someperson
+
+role PodPrisoner
+prefix Pod
 flags NO_SELF LOCK_USERS
 policy-file bg-pod-prisoner
-member 00000000-0000-0000-0000-000000000000 someperson
+manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#member 00000000-0000-0000-0000-000000000000 someperson
 
+# add more roles by copying the role section above
