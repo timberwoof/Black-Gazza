@@ -1,0 +1,13 @@
+Black Gazza NS Domain Server Policies
+
+Joining an NS Domain relinquishes control of your NS Controller to Black Gazza authorities. That includes everyone above you in the hierarchy. Joining any NS Domain has the side effect of deleting your previous access lists. 
+
+Out-Of-Character, you consent to join the Black Gazza NS Domain in the role of your choosing. You consent to experience the autonomy limitations imposed by the role you select. Your role will not be changed without your consent. Your profile will not be changed without your consent. Some roles permit you to leave the Black Gazza Domain at any time. Some roles are configured with NO_SELF, which means that you will not be able to manage your own NS Implant. Some roles are configured with USERS_POOL, which grants level 0 access to other members of your group. Some roles are configured with LOCK_USERS which means your user list is managed by the domain. 
+
+Out-Of-Character, you may quit Black Gazza at any time. You may quit your NS-controlled role within Black Gazza any time. You may revert your controller to a backup copy any time. No harm; no foul. 
+
+Out-Of-Character, Black Gazza personnel will not inflict scenes on you to which you do not consent. You are encouraged to write clear prohibitions in your character sheet. If you write “Anything goes,” then when something happens to you that you did not like, do not complain. Grow up and get over it. 
+
+Timberwoof Lupindo
+Domain Administrator
+2020-01-12
