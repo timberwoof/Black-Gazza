@@ -27,3 +27,8 @@ prefix Prisoner
 flags NO_SELF
 policy-file bg-pod-prisoner
 member 00000000-0000-0000-0000-000000000000 someperson
+
+role PodPrisonCaretaker
+prefix Care
+policy-file bg-pod-caretaker
+member 00000000-0000-0000-0000-000000000000 someperson
