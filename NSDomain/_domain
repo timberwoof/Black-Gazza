@@ -1,0 +1,29 @@
+name BlackGazza
+ 
+organization Black Gazza
+ 
+candidates group 00000000-0000-0000-0000-000000000000
+ 
+admin 00000000-0000-0000-0000-000000000000 someperson
+ 
+role BGGuard
+prefix Guard
+policy-file bg-guard
+member 00000000-0000-0000-0000-000000000000 someperson
+ 
+role BGMedic
+prefix Medic
+policy-file bg-medic
+member 00000000-0000-0000-0000-000000000000 someperson
+ 
+role BGInmate
+prefix Inmate
+flags NO_SELF
+policy-file bg-inmate
+member 00000000-0000-0000-0000-000000000000 someperson
+ 
+role Pod
+prefix Prisoner
+flags NO_SELF
+policy-file bg-pod-prisoner
+member 00000000-0000-0000-0000-000000000000 someperson
