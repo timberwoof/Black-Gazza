@@ -984,7 +984,7 @@ default {
         // if it's the door panel, maybe open the door
         if ((llDetectedLinkNumber(0) == PRIM_DOOR_1) && (llDetectedTouchFace(0) == FACE_DOOR_1))
         {
-            open(checkAuthorization(llDetectedKey(0)), 0);
+            toggleDoor(checkAuthorization(llDetectedKey(0)), 0);
         }
         // if it's the control panel, maybe give the menu
         else if((llDetectedLinkNumber(0) == PRIM_PANEL_1) &&  (llDetectedTouchFace(0) == FACE_PANEL_1))
