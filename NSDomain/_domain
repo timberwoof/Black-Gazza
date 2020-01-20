@@ -9,44 +9,48 @@ organization Black Gazza
 #candidates public
 #candidates group <key>
 candidates public
+prefix Candidate
 #candidates group ce9356ec-47b1-5690-d759-04d8c8921476
 
 # domain admins (in addition to the server object's owner)
 admin 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+prefix Admin
 
-role PodPrisonCaretaker
-prefix Care
+role Dynatic
+prefix Dyn
 flags USERS_POOL MANAGE_SELF
 policy-file bg-pod-caretaker
-manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGCyborg
-prefix Cyb
+prefix BGCyb
 policy-file bg-cyborg
 flags USERS_POOL MANAGE_SELF
-manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
+member 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 
 role BGRobot
-prefix Rob
+prefix BGRob
 policy-file bg-robot
 flags USERS_POOL MANAGE_SELF
-manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGInmate
-prefix P
+prefix BGP
 flags NO_SELF LOCK_USERS
 policy-file bg-inmate
-manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
+member a0b132a9-733b-441b-990b-1e1dff8c04ab brilovegood p-64298
 
 role PodPrisoner
-prefix Pod
+prefix PodP
 flags NO_SELF LOCK_USERS
 policy-file bg-pod-prisoner
-manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
+#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 
 # add more roles by copying the role section above
