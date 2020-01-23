@@ -14,20 +14,18 @@ prefix Candidate
 
 # domain admins (in addition to the server object's owner)
 admin 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
-prefix Admin
+admin 7b9cc7c2-3711-4d28-8589-dbee23b0e77e baktrak resident
 
 role Dynatic
 prefix Dyn
 flags USERS_POOL MANAGE_SELF
 policy-file bg-pod-caretaker
-#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 
 role BGCyborg
 prefix BGCyb
 policy-file bg-cyborg
 flags USERS_POOL MANAGE_SELF
-#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 member 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 
@@ -35,14 +33,13 @@ role BGRobot
 prefix BGRob
 policy-file bg-robot
 flags USERS_POOL MANAGE_SELF
-#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
+member f661391a-85fb-43b2-96d4-00b5214fcab8 Nul Neox
 
 role BGInmate
 prefix BGP
 flags NO_SELF LOCK_USERS
 policy-file bg-inmate
-#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 member a0b132a9-733b-441b-990b-1e1dff8c04ab brilovegood p-64298
 
@@ -50,7 +47,6 @@ role PodPrisoner
 prefix PodP
 flags NO_SELF LOCK_USERS
 policy-file bg-pod-prisoner
-#manager 284ba63f-378b-4be6-84d9-10db6ae48b8d Timberwoof Lupindo
 #member 00000000-0000-0000-0000-000000000000 someperson
 
 # add more roles by copying the role section above
