@@ -2,6 +2,16 @@ integer responderChannel;
 integer responderListen;
 string lockLevel;
 
+integer OPTION_DEBUG = 0;
+
+sayDebug(string message)
+{
+    if (OPTION_DEBUG)
+    {
+        llWhisper(0,"Responder:"+message);
+    }
+}
+
 integer uuidToInteger(key uuid)
 // primitive hash of uuid parts
 {
@@ -66,6 +76,7 @@ default
                 response = "Zap";
             }
         }
+        sayDebug("Responder listen("+message+") responds: "+response);
         llSay(responderChannel,response);
     }
 }
