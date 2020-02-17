@@ -18,6 +18,7 @@
 // frame:<r,g,b>: sets frame to this color
 // button: makes the "open" button work
 // bump: makes the door open when someone bumps into it. 
+// responder: requires the avatar to wear a responder; don't use with Group
 
 // A normally-open door set to group, when closed by a member of the group,
 // will stay closed for half an hour, implementing the fair-game rule. 
@@ -34,16 +35,12 @@ integer FACE_PANEL_2 = 2;
 integer PRIM_DOOR_1 = 4;
 integer PRIM_DOOR_2 = 3;
 
-vector PANEL_TEXTURE_SCALE = <1.0, 1.0, 0>;
-vector PANEL_TEXTURE_OFFSET = <0.0, 0.0, 0>;
+vector PANEL_SCALE = <1.0, 1.0, 0>;
+vector PANEL_OFFSET = <0.0, 0.0, 0>;
 
-// Physical Sizes
-// frame: <0.38743, 5.11704, 5.08728>
-// leaf: <0.10476,1.06177, 3.04108>
-vector LEAF_SCALE = <0.2704, 0.2075, 0.5978>;
-float CLOSE_FACTOR = 0.103;
-float OPEN_FACTOR = .31;
-float ZOFFSET_FACTOR = -.0786275; // isil leaves are lower than the door frame
+float CLOSE_FACTOR = .5312;
+float OPEN_FACTOR = 1.5906;
+float ZOFFSET_FACTOR = -0.4014;// isil leaves are lower than the door frame
 
 // colors
 vector BLACK = <0,0,0>;
@@ -71,6 +68,11 @@ string sound_slide = "b3845015-d1d5-060b-6a63-de05d64d5444";
 string sound_granted = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
 string sound_denied = "d679e663-bba3-9caa-08f7-878f65966194";
 string sound_lockdown = "2d9b82b0-84be-d6b2-22af-15d30c92ad21";
+
+// Physical Sizes - custom grebe
+float leafXscale = 0.5; // thickness of leaf compared to main prim
+float leafYscale = 0.5; // width of leav compared to main prim
+float leafZscale = 1.0; // height of leav compared to main prim
 
 float fwidth;
 float fopen;
@@ -125,6 +127,7 @@ integer OPTION_NORMALLY_OPEN = 0;
 integer OPTION_LABEL = 0;
 integer OPTION_BUTTON = 0;
 integer OPTION_BUMP = 0;
+integer OPTION_RESPONDER = 0;
 vector OUTLINE_COLOR = <0,0,0>;
 vector FRAME_COLOR = <0,0,0>;
 string owners = "";
@@ -132,6 +135,12 @@ vector LABEL_COLOR = <1,1,1>;
 
 // timer
 integer TIMER_INTERVAL = 2;
+
+integer responderChannel;
+integer responderListen;
+string responderMessage;
+integer gResponderTimer = 0;
+key responderKey;
 
 debug(string message)
 {
@@ -144,8 +153,11 @@ debug(string message)
 getParameters()
 {
     string optionstring = llGetObjectDesc();
-    debug("getParameters("+ optionstring +")");
-    if (llSubStringIndex(optionstring,"debug") > -1) OPTION_DEBUG = 1;
+
+    if (llSubStringIndex(optionstring,"debug") > -1) {
+        OPTION_DEBUG = 1;
+        debug("getParameters("+ optionstring +")");
+    }
     if (llSubStringIndex(optionstring,"lockdown") > -1) OPTION_LOCKDOWN = 1;
     if (llSubStringIndex(optionstring,"power") > -1) OPTION_POWER = 1;
     if (llSubStringIndex(optionstring,"group") > -1) OPTION_GROUP = 1;
@@ -153,6 +165,7 @@ getParameters()
     if (llSubStringIndex(optionstring,"normally-open") > -1) OPTION_NORMALLY_OPEN = 1;
     if (llSubStringIndex(optionstring,"button") > -1) OPTION_BUTTON = 1;
     if (llSubStringIndex(optionstring,"bump") > -1) OPTION_BUMP = 1;
+    if (llSubStringIndex(optionstring,"responder") > -1) OPTION_RESPONDER = 1;
     
     integer lockdown_delay_index = llSubStringIndex(optionstring,"lockdown-delay"); 
     if (lockdown_delay_index > -1)
@@ -164,7 +177,6 @@ getParameters()
         LOCKDOWN_DELAY = (integer)lockdown_delay;
         debug("lockdown_delay("+lockdown_delay+")="+(string)LOCKDOWN_DELAY);
     }
-    
     
     integer label_index = llSubStringIndex(optionstring,"label"); 
     if (label_index > -1)
@@ -215,43 +227,115 @@ getParameters()
     debug("getParameters end");
 }
 
-integer checkAuthorization(key whoclicked)
+integer uuidToInteger(key uuid)
+// primitive hash of uuid parts
+{
+    // UUID looks like 284ba63f-378b-4be6-84d9-10db6ae48b8d
+    string hexdigits = "abcdef";
+    list uuidparts = llParseString2List(uuid,["-"],[]);
+    // last one is too big; split it into 2 6-digit numbers
+    string last = llList2String(uuidparts,4);
+    string last1 = llGetSubString(last,0,5);
+    string last2 = llGetSubString(last,6,12);
+    list lasts = [last1, last2];
+    uuidparts = llListReplaceList(uuidparts, lasts, 4, 4);
+    
+    integer sum = 0;
+    integer i = 0;
+    // take each uuid part
+    for (i=0; i < llGetListLength(uuidparts); i++) {
+        string uuidPart = llList2String(uuidparts,i);
+        integer j;
+        // look at each digit
+        for (j=0; j < llStringLength(uuidPart); j++) {
+            string c = llGetSubString(uuidPart, j, j);
+            string k = (string)llSubStringIndex(hexdigits, c);
+            // if it's in abcdef
+            if ((integer)k > -1) {
+                // substitute in the digit 123456
+                uuidPart = llDeleteSubString(uuidPart, j, j);
+                uuidPart = llInsertString(uuidPart, j, k);
+            }
+        }
+        sum = sum - (integer)uuidPart;
+    }
+    return sum;
+}
+
+
+pingResponder(key whoclicked) {
+// send a message to that avatar so their responder will pick it up and respond yes/no
+// responder channel is determined by avatar's UUID
+
+    responderMessage = "Yes"; // allow people without responder to pass
+    responderKey = whoclicked;
+    responderChannel = uuidToInteger(whoclicked);
+    responderListen = llListen(responderChannel, "", "", "");
+    debug("Request Authorization on channel "+(string)responderChannel);    
+    llWhisper(responderChannel, "Request Authorization");
+    gResponderTimer = setTimerEvent(TIMER_INTERVAL);
+}
+
+integer checkAuthorization(key whoclicked, string responderCode)
 // all the decisions about whether to do anything
 // in response to bump or press button
 {
     // assume authorization
     integer authorized = 1;
     
-    // group prohibits
-    if (OPTION_GROUP & (!llSameGroup(llDetectedKey(0))))
+    if (OPTION_RESPONDER)
     {
-        debug("checkAuthorization failed group check");
-        authorized = 0;
+        if (responderCode == "ask") 
+        {
+            debug("Pinging your Responder.");
+            pingResponder(whoclicked);
+            return(0); // skip setting icons
+        }
+        else if (responderCode != "Yes")
+        {
+            debug("checkAuthorization failed responder check");
+            if (responderCode == "Zap") {
+                debug("checkAuthorization got zap code");
+                llSay(-106969,(string)whoclicked);
+            }
+            authorized = 0;
+        } 
     }
-
-    // power off prohibits
-    if ((OPTION_POWER) & (gPowerState == POWER_OFF))
+    else // !OPTION_RESPONDER - act normally
     {
-        debug("checkAuthorization failed power check");
-        authorized = 0;
-        return authorized;
+
+        // group prohibits
+        if (OPTION_GROUP & (!llSameGroup(llDetectedKey(0))))
+        {
+            debug("checkAuthorization failed group check");
+            authorized = 0;
+        }
+
+        // power off prohibits
+        if ((OPTION_POWER) & (gPowerState == POWER_OFF))
+        {
+            debug("checkAuthorization failed power check");
+            authorized = 0;
+            return authorized;
+        }
+    
+        // lockdown checks group
+        if ((OPTION_LOCKDOWN) & (gLockdownState == LOCKDOWN_ON) & (!llSameGroup(llDetectedKey(0))))
+        {
+            debug("checkAuthorization failed lockdown group check");
+            authorized = 0;
+        }
+
+        // owner match overrides
+        debug("owners:"+owners+" whoclicked:"+llKey2Name(whoclicked));
+        if (OPTION_OWNERS & (llSubStringIndex(owners, llKey2Name(whoclicked))) >= 0)
+        {
+            debug("checkAuthorization passed OWNERS check");
+            authorized = 1;
+        }
     }
     
-    // lockdown checks group
-    if ((OPTION_LOCKDOWN) & (gLockdownState == LOCKDOWN_ON) & (!llSameGroup(llDetectedKey(0))))
-    {
-        debug("checkAuthorization failed lockdown group check");
-        authorized = 0;
-    }
-
-    // owner match overrides
-    debug("owners:"+owners+" whoclicked:"+llKey2Name(whoclicked));
-    if (OPTION_OWNERS & (llSubStringIndex(owners, llKey2Name(whoclicked))) >= 0)
-    {
-        debug ("checkAuthorization passed OWNERS check");
-        authorized = 1;
-    }
-    
+    // set icons
     if (authorized)
     {
         llSetLinkColor(PRIM_PANEL_1, GREEN, FACE_PANEL_1);
@@ -290,15 +374,15 @@ open(integer auth, integer override)
         llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <0.0, -fopen, fZoffset> ]);
         llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <0.0, fopen, fZoffset>]);
         doorState = OPEN;
-    }
 
-    // if normally closed or we're in lockdown,
-    // start a sensor that will close the door when it's clear. 
-    if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
-    {
-        debug("open setting sensor radius "+(string)gSensorRadius);
-        llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
-    } 
+        // if normally closed or we're in lockdown,
+        // start a sensor that will close the door when it's clear. 
+        if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
+        {
+            debug("open setting sensor radius "+(string)gSensorRadius);
+            llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
+        } 
+    }
     if (gLockdownState == LOCKDOWN_TEMP)
     {
         debug("open gLockdownState LOCKDOWN_TEMP -> gLockdownState = LOCKDOWN_OFF");
@@ -455,6 +539,7 @@ integer setTimerEvent(integer duration)
     debug("setTimerEvent("+(string)duration+")");
     if (duration > 0)
     {
+        debug("llSetTimerEvent("+(string)TIMER_INTERVAL+")");
         llSetTimerEvent(TIMER_INTERVAL);
         // Somebody else may be using the timer, so don't turn it off.
     }
@@ -472,26 +557,30 @@ default
         // panel texture scale and offset
         llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_2, WHITE, FACE_PANEL_2);
-        llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_locked, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, 0.0]);
-        llSetLinkPrimitiveParams(PRIM_PANEL_2, [PRIM_TEXTURE, FACE_PANEL_2, texture_locked, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, 0.0]);
+        llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_locked, PANEL_SCALE, PANEL_OFFSET, 0.0]);
+        llSetLinkPrimitiveParams(PRIM_PANEL_2, [PRIM_TEXTURE, FACE_PANEL_2, texture_locked, PANEL_SCALE, PANEL_OFFSET, 0.0]);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_1, 0.1]);
         llSetLinkPrimitiveParams(PRIM_PANEL_2, [PRIM_GLOW, FACE_PANEL_2, 0.1]);
         
         setColorsAndIcons();
         
-        // calculate the leaf movements
         // get  the size of the door frame and calculate the sizes of the leaves
-        vector frameSize = llGetScale( );
-        vector leafsize = <frameSize.x * LEAF_SCALE.x, frameSize.y * LEAF_SCALE.y, frameSize.z * LEAF_SCALE.z>; 
-        fwidth = frameSize.y;
+        vector myscale = <1,1,1>;//llGetScale( );
+        vector leafsize;
+        
+        // calculate the leaf movements
+        // two sliding leaves
+        leafsize = <myscale.x*leafXscale, myscale.y*leafYscale, myscale.z*leafZscale>; 
+        // special case for double door
+        fwidth = myscale.y;
         fclose = fwidth * CLOSE_FACTOR;
         fopen = fwidth * OPEN_FACTOR;
         fdelta = .10;
-        fZoffset = frameSize.z * ZOFFSET_FACTOR;
+        fZoffset = myscale.z * ZOFFSET_FACTOR;
         
         // set the initial leaf sizes and positions
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_SIZE,leafsize]);
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_SIZE,leafsize]);
+        //llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_SIZE,leafsize]);
+        //llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_SIZE,leafsize]);
         llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <0.0, -fclose, 0.0>]);
         llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <0.0,  fclose, 0.0>]);
 
@@ -523,19 +612,18 @@ default
             gLockdownState = LOCKDOWN_OFF;
         }
         
-        gSensorRadius = (frameSize.x + frameSize.y) / 3.0;
+        gSensorRadius = (myscale.x + myscale.y) / 3.0;
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         debug("initialized");
     }
-
 
     touch_start(integer total_number)
     {
         debug("touch_start face "+(string)llDetectedTouchFace(0));
         if (OPTION_BUTTON & (llDetectedTouchFace(0) == FACE_PANEL_1 | llDetectedTouchFace(0) == FACE_PANEL_2))
         {
-            toggleDoor(checkAuthorization(llDetectedKey(0)), 0);
+            toggleDoor(checkAuthorization(llDetectedKey(0), "ask"), 0);
         }
     }
     
@@ -544,10 +632,9 @@ default
         debug("collision_start");
         if (OPTION_BUMP) 
         {
-            open(checkAuthorization(llDetectedKey(0)), 0);
+            open(checkAuthorization(llDetectedKey(0), "ask"), 0);
         }
     }
-
 
     listen(integer channel, string name, key id, string message) {
         debug("listen channel:"+(string)channel+" name:'"+name+"' message: '"+message+"'");
@@ -563,7 +650,7 @@ default
             vector here = llGetPos();
             float distance = llVecDist(here, distantloc)/10.0;
             gPowerState = POWER_FAILING;
-            gPowerTimer = setTimerEvent((integer)distance+2);
+            gPowerTimer = setTimerEvent((integer)distance);
         }
         
         else if (channel == LOCKDOWN_CHANNEL) 
@@ -603,17 +690,42 @@ default
                     setColorsAndIcons();
                 }
             }
+            
+        } else if (channel == responderChannel) {
+            debug("responder: "+message);
+            llListenRemove(responderListen);
+            responderListen = 0;
+            responderChannel = 0;
+            gResponderTimer = -1;
+            open(checkAuthorization(responderKey, message), 0);
         }
     }
     
-    
     timer() {
+        //debug("timer responderListen:"+(string)responderListen+" responderChannel:"+(string)responderChannel);
+        
+        debug("timer gResponderTimer:"+(string)gResponderTimer);
+        if (gResponderTimer > 0) 
+        {
+            gResponderTimer = gResponderTimer - TIMER_INTERVAL;
+        } else {
+            llListenRemove(responderListen);
+            responderListen = 0;
+            responderChannel = 0;
+            llSetTimerEvent(0);
+            if (gResponderTimer == 0) 
+            {
+                open(checkAuthorization(responderKey, "Yes"), 0); // works for someone not wearing responder
+            }
+            gResponderTimer = 0;
+        }
                     
         if (gPowerTimer > 0)
         {
             gPowerTimer = gPowerTimer - TIMER_INTERVAL;
             debug("timer gPowerState:"+(string)gPowerState + " gPowerTimer:"+(string)gPowerTimer);
         }
+        
         if (gPowerTimer <= 0)
         {
             // power timer has run out. 
@@ -652,6 +764,7 @@ default
             gLockdownTimer = gLockdownTimer - TIMER_INTERVAL;
             debug("timer gLockdownState:" + (string)gLockdownState + " gLockdownTimer:"+(string)gLockdownTimer);
         }
+        
         if (gLockdownTimer <= 0) 
         {
             // lockdown timer has run out
@@ -684,8 +797,10 @@ default
             }
         }
         
-        if ( (gPowerTimer <= 0 & gLockdownTimer <= 0) | (gPowerState == POWER_ON & gLockdownState == LOCKDOWN_OFF) )
+        if ( (gResponderTimer <= 0 & gPowerTimer <= 0 & gLockdownTimer <= 0 & gResponderTimer <= 0) | 
+            (gPowerState == POWER_ON & gLockdownState == LOCKDOWN_OFF) )
         {
+            debug("llSetTimerEvent(0) at end of timer event");
             llSetTimerEvent(0);
         }
    }
