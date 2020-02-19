@@ -12,6 +12,7 @@
 // power: responds to power failures
 // group: makes it respond only to member of same group as door
 // owner[ownername]: gives people listed the ability to open the door despite all settings
+// responder: opens for anyone who has the right responder. Overrides gropup
 // zap: zaps nonmember who tries to operate door
 // normally-open: door will open on reset, after power is restored, and lockdown is lifted
 // otherwise door will close on reset and after power is restored. 
@@ -280,6 +281,8 @@ integer checkAuthorization(key whoclicked, string responderCode)
 // all the decisions about whether to do anything
 // in response to bump or press button
 {
+    llSetLinkColor(PRIM_PANEL_1, YELLOW, FACE_PANEL_1);
+    llSetLinkColor(PRIM_PANEL_2, YELLOW, FACE_PANEL_2);
     // assume authorization
     integer authorized = 1;
     
@@ -379,8 +382,8 @@ open(integer auth, integer override)
         // start a sensor that will close the door when it's clear. 
         if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
         {
-            debug("open setting sensor radius "+(string)gSensorRadius);
-            llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
+            debug("open setting gSensorRadius:"+(string)gSensorRadius);
+            llSensorRepeat("", "", AGENT, gSensorRadius, PI, 1.0);
         } 
     }
     if (gLockdownState == LOCKDOWN_TEMP)
@@ -552,6 +555,7 @@ default
     {
         getParameters();
         debug("state_entry");
+        llSensorRemove();
         gPowerState = POWER_OFF;
         
         // panel texture scale and offset
@@ -612,7 +616,7 @@ default
             gLockdownState = LOCKDOWN_OFF;
         }
         
-        gSensorRadius = (myscale.x + myscale.y) / 3.0;
+        gSensorRadius = (myscale.x + myscale.y)*1.0;
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         debug("initialized");
@@ -696,28 +700,26 @@ default
             llListenRemove(responderListen);
             responderListen = 0;
             responderChannel = 0;
-            gResponderTimer = -1;
-            open(checkAuthorization(responderKey, message), 0);
+            responderMessage = message; // set the global for activation when the timer runs out. 
         }
     }
     
     timer() {
         //debug("timer responderListen:"+(string)responderListen+" responderChannel:"+(string)responderChannel);
         
-        debug("timer gResponderTimer:"+(string)gResponderTimer);
         if (gResponderTimer > 0) 
         {
+            debug("timer gResponderTimer > 0: "+(string)gResponderTimer);
             gResponderTimer = gResponderTimer - TIMER_INTERVAL;
-        } else {
-            llListenRemove(responderListen);
-            responderListen = 0;
-            responderChannel = 0;
-            llSetTimerEvent(0);
-            if (gResponderTimer == 0) 
-            {
-                open(checkAuthorization(responderKey, "Yes"), 0); // works for someone not wearing responder
+            if (gResponderTimer <= 0) 
+            {                
+                debug("timer gResponderTimer < 0; responderMessage:"+responderMessage);
+                llListenRemove(responderListen);
+                responderListen = 0;
+                responderChannel = 0;
+                gResponderTimer = 0; 
+                open(checkAuthorization(responderKey, responderMessage), 0);
             }
-            gResponderTimer = 0;
         }
                     
         if (gPowerTimer > 0)
@@ -797,13 +799,19 @@ default
             }
         }
         
+        // if all the timers are off, shut off the timer event. 
         if ( (gResponderTimer <= 0 & gPowerTimer <= 0 & gLockdownTimer <= 0 & gResponderTimer <= 0) | 
             (gPowerState == POWER_ON & gLockdownState == LOCKDOWN_OFF) )
         {
             debug("llSetTimerEvent(0) at end of timer event");
             llSetTimerEvent(0);
         }
-   }
+    }
+    
+    sensor(integer number_detected)
+    {
+        debug("sensor("+(string)number_detected+")");
+    }
     
     no_sensor()
     {
