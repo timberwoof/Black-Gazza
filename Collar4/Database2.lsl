@@ -32,11 +32,10 @@ sayDebug(string message)
 }
 
 // fire off a request to the crime database for this wearer. 
-sendDatabaseQuery(string queryStatus, string command) {
-    sayDebug("sendDatabaseQuery(\""+command+"\")");
+sendDatabaseQuery() {
+    sayDebug("sendDatabaseQuery()");
     displayCentered("Accessing DB");
     string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-    myQueryStatus = queryStatus;
     sayDebug("sendDatabaseQuery:"+URL);
     databaseQuery = llHTTPRequest(URL,[],"");
 }
@@ -46,12 +45,19 @@ displayCentered(string message) {
     llMessageLinked(LINK_THIS, 2001, message, "");
 }
 
+sendAssetNumbers() {
+    // Send the active asset numbers to Menu
+    string message = llList2Json(JSON_ARRAY, assetNumbers);
+    sayDebug("sendAssetNumbers:"+message);
+    llMessageLinked(LINK_THIS, 1011, message, "");
+}
+
 default
 {
     state_entry()
     {
         sayDebug("state_entry");
-        getPlayerRoles();
+        sendDatabaseQuery();
     }
 
     http_response(key request_id, integer status, list metadata, string message)
@@ -60,8 +66,22 @@ default
         sayDebug("http_response message="+message);
         displayCentered("status "+(string)status);
         if (status == 200) {
-          // decode the response
-              
+            // decode the response
+            // looks like 
+            // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+            list returnedStuff = llParseString2List(message, [","], []);
+            string name = llList2String(returnedStuff, 0);
+            crime = llList2String(returnedStuff, 2);
+            assetNumber = llList2String(returnedStuff, 4);
+            
+            sayDebug("name:"+name);
+            sayDebug("crime:"+crime);
+            sayDebug("assetNumber:"+assetNumber);
+            
+            llMessageLinked(LINK_THIS, 1800, crime, "");
+            
+            assetNumbers = [assetNumber];
+            sendAssetNumbers();
         }
         else {
             displayCentered("error "+(string)status);
@@ -73,10 +93,10 @@ default
         // Someone wants database update
         if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
-            getPlayerRoles();
+            sendDatabaseQuery();
         } else if (num == 1013) {
             sayDebug("link_message "+(string)num+" "+message);
-            getPlayerInmateKeys(message);
+            displayCentered("Function unsupported");
         }
     }
 }
