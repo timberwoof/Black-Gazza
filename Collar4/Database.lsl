@@ -75,7 +75,7 @@ sendDatabaseQuery(string queryStatus, string command) {
         URL = URL + command; 
     }
     myQueryStatus = queryStatus;
-    sayDebug("sendDatabaseQuery:"+URL);
+    //sayDebug("sendDatabaseQuery:"+URL);
     databaseQuery = llHTTPRequest(URL,[],"");
 }
 
