@@ -49,6 +49,7 @@ sayDebug(string message)
 }
 
 generateChannels() {
+    sayDebug("generateChannels");
     if (RLVStatusChannel != 0) {
         sayDebug("remove RLVStatusChannel " + (string)RLVStatusChannel);
         llListenRemove(RLVStatusChannel);
@@ -64,6 +65,7 @@ generateChannels() {
 key httprequest;
 
 registerWithDB() {
+    sayDebug("registerWithDB");
     string timestamp = llGetTimestamp( ); // format 
     string timeStampDate = llGetSubString(timestamp,0,9);
     string timeStampTime = llGetSubString(timestamp,11,18);
@@ -106,6 +108,7 @@ registerWithDB() {
 }
 
 checkRLV() {
+    sayDebug("checkRLV");
     if (llGetAttached() != 0) {
         llOwnerSay("Checking RLV version.");
         haveAnimatePermissions = 0;
@@ -122,50 +125,50 @@ checkRLV() {
 
 sendRLVRestrictCommand(string level) {
     // level can be Off Light Medium Heavy Hardcore
+    string theSound = soundLatch;
     if (RLVpresent == 1) {
-        sayDebug("sendRLVRestrictCommand("+level+")");
         RLVlevel = level;
+        sayDebug("sendRLVRestrictCommand("+RLVlevel+")");
         llOwnerSay("@clear");
         string rlvcommand = ""; 
-        if (level == "Off") {
-            llPlaySound(soundUnlatch, 1);
-            llOwnerSay("RLV has been unlocked.");
-            return;
-        }else if (level == "Light") {
+        if (RLVlevel == "Off") {
+            theSound = soundUnlatch;
+        }else if (RLVlevel == "Light") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=y,showminimap=y,showloc=y,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
-        } else if (level == "Medium") {
+        } else if (RLVlevel == "Medium") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=n,showminimap=n,showloc=y,fly=n,detach=n,sittp=n,fartouch=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,
-        } else if (level == "Heavy") {
+        } else if (RLVlevel == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,sittp=n,fartouch=n";
             // chatnormal=y,chatwhisper=y,
-        } else if (level == "Hardcore") {
+        } else if (RLVlevel == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,sittp=n,fartouch=n";
             // chatwhisper=y,
         }
-        llPlaySound(soundLatch, 1);
         sayDebug(rlvcommand);
+        llPlaySound(theSound, 1);
         llOwnerSay(rlvcommand);
         llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
-        llOwnerSay("RLV lock level has been set to "+level);
+        llMessageLinked(LINK_THIS, 2001, "", "");
+        llOwnerSay("RLV lock level has been set to "+RLVlevel);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
-        // send RLV statuses
         llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
-        llMessageLinked(LINK_THIS, 1400, "Off", "");
+        llMessageLinked(LINK_THIS, 2001, "", "");
     }
 }
 
 // ***************************
 // Safeword
 SendSafewordInstructions() {
+    sayDebug("SendSafewordInstructions");
     if (SafewordChannel != 0) {
         sayDebug("remove SafewordChannel " + (string)SafewordChannel);
         llListenRemove(SafewordChannel);
@@ -194,8 +197,6 @@ SafewordSucceeded() {
     SafewordChannel = 0;
     SafewordListen = 0;
     sendRLVRestrictCommand("Off");
-    llMessageLinked(LINK_THIS, 1400, "Off", "");
-    //registerWithDB(); // prisoner, off
 }
  
 // =====================
@@ -404,9 +405,6 @@ default
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
                 sayDebug("link_message "+(string)num+" "+message);
                 sendRLVRestrictCommand(message);
-                if (message == "Off") {
-                    llMessageLinked(LINK_THIS, 1400, "Off", "");
-                }
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
             }
@@ -454,11 +452,12 @@ default
             llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
             llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
             RLVStatusListen = 0;
-            lockTimerRestart();
+            lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
         }
         
         if (channel == ZapChannel) {
+            sayDebug("listen ZapChannel");   
             if (message == (string)llGetOwner()) {
                 startZap("Low", name);
             }
@@ -469,10 +468,12 @@ default
     timer()
     {
         if (SafewordListen != 0) {
+            sayDebug("timer SafewordListen");   
             // we are listening for a safeword, so all else loses priority
             // but this means the Safeword was allowed to time out. 
             SafewordFailed();
         } else if (RLVStatusListen != 0) {
+            sayDebug("timer RLVStatusListen");   
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
             RLVpresent = 0;
