@@ -47,6 +47,7 @@ list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic",
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
+string buttonOff = "⦻";
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -152,13 +153,19 @@ mainMenu(key avatarKey) {
     if (!llSameGroup(avatarKey) || (ICOOCMood == "OOC")) {
         // inmates don't get Zap commands
         buttons = buttons + ["Zap"];
+    } else {
+        buttons = buttons + [buttonOff];
     }
     if (avatarKey == llGetOwner() && theLocklevel != "Hardcore" && theLocklevel != "Off") {
         // if wearer is in hardcore mode, no safeword
         buttons = buttons + ["Safeword"];
+    } else {
+        buttons = buttons + [buttonOff];
     }
     if (theLocklevel != "Off" && !llSameGroup(avatarKey)) {
         buttons = buttons + ["Release"];
+    } else {
+        buttons = buttons + [buttonOff];
     }
     setUpMenu("Main", avatarKey, message, buttons);
 }
@@ -197,9 +204,9 @@ zapMenu(key avatarKey)
     // the zap menu never includes radio buttons in front of the Zap word
     string message = "Zap";
     list buttons = [];
-    if (allowZapLow) buttons = buttons + ["Zap Low"];
-    if (allowZapMed) buttons = buttons + ["Zap Med"];
-    if (allowZapHigh) buttons = buttons + ["Zap High"];
+    if (allowZapLow) buttons = buttons + ["Zap Low"]; else buttons = buttons + buttonOff;
+    if (allowZapMed) buttons = buttons + ["Zap Med"]; else buttons = buttons + buttonOff;
+    if (allowZapHigh) buttons = buttons + ["Zap High"]; else buttons = buttons + buttonOff;
     setUpMenu("Zap", avatarKey, message, buttons);
 }
 
@@ -345,12 +352,12 @@ settingsMenu(key avatarKey) {
     
     string message = "Settings";
     list buttons = [];
-    if (setMood) buttons = buttons + "Mood";
-    if (setAsset) buttons = buttons + "Asset";
-    if (setThreat) buttons = buttons + "Threat";
-    if (setLock) buttons = buttons + "Lock";
-    if (setZaps) buttons = buttons + "SetZap";
-    if (setTimer) buttons = buttons + "Timer";
+    if (setMood) buttons = buttons + "Mood"; else buttons = buttons + buttonOff ;
+    if (setAsset) buttons = buttons + "Asset"; else buttons = buttons + buttonOff ;
+    if (setThreat) buttons = buttons + "Threat"; else buttons = buttons + buttonOff ;
+    if (setLock) buttons = buttons + "Lock"; else buttons = buttons + buttonOff ;
+    if (setZaps) buttons = buttons + "SetZap"; else buttons = buttons + buttonOff ;
+    if (setTimer) buttons = buttons + "Timer"; else buttons = buttons + buttonOff ;
     setUpMenu("Settings", avatarKey, message, buttons);
 }
     
@@ -468,7 +475,7 @@ lockMenu(key avatarKey)
             integer lockindex =  llList2Integer(lockListMenu, listsIndex);
             if (lockindex != -1) {
                 string lockButton = llList2String(LockLevels, lockindex);
-                buttons = buttons + menuRadioButton(lockButton, theLocklevel); ;
+                buttons = buttons + menuRadioButton(lockButton, theLocklevel); 
             }
         }
         setUpMenu("Lock", avatarKey, message, buttons);
