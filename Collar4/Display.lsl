@@ -63,6 +63,7 @@ integer FaceBlinky4 = 4;
 integer LinkAlphanumFrame = 17;
 integer FaceAlphanumFrame = 5;
 integer FaceAlphanum = 1;
+list LinksAlphanum = [];
 
 integer linkTitler = 0;
 
@@ -139,14 +140,14 @@ displayText(string text){
     string letter;
     for (i = 0; i < 12; i++){
         letter =  llGetSubString(text,i,i);     // get a letter out of the text
-        j = llSubStringIndex(textMap,letter);   // find it in the boitmap
+        j = llSubStringIndex(textMap,letter);   // find it in the bitmap
         integer ix = (j % 10);                  // find the x coordinates
         float x = ix * 0.1 + .05;
 
         integer iy = 7 - j / 10;                // find the y coordinates
         float y = iy * 0.1429;
 
-        integer linkNumber = 15 - i;            // shift the appropriate textmap
+        integer linkNumber = llList2Integer(LinksAlphanum, i); // shift the appropriate textmap
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_TEXTURE, 0, fontID, <0.1, 0.15, 0.0>, <x, y, 0.0>, 0.0]);
     }
 }
@@ -257,6 +258,26 @@ default
         setTextColor(CYAN);
         
         linkTitler = getLinkWithName("Titler");
+        
+        // LinksAlphanum
+        integer i;
+        for (i = 0; i < 12; i++) {
+            string linkname = "D"+(string)i;
+            integer link = getLinkWithName(linkname);
+            sayDebug("init linking "+linkname+" to "+(string)link);
+            LinksAlphanum = LinksAlphanum + [link];
+            }        
+        
+        linkTitler = getLinkWithName("powerHoseNozzle");
+        linkTitler = getLinkWithName("Titler");
+        linkTitler = getLinkWithName("leashPoint");
+        LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
+        LinkAlphanumFrame = getLinkWithName("BG_CollarV4_LightsMesh");
+        batteryIconLink = getLinkWithName("powerDisplay");
+        linkTitler = getLinkWithName("D0");
+        linkTitler = getLinkWithName("Titler");
+        linkTitler = getLinkWithName("Titler");
+        
         llSetLinkAlpha(linkTitler, 0, ALL_SIDES);
 
         // turn off lingering battery animations
