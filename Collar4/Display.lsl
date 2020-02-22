@@ -63,6 +63,8 @@ integer LinkAlphanumFrame = 17;
 integer FaceAlphanumFrame = 5;
 integer FaceAlphanum = 1;
 
+integer linkTitler = 0;
+
 // BG_CollarV4_PowerDisplay_PNG
 integer batteryLevel;
 key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
@@ -93,13 +95,27 @@ list classSpeculars;
 list classBumpmaps;
 vector classColor;
 
-    
+string prisonerCrime;
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
         llWhisper(0,"Display:"+message);
     }
+}
+
+integer getLinkWithName(string name) {
+    integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
+    integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
+    for (; i < x; ++i)
+        if (llGetLinkName(i) == name) 
+            return i; // Found it! Exit loop early with result
+    return -1; // No prim with that name, return -1.
+}
+
+displayTitler(string title, vector color) {
+    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, color, 1.0]);
 }
 
 displayText(string text){
@@ -238,6 +254,9 @@ default
         Class = "White";
         classColor = WHITE;
         setTextColor(CYAN);
+        
+        linkTitler = getLinkWithName("Titler");
+        llSetLinkAlpha(linkTitler, 0, ALL_SIDES);
 
         // turn off lingering battery animations
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
@@ -327,6 +346,12 @@ default
             displayBattery((integer)message);
         }
         
+        // Prisoner Crime
+        else if (num == 1800) {
+            prisonerCrime = message;
+            displayTitler(assetNumber + "\n" + prisonerCrime, classColor);
+        }
+
         // set and display asset number
         else if (num == 2000) {
             assetNumber = message;
@@ -335,6 +360,7 @@ default
             } else {
                 sayDebug("set and display assetNumber \""+assetNumber+"\"");
                 displayCentered(assetNumber);
+                displayTitler(assetNumber + "\n" + prisonerCrime, classColor);
             }
         }
         
