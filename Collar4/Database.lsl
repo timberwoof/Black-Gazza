@@ -1,7 +1,8 @@
 // Database.lsl
-// All interactions with the external database
+// All interactions with the external database - NEW database
 // Timberwoof Lupindo
 // July 2019
+// version: 2020-02-22
 
 // Link-Messages in the 2000 range
 
