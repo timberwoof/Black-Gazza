@@ -1,3 +1,8 @@
+// Responder.lsl
+// Script for Black Gazza Collar 4
+// Timberwoof Lupindo, February 2020
+// version: 2020-02-22
+
 integer responderChannel;
 integer responderListen;
 string lockLevel;
