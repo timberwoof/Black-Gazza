@@ -33,8 +33,7 @@ integer OPTION_DEBUG = 0;
 integer menuChannel = 0;
 integer menuListen = 0;
 string menuIdentifier;
-list menuChoices;
-key menuAvatar;
+key menuAgentKey;
 
 integer allowZapLow = 1;
 integer allowZapMed = 1;
@@ -94,15 +93,19 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
     sayDebug("setUpMenu "+identifier);
+    
+    if (identifier != "Main") {
+        buttons = buttons + ["Main"];
+    }
+    
     tempDisplay("menu access");
     menuIdentifier = identifier;
-    menuChoices = ["Cancel"] + buttons;
-    menuAvatar = avatarKey;
+    menuAgentKey = avatarKey;
     string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
-    llDialog(avatarKey, completeMessage, buttons, menuChannel);
     menuListen = llListen(menuChannel, "", avatarKey, "");
     llSetTimerEvent(30);
+    llDialog(avatarKey, completeMessage, buttons, menuChannel);
 }
 
 string menuCheckbox(string title, integer onOff)
@@ -159,7 +162,7 @@ mainMenu(key avatarKey) {
         llMessageLinked(LINK_THIS, 2002, "", avatarKey);
     }
     
-    if (menuAvatar != "" & menuAvatar != avatarKey) {
+    if (menuAgentKey != "" & menuAgentKey != avatarKey) {
         llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
         sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
         return;
@@ -439,6 +442,7 @@ ZapLevelMenu(key avatarKey)
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
     buttons = buttons + menuCheckbox("Zap High", allowZapHigh);
+    buttons = buttons + "Settings";
     setUpMenu("ZapLevel", avatarKey, message, buttons);
 }
 
@@ -562,7 +566,7 @@ default
     state_entry()
     {
         sayDebug("state_entry");
-        menuAvatar = "";
+        menuAgentKey = "";
         theLocklevel = "Off";        
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
@@ -612,15 +616,15 @@ default
         // reset the menu setup
         llListenRemove(menuListen);
         menuListen = 0;
-        menuAvatar = "";
+        menuAgentKey = "";
         llSetTimerEvent(0);
         
-        // Cancel
-        if (message == "Cancel") {
-            menuAvatar = "";
+        // Main button
+        if (message == "Main") {
+            mainMenu(avatarKey);
         }
         
-        //Main
+        //Main Menu
         else if (menuIdentifier == "Main") {
             sayDebug("listen: Main:"+message);
             doMainMenu(avatarKey, message);
@@ -640,6 +644,7 @@ default
                 // The wearer chose this asset number so transmit it and display it
                 llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
                 llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
+                settingsMenu(avatarKey);
             }
         }
         
@@ -648,6 +653,7 @@ default
             sayDebug("listen: Class:"+message);
             prisonerClass = message;
             llMessageLinked(LINK_THIS, 1200, prisonerClass, avatarKey);
+            settingsMenu(avatarKey);
         }
         
         // Mood
@@ -655,6 +661,7 @@ default
             sayDebug("listen: Mood:"+messageButtonsTrimmed);
             ICOOCMood = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1100, ICOOCMood, avatarKey);
+            settingsMenu(avatarKey);
         }
         
         // Zap the inmate
@@ -666,7 +673,12 @@ default
         // Set Zap Level
         else if (menuIdentifier == "ZapLevel") {
             sayDebug("listen: Set Zap:"+message);
-            doSetZapLevels(avatarKey, messageButtonsTrimmed);
+            if (message == "Settings") {
+                settingsMenu(avatarKey);
+            } else {
+                doSetZapLevels(avatarKey, messageButtonsTrimmed);
+                ZapLevelMenu(avatarKey);
+            }
         }
 
         // Lock Level
@@ -676,6 +688,7 @@ default
                 theLocklevel = messageButtonsTrimmed;
                 sayDebug("listen set theLocklevel:\""+theLocklevel+"\"");
                 llMessageLinked(LINK_THIS, 1401, theLocklevel, avatarKey);
+                settingsMenu(avatarKey);
             }
         }
 
@@ -684,6 +697,7 @@ default
             sayDebug("listen: threatLevel:"+messageButtonsTrimmed);
             threatLevel = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1500, threatLevel, avatarKey);
+            settingsMenu(avatarKey);
         }
         
         // Document
@@ -733,6 +747,6 @@ default
         // reset the menu setup
         llListenRemove(menuListen);
         menuListen = 0;   
-        menuAvatar = "";
+        menuAgentKey = "";
     }
 }
