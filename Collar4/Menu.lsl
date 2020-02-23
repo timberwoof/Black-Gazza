@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-22
+// version: 2020-02-23
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -48,7 +48,6 @@ list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic",
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
-string buttonOff = "⦻";
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -136,9 +135,26 @@ list menuRadioButton(string title, string match)
     return [radiobutton + " " + title];
 }
 
+list menuButtonActive(string title, integer onOff)
+// make a menu button be the text or the Inactive symbol
+{
+    string button;
+    if (onOff)
+    {
+        button = title;
+    }
+    else
+    {
+        button = "⦻";
+    }
+    return [button];
+}
+
 // Menus and Handlers ****************
 
 mainMenu(key avatarKey) {
+    string message = "Main";
+
     if (assetNumber == "Unknown") {
         llMessageLinked(LINK_THIS, 2002, "", avatarKey);
     }
@@ -149,25 +165,32 @@ mainMenu(key avatarKey) {
         return;
         }
     
-    string message = "Main";
-    list buttons = ["Info", "Settings", "Leash"]; // *** , "Hack" // not yet implemented
+    // assume some things are not available
+    integer doZap = 0;
+    integer doSafeword = 0;
+    integer doRelease = 0;
+    
+    // enambe things based on state
     if (!llSameGroup(avatarKey) || (ICOOCMood == "OOC")) {
-        // inmates don't get Zap commands
-        buttons = buttons + ["Zap"];
-    } else {
-        buttons = buttons + [buttonOff];
+        doZap = 1;
     }
+    
     if (avatarKey == llGetOwner() && theLocklevel != "Hardcore" && theLocklevel != "Off") {
-        // if wearer is in hardcore mode, no safeword
-        buttons = buttons + ["Safeword"];
+        doSafeword = 1;
     } else {
-        buttons = buttons + [buttonOff];
+        message = message + "\nSafeword is only availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
+    
     if (theLocklevel != "Off" && !llSameGroup(avatarKey)) {
-        buttons = buttons + ["Release"];
+        doRelease = 1;
     } else {
-        buttons = buttons + [buttonOff];
+        message = message + "\nRelease is only availavle to a Guard while prisoner is in RLV Hardcore mode.";
     }
+    
+    list buttons = ["Info", "Settings", "Leash", "Hack"];
+    buttons = buttons + menuButtonActive("Zap", doZap);
+    buttons = buttons + menuButtonActive("Safeword", doSafeword);
+    buttons = buttons + menuButtonActive("Release", doRelease);
     setUpMenu("Main", avatarKey, message, buttons);
 }
 
@@ -205,14 +228,15 @@ zapMenu(key avatarKey)
     // the zap menu never includes radio buttons in front of the Zap word
     string message = "Zap";
     list buttons = [];
-    if (allowZapLow) buttons = buttons + ["Zap Low"]; else buttons = buttons + buttonOff;
-    if (allowZapMed) buttons = buttons + ["Zap Med"]; else buttons = buttons + buttonOff;
-    if (allowZapHigh) buttons = buttons + ["Zap High"]; else buttons = buttons + buttonOff;
+    buttons = buttons + menuButtonActive("Zap Low", allowZapLow);
+    buttons = buttons + menuButtonActive("Zap Med", allowZapMed);
+    buttons = buttons + menuButtonActive("Zap High", allowZapHigh);
     setUpMenu("Zap", avatarKey, message, buttons);
 }
 
 string class2Description(string class) {
-    return llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
+    return llList2String(prisonerClasses, llListFindList(prisonerClasses, [class])) + ": " +
+        llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
 }
 
 string batteryGraph(string batteryLevel) {
@@ -297,7 +321,10 @@ settingsMenu(key avatarKey) {
     // IC/OOC mood - OOC, DnD or other
     // RLV lock level - Off, Light, Medium, Heavy, Lardcore
     
+    string message = "Settings";
+
     // 1. Assume nothing is allowed
+    integer setClass = 0;
     integer setMood = 0;
     integer setThreat = 0;
     integer setLock = 0;
@@ -317,10 +344,14 @@ settingsMenu(key avatarKey) {
         if ((ICOOCMood == "OOC") || (ICOOCMood == "DnD")) {
             sayDebug("settingsMenu: ooc");
             // IC or DnD you change everything
+            setClass = 1;
             setThreat = 1;
             setZaps = 1;
             setTimer = 1;
             setAsset = 1;
+        }
+        else {
+            message = message + "\nSome settings are not available while you are IC.";
         }
     }
     // What a guard can change
@@ -334,7 +365,10 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: ooc");
             // OOC, guards can change some things
             // DnD means Do Not Disturb
-            // Oh, there's nothing because Class and Crime can only be set by the Crime Setter.
+            setClass = 1;
+        }
+        else {
+            message = message + "\nSome settings are not available while you are OOC.";
         }
     }
     
@@ -344,21 +378,24 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: heavy-owner");
             setZaps = 0;
             setTimer = 0;
+            message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         } else {
             sayDebug("settingsMenu: heavy-guard");
             setZaps = 1;
             setTimer = 1;
+            message = message + "\nSome settings are not available to you while you are a guard.";
         }
     }
     
-    string message = "Settings";
     list buttons = [];
-    if (setMood) buttons = buttons + "Mood"; else buttons = buttons + buttonOff ;
-    if (setAsset) buttons = buttons + "Asset"; else buttons = buttons + buttonOff ;
-    if (setThreat) buttons = buttons + "Threat"; else buttons = buttons + buttonOff ;
-    if (setLock) buttons = buttons + "Lock"; else buttons = buttons + buttonOff ;
-    if (setZaps) buttons = buttons + "SetZap"; else buttons = buttons + buttonOff ;
-    if (setTimer) buttons = buttons + "Timer"; else buttons = buttons + buttonOff ;
+    buttons = buttons + menuButtonActive("Asset", setAsset);
+    buttons = buttons + menuButtonActive("Class", setClass);
+    buttons = buttons + menuButtonActive("Threat", setThreat);
+    buttons = buttons + menuButtonActive("Lock", setLock);
+    buttons = buttons + menuButtonActive("Timer", setTimer);
+    buttons = buttons + menuButtonActive("SetZap", setZaps);
+    buttons = buttons + menuButtonActive("Mood", setMood);
+    
     setUpMenu("Settings", avatarKey, message, buttons);
 }
     
@@ -368,6 +405,9 @@ doSettingsMenu(key avatarKey, string message) {
         }
         else if (message == "Lock"){
             lockMenu(avatarKey);
+        }
+        else if (message == "Class"){
+            classMenu(avatarKey);
         }
         else if (message == "Threat"){
             threatMenu(avatarKey);
@@ -420,6 +460,19 @@ doSetZapLevels(key avatarKey, string message)
         // Send the zap status message
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         llMessageLinked(LINK_THIS, 1300, zapJsonList, avatarKey);
+    }
+}
+
+classMenu(key avatarKey)
+{
+    if (avatarKey == llGetOwner())
+    {
+        string message = "Set your Prisoner Class";
+        setUpMenu("Class", avatarKey, message, prisonerClasses);
+    }
+    else
+    {
+        ; // no one else gets a thing
     }
 }
 
@@ -588,6 +641,13 @@ default
                 llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
                 llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
             }
+        }
+        
+        // Class
+        else if (menuIdentifier == "Class") {
+            sayDebug("listen: Class:"+message);
+            prisonerClass = message;
+            llMessageLinked(LINK_THIS, 1200, prisonerClass, avatarKey);
         }
         
         // Mood
