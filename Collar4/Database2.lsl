@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-02-22
+// version: 2020-02-23
 
 // Link-Messages in the 2000 range
 
@@ -90,14 +90,14 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        //sayDebug("link_message "+(string)num+" "+message);
+        sayDebug("link_message "+(string)num+" "+message);
         // Someone wants database update
         if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
             sendDatabaseQuery();
         } else if (num == 1013) {
             sayDebug("link_message "+(string)num+" "+message);
-            displayCentered("Function unsupported");
+            //displayCentered("Function unsupported");
         }
     }
 }
