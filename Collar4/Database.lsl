@@ -1,14 +1,39 @@
-// database2.lsl
-// interim connectivity for Collar 4 to the old database. 
-// This has the same commections to the rest of the collar as database.lsl but it connects to the current db. 
-
 // Database.lsl
-// All interactions with the external database
+// All interactions with the external database - NEW database
 // Timberwoof Lupindo
-// July 2019, February 2020
-// version: 2020-02-23
+// July 2019
+// version: 2020-02-22
 
 // Link-Messages in the 2000 range
+
+/*
+Kyroraz Ansar, [Jul 18, 2019 at 1:06:46 PM (7/18/19, 1:23:14 PM)]:
+...Commands:
+    show_roles:  Shows all the roles within a UUID identity (SL Avatar)
+    show_assets:  Shows all the assets (e.g. P-60361, X-19281 etc) within a role owned by a UUID identity.
+    show_asset:  Shows all the information about an asset (P-60361 for example) 
+    show_key:  Shows one piece of information about an asset.  Example:  crime within P-60361, this just returns the crime.
+    show_keys:  Displays the keys linked to an asset e.g. P-60361
+
+Other parameters:
+
+    role = Defines a specific role to drill into
+    asset = Defines a specific asset to drill into
+    key = Defines a specific key within  an asset to drill into
+
+Example URLs:
+https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d
+https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles
+https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate
+https://api.blackgazza.com/identity/284ba63f-378b-4be6-84d9-10db6ae48b8d/roles/inmate/P-60361
+
+Collar is interested in the role=inmate things.
+0. What roles does this UUID have? 
+1. Does this UUID have an Inmate role set? 
+2. If so, what assets (collar numbers) does this UUIS have? 
+3. For each asset, show all the keys this asset has.
+4. Fr each key, list the data. 
+*/
 
 integer OPTION_DEBUG = 0;
 key databaseQuery;
@@ -16,7 +41,7 @@ string myQueryStatus;
 
 string name;
 string start_date;
-list assetNumbers; // there's only one
+list assetNumbers;
 string assetNumber;
 string crime;
 string class;
@@ -33,12 +58,50 @@ sayDebug(string message)
 }
 
 // fire off a request to the crime database for this wearer. 
-sendDatabaseQuery() {
-    sayDebug("sendDatabaseQuery()");
+sendDatabaseQuery(string queryStatus, string command) {
+    sayDebug("sendDatabaseQuery(\""+command+"\")");
     displayCentered("Accessing DB");
-    string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-    sayDebug("sendDatabaseQuery:"+URL);
+    // Old DB
+    //string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+    // New DB
+    string UUID = (string)llGetOwner();
+    // test uuids
+    // 00000000-0000-0000-0000-000000000010 Loot Boplace
+    // 00000000-0000-0000-0000-000000000011 Marmour Bovinecow
+    // 00000000-0000-0000-0000-000000000012 LUP-8462
+    // 00000000-0000-0000-0000-000000000013 Melkor Schmerzlos
+    //UUID = "00000000-0000-0000-0000-000000000013";
+    string URL = "https://api.blackgazza.com/identity/" + UUID;
+    if (command != "") {
+        URL = URL + command; 
+    }
+    myQueryStatus = queryStatus;
+    //sayDebug("sendDatabaseQuery:"+URL);
     databaseQuery = llHTTPRequest(URL,[],"");
+}
+
+getPlayerRoles() {
+    sayDebug("getPlayerRoles");
+    sendDatabaseQuery("GetRoles", "/roles");
+}
+
+getPlayerInmateNumbers() {
+    sayDebug("getPlayerInmateNumbers");
+    sendDatabaseQuery("GetAssets", "/roles/inmate");
+}
+
+getPlayerInmateKeys(string assetNumber) {
+    sayDebug("getPlayerInmateKeys("+assetNumber+")");
+    sendDatabaseQuery("GetAssetKeys", "/roles/inmate/"+assetNumber);
+}
+
+getPlayerInmateAssetKey(string assetNumber, string assetKey) {
+    sayDebug("getPlayerInmateAssetKey("+assetNumber+","+assetKey+")");
+    sendDatabaseQuery("GetOneKey", "/roles/inmate/"+assetNumber+"/"+assetKey);
+}
+
+string getListThing(list theList, string theKey){
+    return llList2String(theList, llListFindList(theList, [theKey])+1);
 }
 
 displayCentered(string message) {
@@ -53,12 +116,13 @@ sendAssetNumbers() {
     llMessageLinked(LINK_THIS, 1011, message, "");
 }
 
+
 default
 {
     state_entry()
     {
-        sayDebug("state_entry");
-        sendDatabaseQuery();
+        sayDebug("state_entry with asset number=\""+assetNumber+"\"");
+        getPlayerRoles();
     }
 
     http_response(key request_id, integer status, list metadata, string message)
@@ -67,22 +131,64 @@ default
         sayDebug("http_response message="+message);
         displayCentered("status "+(string)status);
         if (status == 200) {
-            // decode the response
-            // looks like 
-            // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
-            list returnedStuff = llParseString2List(message, [","], []);
-            string name = llList2String(returnedStuff, 0);
-            crime = llList2String(returnedStuff, 2);
-            assetNumber = llList2String(returnedStuff, 4);
+              
+            if (myQueryStatus == "GetRoles") {
+                sayDebug("decode roles");
+                list theList = llJson2List(message);
+                if (llListFindList(theList, ["inmate"]) < 0) {
+                    sayDebug("roles did not contain inmate");
+                } else {
+                    getPlayerInmateNumbers();
+               }
+            }
+
+            else if (myQueryStatus == "GetAssets") {
+                sayDebug("decode asset numbers");
+                list theList = llJson2List(message);
+                assetNumbers = [];
+                integer i;
+                for (i = 0; i < llGetListLength(theList); i = i + 2) {
+                    string theAssetNumber = llList2String(theList,i); // index tells which asset number to grab
+                    sayDebug("theAssetNumber:"+theAssetNumber);
+                    assetNumbers = assetNumbers + [theAssetNumber];
+                }
+                sendAssetNumbers();
+            }
             
-            sayDebug("name:"+name);
-            sayDebug("crime:"+crime);
-            sayDebug("assetNumber:"+assetNumber);
+            else if (myQueryStatus == "GetAssetKeys") {
+                sayDebug("get list of asset keys");
+                list theList = llJson2List(message);
+                crime="";
+                llMessageLinked(LINK_THIS, 1800, crime, "");
+                class = "";
+                llMessageLinked(LINK_THIS, 1200, class, "");
+                    
+                // decode the incoming list of keys
+                integer i;
+                for (i = 0; i < llGetListLength(theList); i=i+2){
+                    string theKey = llList2String(theList,i);
+                    string theValue = llList2String(theList,i+1);
+                    sayDebug("key-value: "+theKey+"="+theValue);
+                    if (theKey == "crime") {
+                        crime = theValue;
+                        sayDebug("sending crime \""+crime+"\"");
+                        llMessageLinked(LINK_THIS, 1800, crime, "");
+                    } else if (theKey == "class") {
+                        class = theValue;
+                        sayDebug("sending class "+class);
+                        llMessageLinked(LINK_THIS, 1200, class, "");
+                    }
+                }
+            }
             
-            llMessageLinked(LINK_THIS, 1800, crime, "");
-            
-            assetNumbers = [assetNumber];
-            sendAssetNumbers();
+            else if (myQueryStatus == "GetOneKey") {
+                sayDebug("get one asset key");
+                list list1 = llJson2List(message);
+                string theKey = llList2String(list1,0);
+                string theValue = llList2String(list1,1);
+                sayDebug("key-value: "+theKey+"="+theValue);
+            }
+
         }
         else {
             displayCentered("error "+(string)status);
@@ -90,14 +196,14 @@ default
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
-        sayDebug("link_message "+(string)num+" "+message);
+        //sayDebug("link_message "+(string)num+" "+message);
         // Someone wants database update
         if (num == 2002) {
             sayDebug("link_message "+(string)num+" "+message);
-            sendDatabaseQuery();
+            getPlayerRoles();
         } else if (num == 1013) {
             sayDebug("link_message "+(string)num+" "+message);
-            //displayCentered("Function unsupported");
+            getPlayerInmateKeys(message);
         }
     }
 }
