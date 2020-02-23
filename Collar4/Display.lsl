@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-23
+// version: 2020-02-23-1
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -14,6 +14,7 @@ integer OPTION_DEBUG = 0;
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
 vector GRAY = <0.5, 0.5, 0.5>;
+vector LIGHT_GRAY = <0.7, 0.7, 0.7>;
 vector DARK_BLUE = <0.0, 0.0, 0.2>;
 vector BLUE = <0.0, 0.0, 1.0>;
 vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
@@ -25,7 +26,7 @@ vector REDORANGE = <1.0, 0.25, 0.0>;
 vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
-vector PURPLE = <0.5, 0.0, 1.0>;
+vector PURPLE = <0.7, 0.1, 1.0>;
         
 // Diffuse = Textures
 key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
@@ -120,10 +121,12 @@ integer getLinkWithName(string name) {
 }
 
 displayTitler() {
+    integer moodIndex = llListFindList(moodNames, [prisonerMood]);
+    vector moodColor = llList2Vector(moodColors, moodIndex);
     integer classIndex = llListFindList(classNames, [prisonerClass]);
     string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
-    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, prisonerClassColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, 1.0]);
 }
 
 displayText(string text){
@@ -248,11 +251,11 @@ default
         
         // set up lists and shit
         moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
-        moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
+        moodColors = [LIGHT_GRAY, GREEN, YELLOW, ORANGE, CYAN, PURPLE, GRAY];
         prisonerMood = "OOC";
         
-        classNames = ["white","pink","red","orange","green","blue","black"];
-        classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
+        classNames = ["white","pink","red","orange","green","blue","black","Unknown"];
+        classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
             BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
@@ -264,8 +267,6 @@ default
         prisonerClassColor = WHITE;
         setTextColor(CYAN);
         
-        linkTitler = getLinkWithName("Titler");
-        
         // LinksAlphanum
         integer i;
         for (i = 0; i < 12; i++) {
@@ -274,27 +275,30 @@ default
             sayDebug("init linking "+linkname+" to "+(string)link);
             LinksAlphanum = LinksAlphanum + [link];
             }        
-        
-        linkTitler = getLinkWithName("powerHoseNozzle");
         linkTitler = getLinkWithName("Titler");
-        linkTitler = getLinkWithName("leashPoint");
         LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
         LinkAlphanumFrame = getLinkWithName("BG_CollarV4_LightsMesh");
         batteryIconLink = getLinkWithName("powerDisplay");
-        linkTitler = getLinkWithName("D0");
-        linkTitler = getLinkWithName("Titler");
-        linkTitler = getLinkWithName("Titler");
+        //linkTitler = getLinkWithName("powerHoseNozzle");
+        //linkTitler = getLinkWithName("leashPoint");
         
         llSetLinkAlpha(linkTitler, 0, ALL_SIDES);
 
         // turn off lingering battery animations
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
-        batteryLevel = 0; // remove when we do "real" battery levels
+        // Initialize the world
+        batteryLevel = 0; 
+        prisonerMood = "Unknown";
+        prisonerClass = "Unknown";
+        prisonerThreat = "Unknown";
+        prisonerCrime = "Unknown";
+        displayTitler();
                 
         if (llGetAttached() != 0) {
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
         }
+        
     }
 
     attach(key id)
