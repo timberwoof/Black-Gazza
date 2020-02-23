@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-22
+// version: 2020-02-23
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -85,19 +85,22 @@ integer scrollPos;
 integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 
-string Mood;
+string prisonerMood;
 list moodNames;
 list moodColors;
 
-string Class;
+string prisonerClass;
+string prisonerClassLong;
 list classNames;
+list classNamesLong;
 list classColors;
 list classTextures;
 list classSpeculars;
 list classBumpmaps;
-vector classColor;
+vector prisonerClassColor;
 
 string prisonerCrime;
+string prisonerThreat;
 
 sayDebug(string message)
 {
@@ -116,8 +119,11 @@ integer getLinkWithName(string name) {
     return -1; // No prim with that name, return -1.
 }
 
-displayTitler(string title, vector color) {
-    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, color, 1.0]);
+displayTitler() {
+    integer classIndex = llListFindList(classNames, [prisonerClass]);
+    string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
+    string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
+    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, prisonerClassColor, 1.0]);
 }
 
 displayText(string text){
@@ -152,12 +158,12 @@ displayText(string text){
     }
 }
 
-setTextColor(vector classColor){
-    sayDebug("setTextColor "+(string)classColor);
+setTextColor(vector prisonerClassColor){
+    sayDebug("setTextColor "+(string)prisonerClassColor);
     integer i;
     for (i = 0; i < 12; i++){
-        integer linkNumber = 15 - i; 
-        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, classColor, 0.5]);
+        integer linkNumber = llList2Integer(LinksAlphanum, i); 
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, prisonerClassColor, 0.5]);
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
     }
 }
@@ -243,9 +249,10 @@ default
         // set up lists and shit
         moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
         moodColors = [DARK_GRAY, GREEN, YELLOW, ORANGE, CYAN, BLUE, BLACK];
-        Mood = "OOC";
+        prisonerMood = "OOC";
         
         classNames = ["white","pink","red","orange","green","blue","black"];
+        classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
             BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
@@ -253,8 +260,8 @@ default
             BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
         classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
             BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
-        Class = "White";
-        classColor = WHITE;
+        prisonerClass = "White";
+        prisonerClassColor = WHITE;
         setTextColor(CYAN);
         
         linkTitler = getLinkWithName("Titler");
@@ -304,28 +311,32 @@ default
 
         // IC/OOC Mood sets frame color 
         if (num == 1100) {
-            Mood = message;
-            sayDebug("link_message "+(string)num+" "+Mood+"->Mood");
-            integer moodi = llListFindList(moodNames, [Mood]);
+            prisonerMood = message;
+            sayDebug("link_message "+(string)num+" "+prisonerMood+"->prisonerMood");
+            integer moodi = llListFindList(moodNames, [prisonerMood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
+            displayTitler();
         }
         
         // Prisoner Class sets text color and blinky 3
         else if (num == 1200) {
-            Class = message;
-            sayDebug("link_message "+(string)num+" "+Class+"->Class");
-            integer classi = llListFindList(classNames, [Class]);
-            classColor = llList2Vector(classColors, classi);
-            setTextColor(classColor);
+            prisonerClass = message;
+            sayDebug("link_message "+(string)num+" "+prisonerClass+"->prisonerClass");
+            integer classi = llListFindList(classNames, [prisonerClass]);
+            prisonerClassColor = llList2Vector(classColors, classi);
+            prisonerClassLong = llList2String(classNamesLong, classi);
+            setTextColor(prisonerClassColor);
+            
             // set the blinky color
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, classColor, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, prisonerClassColor, 1.0]);
             
             // set the collar frame texture, reflectivity, and bumpiness
             llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
             llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
             llSetPrimitiveParams([PRIM_NORMAL, FaceFrame, llList2Key(classBumpmaps, classi), <1,1,0>, <0,0,0>, 0]);
+            displayTitler();
             }
         
         // Zap Level sets blinky 1
@@ -344,12 +355,14 @@ default
         
         // Threat level sets blinky 4
         else if (num == 1500) {
+            prisonerThreat = message;
             list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
             list threatColors = [GREEN, YELLOW, ORANGE, RED];
-            integer threati = llListFindList(threatLevels, [message]);
+            integer threati = llListFindList(threatLevels, [prisonerThreat]);
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
+            displayTitler();
         }
         
         // Lock level sets blinky 2
@@ -371,7 +384,7 @@ default
         // Prisoner Crime
         else if (num == 1800) {
             prisonerCrime = message;
-            displayTitler(assetNumber + "\n" + prisonerCrime, classColor);
+            displayTitler();
         }
 
         // set and display asset number
@@ -382,7 +395,7 @@ default
             } else {
                 sayDebug("set and display assetNumber \""+assetNumber+"\"");
                 displayCentered(assetNumber);
-                displayTitler(assetNumber + "\n" + prisonerCrime, classColor);
+                displayTitler();
             }
         }
         
