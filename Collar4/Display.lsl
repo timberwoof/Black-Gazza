@@ -8,6 +8,7 @@
 // • alphanumeric display
 // • blinky lights
 // • battery display
+// • floaty text
 
 integer OPTION_DEBUG = 0;
 
