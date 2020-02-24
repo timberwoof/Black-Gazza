@@ -69,19 +69,17 @@ default
 
     listen(integer channel, string name, key id, string message)
     {
+        sayDebug("Responder listen("+name+","+message+")");
         list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
         integer locki = llListFindList(lockLevels, [lockLevel]);
-        string response = "Zap";
         if (message == "Request Authorization") {
-            if (locki <= 2) {
-                response = "Yes";
+            if (0 < locki && locki <= 2) {
+                llSay(responderChannel,"Yes");
             } else if (locki == 3) {
-                response = "No";
-            } else {
-                response = "Zap";
+                llSay(responderChannel,"No");
+            } else if (locki >= 4) {
+                llSay(responderChannel,"Zap");
             }
         }
-        sayDebug("Responder listen("+message+") responds: "+response);
-        llSay(responderChannel,response);
     }
 }
