@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-23
+// version: 2020-02-25
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -572,6 +572,7 @@ default
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
         llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
         llMessageLinked(LINK_THIS, 2002, "", ""); // ask for database update
+        doSetZapLevels(llGetOwner(),""); // initialize
     }
 
     touch_start(integer total_number)
@@ -715,11 +716,14 @@ default
         }
     }
     
-    link_message(integer sender_num, integer num, string message, key id){ 
+    link_message(integer sender_num, integer num, string message, key avatarKey){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 1011) {
+        if (num == 1101) {
             assetNumbers = llJson2List(message);
+            assetNumber = llList2String(assetNumbers, 0);
+            llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
+            llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
         } else if (num == 1200) {
             prisonerClass = message;
         } else if (num == 1400) {
