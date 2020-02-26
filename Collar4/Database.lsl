@@ -58,6 +58,7 @@ default
     state_entry()
     {
         sayDebug("state_entry");
+        llSleep(2); // wait for other scripts to awaken. 
         sendDatabaseQuery();
     }
 
@@ -80,7 +81,6 @@ default
             sayDebug("assetNumber:"+assetNumber);
             
             llMessageLinked(LINK_THIS, 1800, crime, "");
-            
             assetNumbers = [assetNumber];
             sendAssetNumbers();
         }
