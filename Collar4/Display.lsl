@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-23-1
+// version: 2020-02-25
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -10,7 +10,7 @@
 // • battery display
 // • floaty text
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -28,6 +28,9 @@ vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
 vector PURPLE = <0.7, 0.1, 1.0>;
+
+list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
+list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
         
 // Diffuse = Textures
 key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
@@ -70,7 +73,7 @@ list LinksAlphanum = [];
 integer linkTitler = 0;
 
 // BG_CollarV4_PowerDisplay_PNG
-integer batteryLevel;
+string batteryLevel;
 key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
 integer batteryIconLink = 16;
 integer batteryIconFace = 0;
@@ -100,9 +103,16 @@ list classTextures;
 list classSpeculars;
 list classBumpmaps;
 vector prisonerClassColor;
+string prisonerLockLevel;
 
 string prisonerCrime;
 string prisonerThreat;
+
+integer responderChannel;
+integer responderListen;
+
+string assetNumber;
+string zapLevelsJSON;
 
 sayDebug(string message)
 {
@@ -235,14 +245,40 @@ displayBattery(integer percent)
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
 }
 
-string name;
-string start_date;
-string assetNumber;
-string crime;
-string class;
-string shocks;
-string rank;
-string specialty;
+integer uuidToInteger(key uuid)
+// primitive hash of uuid parts
+{
+    // UUID looks like 284ba63f-378b-4be6-84d9-10db6ae48b8d
+    string hexdigits = "abcdef";
+    list uuidparts = llParseString2List(uuid,["-"],[]);
+    // last one is too big; split it into 2 6-digit numbers
+    string last = llList2String(uuidparts,4);
+    string last1 = llGetSubString(last,0,5);
+    string last2 = llGetSubString(last,6,12);
+    list lasts = [last1, last2];
+    uuidparts = llListReplaceList(uuidparts, lasts, 4, 4);
+    
+    integer sum = 0;
+    integer i = 0;
+    // take each uuid part
+    for (i=0; i < llGetListLength(uuidparts); i++) {
+        string uuidPart = llList2String(uuidparts,i);
+        integer j;
+        // look at each digit
+        for (j=0; j < llStringLength(uuidPart); j++) {
+            string c = llGetSubString(uuidPart, j, j);
+            string k = (string)llSubStringIndex(hexdigits, c);
+            // if it's in abcdef
+            if ((integer)k > -1) {
+                // substitute in the digit 123456
+                uuidPart = llDeleteSubString(uuidPart, j, j);
+                uuidPart = llInsertString(uuidPart, j, k);
+            }
+        }
+        sum = sum - (integer)uuidPart;
+    }
+    return sum;
+}
 
 default
 {
@@ -289,16 +325,21 @@ default
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
         // Initialize the world
-        batteryLevel = 0; 
+        batteryLevel = "Unknown"; 
         prisonerMood = "Unknown";
         prisonerClass = "Unknown";
         prisonerThreat = "Unknown";
         prisonerCrime = "Unknown";
         displayTitler();
                 
+        // set the name of the collar
         if (llGetAttached() != 0) {
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
         }
+
+        // set up the responder
+        responderChannel = uuidToInteger(llGetOwner());
+        responderListen = llListen(responderChannel,"", "", "");
         
     }
 
@@ -307,7 +348,7 @@ default
         sayDebug("attach");
         if (id) {
             llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
-            batteryLevel = 0;  // remove when we do "real" battery levels      
+            batteryLevel = "0";  // remove when we do "real" battery levels      
         }
     }
 
@@ -347,7 +388,8 @@ default
         // Zap Level sets blinky 1
         else if (num == 1300) {
             // message contains a json list of settings
-            list zapLevels = llJson2List(message);
+            zapLevelsJSON = message;
+            list zapLevels = llJson2List(zapLevelsJSON);
             sayDebug("link_message "+(string)num+" "+(string)zapLevels+"->message");
             sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
@@ -356,6 +398,15 @@ default
             if (llList2Integer(zapLevels,1)) lightcolor = ORANGE;
             if (llList2Integer(zapLevels,2)) lightcolor = RED;
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, lightcolor, 1.0]);            
+        }
+        
+        // Lock level sets blinky 2
+        else if (num == 1400) {
+            prisonerLockLevel = message;
+            integer locki = llListFindList(lockLevels, [prisonerLockLevel]);
+            vector lockcolor = llList2Vector(lockColors, locki);
+            sayDebug("lock level message:"+prisonerLockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, lockcolor, 1.0]);
         }
         
         // Threat level sets blinky 4
@@ -370,18 +421,9 @@ default
             displayTitler();
         }
         
-        // Lock level sets blinky 2
-        else if (num == 1400) {
-            list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
-            list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
-            integer locki = llListFindList(lockLevels, [message]);
-            vector lockcolor = llList2Vector(lockColors, locki);
-            sayDebug("lock level message:"+message+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, lockcolor, 1.0]);
-        }
-        
         // Battery Level Report
         else if (num == 1700) {
+            batteryLevel = message;
             sayDebug("battery "+message);
             displayBattery((integer)message);
         }
@@ -412,6 +454,23 @@ default
         }
     }
     
+    listen(integer channel, string name, key id, string message)
+    {
+        if (message == "Request Status") {
+            string statusJsonList = llList2Json(JSON_OBJECT, [
+                "assetNumber", assetNumber, 
+                "prisonerCrime", prisonerCrime, 
+                "prisonerClass", prisonerClass, 
+                "prisonerThreat", prisonerThreat,
+                "prisonerMood", prisonerMood, 
+                "batteryLevel", batteryLevel, 
+                "prisonerLockLevel", prisonerLockLevel, 
+                "zapLevels", zapLevelsJSON]);
+            sayDebug("listen("+name+","+message+") responds with " + statusJsonList);
+            llSay(responderChannel, statusJsonList);
+        }
+    }
+
     timer() {
         sayDebug("timer(): display assetNumber "+assetNumber);
             if (assetNumber == "") {
