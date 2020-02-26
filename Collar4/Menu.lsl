@@ -50,7 +50,7 @@ integer rlvPresent = 0;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
-string threatLevel = "None";
+string threatLevel = "Moderate";
 string batteryLevel = "Unknown";
 
 key approveAvatar;
@@ -719,7 +719,7 @@ default
     link_message(integer sender_num, integer num, string message, key avatarKey){ 
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("Menu link_message "+(string)num+" "+message);
-        if (num == 1101) {
+        if (num == 1011) {
             assetNumbers = llJson2List(message);
             assetNumber = llList2String(assetNumbers, 0);
             llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
