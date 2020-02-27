@@ -2,13 +2,14 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-25
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
 
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
+
+string version = "2020-02-26";
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -279,11 +280,12 @@ infoGive(key avatarKey){
     }
     message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
     message = message + "------------------\nOOC Information:\n";
+    message = message + "Version: " + version + "\n";
     message = message + "Mood: " + ICOOCMood + "\n";
     if (rlvPresent) {
-        message = message + "RLV: " + theLocklevel + "\n";
+        message = message + "RLV Active: " + theLocklevel + "\n";
     } else {
-        message = message + "RLV: not detected.\n";
+        message = message + "RLV not detected.\n";
     }
     
     // Prepare a list of documents to hand out 
@@ -407,7 +409,13 @@ doSettingsMenu(key avatarKey, string message) {
             moodMenu(avatarKey);
         }
         else if (message == "Lock"){
-            lockMenu(avatarKey);
+            if (rlvPresent == 1) {
+                lockMenu(avatarKey);
+            } else {
+                // get RLV to check RLV again 
+                llOwnerSay("RLV was off nor not detected. Attempting to register with RLV.");
+                llMessageLinked(LINK_THIS, 1410, "Register RLV", avatarKey);
+            }
         }
         else if (message == "Class"){
             classMenu(avatarKey);
@@ -727,16 +735,22 @@ default
         } else if (num == 1200) {
             prisonerClass = message;
         } else if (num == 1400) {
-            // RLV/Lock status
+            // RLV level: Off, Light, Medium, heavy, Hardcore
+            if (rlvPresent == 1) {
+                theLocklevel = message;
+            } else {
+                theLocklevel = "Off";
+            }
+            sayDebug("link_message set theLocklevel:"+theLocklevel);
+        } else if (num == 1403) {
+            // RLV Presence
             if (message == "NoRLV") {
                 rlvPresent = 0;
                 theLocklevel = "Off";
             } else if (message == "YesRLV") {
                 rlvPresent = 1;
-            } else {
-                theLocklevel = message;
             }
-            sayDebug("link_message set theLocklevel:"+theLocklevel);
+            sayDebug("link_message set rlvPresent:"+(string)rlvPresent);
         } else if (num == 1700) {
             batteryLevel = message;
         } else if (num == 1800) {
