@@ -8,7 +8,7 @@
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
