@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-02-25
+// version: 2020-02-26
 
 // Link-Messages in the 2000 range
 
