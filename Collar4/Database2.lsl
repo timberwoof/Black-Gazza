@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-02-23
+// version: 2020-02-26
 
 // Link-Messages in the 2000 range
 
@@ -58,6 +58,7 @@ default
     state_entry()
     {
         sayDebug("state_entry");
+        llSleep(2); // wait for other scripts to awaken. 
         sendDatabaseQuery();
     }
 
@@ -80,7 +81,6 @@ default
             sayDebug("assetNumber:"+assetNumber);
             
             llMessageLinked(LINK_THIS, 1800, crime, "");
-            
             assetNumbers = [assetNumber];
             sendAssetNumbers();
         }
