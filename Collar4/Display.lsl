@@ -31,6 +31,8 @@ vector PURPLE = <0.7, 0.1, 1.0>;
 
 list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
 list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
+list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
+list threatColors = [GREEN, YELLOW, ORANGE, RED];
         
 // Diffuse = Textures
 key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
@@ -93,6 +95,7 @@ string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 string prisonerMood;
 list moodNames;
 list moodColors;
+vector moodColor;
 
 string prisonerClass;
 string prisonerClassLong;
@@ -133,7 +136,7 @@ integer getLinkWithName(string name) {
 
 displayTitler() {
     integer moodIndex = llListFindList(moodNames, [prisonerMood]);
-    vector moodColor = llList2Vector(moodColors, moodIndex);
+    moodColor = llList2Vector(moodColors, moodIndex);
     integer classIndex = llListFindList(classNames, [prisonerClass]);
     string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
@@ -280,6 +283,16 @@ integer uuidToInteger(key uuid)
     return sum;
 }
 
+// get a value from color stored in the blinky and send it to the link
+string blinkyFaceColorToMeaning(integer face, list colors, list names, integer channel){
+    list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
+    vector prisonerThreatColor = llList2Vector(colorList,0);
+    integer index = llListFindList(colors, [prisonerThreatColor]);
+    string stateName = llList2String(names, index); 
+    llMessageLinked(LINK_THIS, channel, stateName, "");
+    return stateName;
+}
+
 default
 {
     state_entry()
@@ -326,9 +339,9 @@ default
 
         // Initialize the world
         batteryLevel = "Unknown"; 
-        prisonerMood = "Unknown";
-        prisonerClass = "Unknown";
-        prisonerThreat = "Moderate";
+        prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, 1100);
+        prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, 1200);
+        prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, 1500);
         prisonerCrime = "Unknown";
         displayTitler();
                 
@@ -412,8 +425,6 @@ default
         // Threat level sets blinky 4
         else if (num == 1500) {
             prisonerThreat = message;
-            list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
-            list threatColors = [GREEN, YELLOW, ORANGE, RED];
             integer threati = llListFindList(threatLevels, [prisonerThreat]);
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
