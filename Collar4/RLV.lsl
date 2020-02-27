@@ -108,10 +108,10 @@ registerWithDB() {
     //httprequest = llHTTPRequest(url, parameters, body );
 }
 
-checkRLV() {
-    sayDebug("checkRLV");
+checkRLV(string why) {
+    sayDebug("checkRLV("+why+")");
     if (llGetAttached() != 0) {
-        llOwnerSay("Checking RLV version.");
+        llOwnerSay("Checking RLV version ("+why+").");
         haveAnimatePermissions = 0;
         llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
         generateChannels();
@@ -362,11 +362,10 @@ default
         RLVlevel = "Off";
         HudFunctionState = 0;
         SafewordListen = 0;
-        checkRLV();
         llPreloadSound(soundCharging);
         llPreloadSound(soundZapLoop);
         if (llGetAttached() != 0) {
-            checkRLV();
+            checkRLV("state_entry");
         }
         llListen(ZapChannel, "", "", "");
         sayDebug("state_entry done");
@@ -379,7 +378,7 @@ default
             hudAttached = 1;
             RLVpresent = 0;
             HudFunctionState = 0;
-            checkRLV();
+            checkRLV("attach");
             registerWithDB();    // inmate, offline  
             sendRLVRestrictCommand(RLVlevel);
             sayDebug("attach done");
@@ -426,7 +425,7 @@ default
             
         // Menu noticed that RLV was off. Try to set up RLV again. 
         } else if (num == 1410) {
-            checkRLV();
+            checkRLV("link_message");
             
         // someone sent the Zap command
         } else if (num == 1301) {
