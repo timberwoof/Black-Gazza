@@ -6,7 +6,7 @@
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 string prisonerNumber = "P-99999"; // to make the menus nice
 integer menuChannel = 0;
 integer menuListen = 0;
