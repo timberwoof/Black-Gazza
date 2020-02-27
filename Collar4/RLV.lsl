@@ -1,14 +1,14 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-02-22
+// version: 2020-02-26
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -118,10 +118,11 @@ checkRLV() {
         string statusquery="version="+(string)RLVStatusChannel;
         sayDebug(statusquery);
         llOwnerSay("@"+statusquery);
-        llSetTimerEvent(30); 
-    }
         // "the timeout should be long enough, like 30 seconds to one minute 
         // in order to receive the automatic reply from the viewer." 
+        llSetTimerEvent(30); 
+        // The response comes in event listen on channel RLVStatusChannel.
+    }
 }
 
 sendRLVRestrictCommand(string level) {
@@ -157,6 +158,7 @@ sendRLVRestrictCommand(string level) {
         llPlaySound(theSound, 1);
         llOwnerSay(rlvcommand);
         llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
+        llMessageLinked(LINK_THIS, 1403, "yesRLV", "");
         llMessageLinked(LINK_THIS, 2001, "", "");
         llOwnerSay("RLV lock level has been set to "+RLVlevel);
     } else {
@@ -402,6 +404,8 @@ default
     
     link_message( integer sender_num, integer num, string message, key id ){ 
     // We listen in on link messages and pick the ones we're interested in
+    
+        // RLV lock ment sends new RLV lock level
         if (num == 1401) {
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
                 sayDebug("link_message "+(string)num+" "+message);
@@ -409,6 +413,8 @@ default
             } else if (message == "Safeword") {
                 SendSafewordInstructions();
             }
+            
+        // someone requested RLV lock status
         } else if (num == 1402) { // status request
             sayDebug("link_message sending RLVlevel:"+RLVlevel);
             if (RLVpresent) {
@@ -417,9 +423,17 @@ default
                 llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
             }
             llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
+            
+        // Menu noticed that RLV was off. Try to set up RLV again. 
+        } else if (num == 1410) {
+            checkRLV();
+            
+        // someone sent the Zap command
         } else if (num == 1301) {
             // command message is like "Zap Low" 
             startZap(llGetSubString(message, 4,6), llKey2Name(id));
+            
+        // timer sent set or reset
         } else if (num == 3002) {
             if (message == "") {
                 lockTimerReset();
@@ -437,6 +451,7 @@ default
     {
         sayDebug("listen channel:" + (string)channel + " key:" + (string) id + " message:"+ message);
         
+        // safeword system
         if (channel == SafewordChannel && id == llGetOwner()) {
             sayDebug("safeword:" + message);   
             if (message == (string)Safeword) {
@@ -446,6 +461,7 @@ default
             }
         }
         
+        // response from RLV system in the viewer
         if (channel == RLVStatusChannel) {
             sayDebug("status:" + message);   
             RLVpresent = 1;
@@ -457,6 +473,7 @@ default
             llOwnerSay(message+"; RLV is present.");
         }
         
+        // request on zapchannel
         if (channel == ZapChannel) {
             sayDebug("listen ZapChannel");   
             if (message == (string)llGetOwner()) {
