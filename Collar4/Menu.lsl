@@ -563,7 +563,7 @@ tone(integer number) {
     integer i;
     for (i = 0; i < llStringLength(numbers); i++) {
         integer digit = (integer)llGetSubString(numbers, i, i);
-        llPlaySound(llList2String(touchTones, digit), 1);
+        llPlaySound(llList2String(touchTones, digit), 0.2);
     }
 }
 
@@ -732,6 +732,8 @@ default
             assetNumber = llList2String(assetNumbers, 0);
             llMessageLinked(LINK_THIS, 1013, assetNumber, avatarKey);
             llMessageLinked(LINK_THIS, 2000, assetNumber, avatarKey);
+        } else if (num == 1100) {
+            ICOOCMood = message;
         } else if (num == 1200) {
             prisonerClass = message;
         } else if (num == 1400) {
