@@ -2,7 +2,7 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-02-26
+// version: 2020-02-27
 
 // Handles all leash menu, authroization, and leashing functionality
 
@@ -92,15 +92,8 @@ leashMenu(key avatarKey)
 leashParticlesOn(key target) {
     sayDebug("leashParticlesOn");
     string texturename = "1d15cba4-91dd-568c-b2b4-d25331bebe73"; 
-    string nullstr = ""; 
-    key nullkey = NULL_KEY; 
-    key posekey = nullkey; 
     float age = 5; 
-    float gravity = 1.0; 
-    key currenttarget = nullkey; 
-    string ourtarget = nullstr; 
-    integer line; 
-    key loadkey; 
+    float gravity = 0.2; 
 
     llLinkParticleSystem( leashRingPrim, [
     PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
@@ -135,12 +128,21 @@ leashParticlesOff() {
     llLinkParticleSystem(leashRingPrim, []);
 }
 
+integer getLinkWithName(string name) {
+    integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
+    integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
+    for (; i < x; ++i)
+        if (llGetLinkName(i) == name) 
+            return i; // Found it! Exit loop early with result
+    return -1; // No prim with that name, return -1.
+}
+
 default
 {
     state_entry()
     {
         leashParticlesOff();
-        leashLength = 5;
+        leashRingPrim = getLinkWithName("leashPoint");
         leasherAvatar = llGetOwner();
         llMessageLinked(LINK_THIS, 2002, "Request", "");
         sensorState = "";
@@ -174,6 +176,7 @@ default
             leashParticlesOn(leashTarget);
             llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
             sensorState = "Leash";
+            leashMenu(leasherAvatar);
         } else if (message == "Leash To") {
             sayDebug("find leash points");
             leashPoints = [];
@@ -183,6 +186,7 @@ default
             sayDebug("set leash length");
             // message was like "5 m" or "10 m"
             leashLength = (integer)llGetSubString(message,0,1);
+            leashMenu(leasherAvatar);
         } else if (llGetSubString(message,0,4) == "Point") {
             sayDebug("leash to point");
             integer pointi = (integer)llGetSubString(message,6,7);
@@ -190,6 +194,7 @@ default
             leashParticlesOn(leashTarget);
             llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
             sensorState = "Leash";
+            leashMenu(leasherAvatar);
         } else if (message == "Unleash") {
             llSensorRemove();
             leashParticlesOff();
