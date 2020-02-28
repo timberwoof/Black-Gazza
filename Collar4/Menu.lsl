@@ -9,7 +9,7 @@
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-string version = "2020-02-26";
+string version = "2020-02-27";
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -101,7 +101,7 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
     
     tempDisplay("menu access");
     menuIdentifier = identifier;
-    menuAgentKey = avatarKey;
+    menuAgentKey = avatarKey; // remember who clicked
     string completeMessage = assetNumber + " Collar: " + message;
     menuChannel = -(llFloor(llFrand(10000)+1000));
     menuListen = llListen(menuChannel, "", avatarKey, "");
@@ -174,8 +174,8 @@ mainMenu(key avatarKey) {
     integer doSafeword = 0;
     integer doRelease = 0;
     
-    // enambe things based on state
-    if (!llSameGroup(avatarKey) || (ICOOCMood == "OOC")) {
+    // enable things based on state
+    if (!llSameGroup(avatarKey) && (ICOOCMood == "OOC") && (ICOOCMood =="DnD")) {
         doZap = 1;
     }
     
@@ -480,7 +480,15 @@ classMenu(key avatarKey)
     if (avatarKey == llGetOwner())
     {
         string message = "Set your Prisoner Class";
-        setUpMenu("Class", avatarKey, message, prisonerClasses);
+        list buttons = [];
+        integer index = 0;
+        integer length = llGetListLength(prisonerClasses);
+        for (index = 0; index < length; index++) {
+            string class = llList2String(prisonerClasses, index);
+            buttons = buttons + menuRadioButton(class, prisonerClass);
+        }
+        buttons = buttons + "Settings";
+        setUpMenu("Class", avatarKey, message, buttons);
     }
     else
     {
@@ -634,13 +642,13 @@ default
         }
         
         //Main Menu
-        else if (menuIdentifier == "Main") {
+        else if ((menuIdentifier == "Main") || (message == "Settings")) {
             sayDebug("listen: Main:"+message);
             doMainMenu(avatarKey, message);
         }
         
         //Settings
-        else if (menuIdentifier == "Settings") {
+        else if (menuIdentifier == "Settings"){
             sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message);
         }
@@ -659,8 +667,8 @@ default
         
         // Class
         else if (menuIdentifier == "Class") {
-            sayDebug("listen: Class:"+message);
-            prisonerClass = message;
+            sayDebug("listen: Class:"+messageButtonsTrimmed);
+            prisonerClass = messageButtonsTrimmed;
             llMessageLinked(LINK_THIS, 1200, prisonerClass, avatarKey);
             settingsMenu(avatarKey);
         }
