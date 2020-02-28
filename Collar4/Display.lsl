@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-25
+// version: 2020-02-27
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -304,7 +304,7 @@ default
         moodColors = [LIGHT_GRAY, GREEN, YELLOW, ORANGE, CYAN, PURPLE, GRAY];
         prisonerMood = "OOC";
         
-        classNames = ["white","pink","red","orange","green","blue","black","Unknown"];
+        classNames = ["white","pink","red","orange","green","blue","black"];
         classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
@@ -313,7 +313,7 @@ default
             BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
         classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
             BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
-        prisonerClass = "White";
+        prisonerClass = "white";
         prisonerClassColor = WHITE;
         setTextColor(CYAN);
         
