@@ -273,7 +273,7 @@ pingResponder(key whoclicked) {
     responderChannel = uuidToInteger(whoclicked);
     responderListen = llListen(responderChannel, "", "", "");
     debug("Request Authorization on channel "+(string)responderChannel);    
-    llWhisper(responderChannel, "Request Authorization");
+    llWhisper(responderChannel, "Request Status");
     gResponderTimer = setTimerEvent(TIMER_INTERVAL);
 }
 
@@ -641,10 +641,9 @@ default
     }
 
     listen(integer channel, string name, key id, string message) {
-        debug("listen channel:"+(string)channel+" name:'"+name+"' message: '"+message+"'");
-        debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
         if ((channel == POWER_CHANNEL) & (gPowerState != POWER_FAILING) & (gPowerState != POWER_OFF)) 
         {
+            debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
             debug("listen gPowerState = POWER_FAILING");
             list xyz = llParseString2List( message, [","], ["<",">"]);
             vector distantloc;
@@ -659,6 +658,7 @@ default
         
         else if (channel == LOCKDOWN_CHANNEL) 
         {
+            debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
             debug("listen "+message);
             if (message == "LOCKDOWN") 
             {
@@ -695,12 +695,26 @@ default
                 }
             }
             
-        } else if (channel == responderChannel) {
+        } else if (OPTION_RESPONDER && (channel == responderChannel)) {
             debug("responder: "+message);
             llListenRemove(responderListen);
             responderListen = 0;
             responderChannel = 0;
-            responderMessage = message; // set the global for activation when the timer runs out. 
+            //responderMessage = message; // set the global for activation when the timer runs out. 
+            string assetNumber = llJsonGetValue(message, ["assetNumber"]);
+            string prisonerClass = llJsonGetValue(message, ["prisonerClass"]);
+            string prisonerMood = llJsonGetValue(message, ["prisonerMood"]);
+            string prisonerLockLevel = llJsonGetValue(message, ["prisonerLockLevel"]);
+            string zapLevels = llJsonGetValue(message, ["zapLevels"]);
+            debug("responder assetNumber:"+assetNumber);
+            debug("responder prisonerClass:"+prisonerClass);
+            debug("responder prisonerMood:"+prisonerMood);
+            debug("responder prisonerLockLevel:"+prisonerLockLevel);
+            debug("responder zapLevels:"+zapLevels);
+            
+            // now we set the responderMessage
+            responderMessage = "Yes"; 
+            //if (prisonerMood = 
         }
     }
     
