@@ -71,6 +71,7 @@ default
     
     listen(integer channel, string name, key id, string message) {
         // must be in STATE == WAITING_FOR_FLOOR
+        llListenRemove(menuListen);
         llSetTexture(open, 2);
         desiredFloor = (integer)message;
         llSetClickAction(CLICK_ACTION_SIT);
