@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-02-26
+// version: 2020-02-29
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
@@ -387,7 +387,7 @@ default
             hudAttached = 0;
             HudFunctionState = 0;
             sendRLVRestrictCommand("Off");
-            sendRLVRestrictCommand("NoRLV");
+            sendRLVRestrictCommand("Off");
             registerWithDB();    // inmate, offline  
             sayDebug("attach but no ID done");
         }
