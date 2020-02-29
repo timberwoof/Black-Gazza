@@ -30,7 +30,7 @@ integer INFO = 1;
 integer DEBUG = 2;
 integer TRACE = 3;
 list logLevelS = ["error","info","debug","trace"];
-integer logLevel = 2; // debug
+integer logLevel = 2; // info
 
 vector white = <1,1,1>; // not ready
 vector red = <1,.25,.25>; // werewolf
@@ -46,13 +46,15 @@ string RLVFOLDER; // ~stgargoyle
 integer line;
 key notecardQueryId;
 
-vector plinthLocal;
-string plinthString;
 string plinthSim;
+vector simGlobal;
 vector plinthPos;
 string plinthKey;
-vector simGlobal;
 key plinthQueryId;
+
+integer commandchannel = 0;
+integer beetlejuiceListen = 0;
+string beetlejuicePhrase = "";
 
 string actualState;
 integer triggerAnimationsSet = 0;
@@ -62,14 +64,13 @@ integer count = 0;
 integer continuousLookingCount = 0;
 integer continuousNotLookingCount = 0;
 integer continuouslookthreshold = 0; 
-integer continuouslooktimeout = 0;
 
 integer rlvVersion = 0;
 integer rlvVersionChannel;
 integer rlvVersionListen;
 
-string beetlejuicePhrase;
-integer beetlejuiceListen;
+integer debugMenuChannel = 0;
+integer debugMenuListen = 0;
 
 // when description is "DEBUG", this sends messages to wearer for debugging
 sayLog(integer level, string message) 
@@ -112,6 +113,7 @@ setSymbol(string symbol, string value)
 
 listSymbolValues(integer logLevel)
 {
+    sayLog(logLevel,"Listing symbol values");
     integer index;
     for (index = 0; index < llGetListLength(symbols); index++)
     {
@@ -137,8 +139,7 @@ initializeSymbols()
     setSymbol("sensorradius","10.0");
     setSymbol("sensorrate","2.0");
     setSymbol("continuouslookthreshold","4");
-    setSymbol("continuouslooktimeout","30");
-    setSymbol("anglethreshold","0.12");
+    setSymbol("anglethreshold","0.25");
     setSymbol("sunangle","0.5");
 }
 
@@ -152,7 +153,6 @@ initializePart1()
     continuousLookingCount = 0;
     continuousNotLookingCount = 0;
     triggerAnimationsSet = 0;
-    startState = 0;
     actualState = "flesh";
     notecardQueryId = NULL_KEY;
     plinthQueryId = NULL_KEY;
@@ -160,18 +160,20 @@ initializePart1()
     // set up basic prim prooperties
     llSetColor(white,ALL_SIDES);
     llSetTimerEvent(0);
-    
+        
     // Ask for RLV version number.
     rlvVersionChannel = (integer)llFloor(llFrand(10000));
     rlvVersionListen = llListen(rlvVersionChannel,"","","");
     llOwnerSay("@versionnum="+(string)rlvVersionChannel);
+    
+    llListenRemove(beetlejuiceListen);
     llSensorRemove();
-
+    
     // Ask for animaiton and controls permisiosns.
     if(llGetAttached() != 0) 
     { 
+        sayLog(DEBUG,"attached; asking for animation and control permissions");
         llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION | PERMISSION_TAKE_CONTROLS);
-        sayLog(DEBUG,"attached; asked for animation and control permissions");
     }
     
     initializeSymbols();
@@ -213,7 +215,7 @@ initializePart2(string data)
                 temp = llParseString2List(value, [" "], []);
                 value = llDumpList2String(temp, " ");
                 
-                sayLog(TRACE,"initializePart2 setting "+name+" to "+value);
+                sayLog(DEBUG,"initializePart2 setting "+name+" to "+value);
                 setSymbol(name, value);
             }
             else
@@ -271,7 +273,6 @@ initializePart3()
     // simple often-used symbols become variables
     RLVFOLDER = "~"+getSymbol("rlvfolder");
     continuouslookthreshold = (integer)getSymbol("continuouslookthreshold");
-    continuouslooktimeout = (integer)getSymbol("continuouslooktimeout");
 
     // triggermode can be seen, unseen, day, or night.
     string triggerphrase;
@@ -405,7 +406,7 @@ initializePart4(string data)
     string beetlejuice = getSymbol("beetlejuice");
     if (beetlejuice != OFF)
     {   
-        beetlejuicePhrase = ":: " + beetlejuice+" "+beetlejuice+" "+beetlejuice + " ::";
+        beetlejuicePhrase = beetlejuice+" "+beetlejuice+" "+beetlejuice;
         beetlejuiceListen = llListen(0,"",NULL_KEY, beetlejuicePhrase);
         sayLog(INFO,"When anyone says "+beetlejuicePhrase+", you will go to them.");
     }
@@ -583,9 +584,6 @@ doTransform(string desiredState)
                 llOwnerSay("@chatshout=n,chatnormal=n,fly=n,tploc=n,tplure_sec=n,shownames=n,emote=add,sendchat=n");
                 llOwnerSay("@remattach=n,addattach=n,remoutfit=n,addoutfit=n,tploc=n");
                 llOwnerSay("@rez=n,showinv=n,fartouch=n,touchall=n,touchattach=n,touchworld=n");
-                llOwnerSay("@camunlock=n,camzoommax:1=n,camzoommin:1=n,setcam_fovmin:0.65=n,setcam_fovmax:0.75=n,setcam_fov:0.7=force"); // works
-                llOwnerSay("@camdistmax:1=n,camdistmin:1=n"); // works
-                llOwnerSay("@camdrawmin:5=n,camdrawmax:20=n,camdrawalphamin:0.1=n,camdrawalphamax:0.9=n,@camdrawcolor:0;0;0=n");
             }
             llSetColor(red,ALL_SIDES);
         }
@@ -616,6 +614,17 @@ stopAllAnimations()
     {
         llStopAnimation( llList2Key(l, i));
     }
+}
+
+debugmenu()
+{
+    sayLog(DEBUG, "debugmenu");
+    list debugButtons = ["flesh","stone","were"];
+    string debugText = "choose transformation state:";
+    debugMenuChannel = llFloor(llFrand(1000)+1000);
+    debugMenuListen = llListen(debugMenuChannel, "", "", "");
+    llSetTimerEvent(30);
+    llDialog(llGetOwner(), debugText, debugButtons, debugMenuChannel);
 }
 
 default
@@ -661,7 +670,14 @@ default
     timer()
     {
         sayLog(DEBUG, "timer startState:"+(string)startState);
-                
+        
+        if (debugMenuChannel != 0 & debugMenuListen != 0)
+        {
+            debugMenuChannel = 0;
+            debugMenuListen = 0;
+            llSetTimerEvent(300); // 5 minutes
+        }
+        
         if (2 == startState) // end of read-notecard
         {
             initializePart3();
@@ -757,6 +773,28 @@ default
             sayLog(DEBUG,"RLV version:"+(string)message); 
             llListenRemove(rlvVersionListen);
         }
+        
+        if ((0 != beetlejuiceListen) & (0 == channel) & (beetlejuicePhrase == message) & (plinthSim != ""))
+        {
+            if (llGetOwner() == id)
+            {
+                sayLog(INFO,"Wherever you go, there you are.");
+            }
+            else
+            {
+                sayLog(INFO,name+" has summoned you by saying "+message+".");
+                vector summonTo=llList2Vector(llGetObjectDetails(id, [OBJECT_POS]), 0);
+                forceTeleportTo(llGetRegionName(),summonTo);
+            }
+        }
+        
+        if (debugMenuChannel == channel)
+        {
+            llListenRemove(debugMenuListen);
+            debugMenuChannel = 0;
+            debugMenuListen = 0;
+            doTransform(message);
+        }
     }
 
     touch_start(integer total_number)
@@ -790,8 +828,15 @@ default
             }
             else
             {
-                sayLog(INFO,who+" is looking at you.");
-                llSensorRepeat("", NULL_KEY, AGENT, (float)getSymbol("sensorradius"), PI, (float)getSymbol("sensorrate"));
+                if (logLevel >= DEBUG)
+                {
+                    debugmenu();
+                }
+                else
+                {    
+                    sayLog(INFO,who+" is looking at you.");
+                    llSensorRepeat("", NULL_KEY, AGENT, (float)getSymbol("sensorradius"), PI, (float)getSymbol("sensorrate"));
+                }
             }
         } 
         
@@ -806,9 +851,16 @@ default
             }
             else
             {
+                if (logLevel >= DEBUG)
+                {
+                    debugmenu();
+                }
+                else
+                {    
                     sayLog(INFO,"You are transformed. You cannot cancel the HUD.");
                     vector sun = llGetSunDirection();
                     sayLog(DEBUG,"sun angle is "+(string)sun.z);
+                }
             }
         }
     }
@@ -839,7 +891,7 @@ default
                 avatarSeesMe.z = 0.0;
                 rotation rotBetween = llRotBetween(avatarLookingAt,avatarSeesMe);
                 float angleBetween = llAngleBetween(<0,0,0,0>, rotBetween);
-                sayLog(DEBUG,avatarName+": "+(string)angleBetween);
+                sayLog(TRACE,avatarName+": "+(string)angleBetween);
                 if (angleBetween < (float)getSymbol("anglethreshold"))
                 {
                     someoneIsLooking = someoneIsLooking + 1;
@@ -865,7 +917,7 @@ default
             sayLog(TRACE,who+" is looking at you.");
             continuousNotLookingCount = 0;
             continuousLookingCount = continuousLookingCount + 1;
-            if (continuousLookingCount > continuouslookthreshold & continuousLookingCount < continuouslooktimeout)
+            if (continuousLookingCount > continuouslookthreshold)
             {
                 sayLog(TRACE,who+" has been looking at you for a while.");
                 if ("seen" == triggerMode)
@@ -881,16 +933,6 @@ default
                     sayLog(ERROR,"ill-defined trigger mode: "+triggerMode);
                 }
             }
-            if (continuousLookingCount > continuouslooktimeout)
-            {
-                sayLog(INFO,"Someone has been looking at you for a long time.");
-                if ("seen" == triggerMode)
-                {
-                    doTransform("flesh");
-                }
-                sayLog(INFO,"Run!");
-            }
-
         }
         
         else if (someoneIsLooking == 0)
