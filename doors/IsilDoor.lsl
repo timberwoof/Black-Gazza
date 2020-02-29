@@ -700,17 +700,31 @@ default
             llListenRemove(responderListen);
             responderListen = 0;
             responderChannel = 0;
-            //responderMessage = message; // set the global for activation when the timer runs out. 
+            
+            // response looks like {"assetNumber":"P-60361","prisonerCrime":"Piracy; Illegal Transport of Biogenics",
+            // "prisonerClass":"red","prisonerThreat":"None","prisonerMood":"Dominant","batteryLevel":"40",
+            // "prisonerLockLevel":"NoRLV","zapLevels":[1,1,1]}
+            // {"assetNumber":"P-60361","prisonerCrime":"Piracy; Illegal Transport of Biogenics",
+            // "prisonerClass":"blue","prisonerThreat":"Moderate","prisonerMood":"DnD","batteryLevel":"90",
+            // "prisonerLockLevel":"Off","zapLevels":[1,1,1]}
             string assetNumber = llJsonGetValue(message, ["assetNumber"]);
             string prisonerClass = llJsonGetValue(message, ["prisonerClass"]);
             string prisonerMood = llJsonGetValue(message, ["prisonerMood"]);
             string prisonerLockLevel = llJsonGetValue(message, ["prisonerLockLevel"]);
             string zapLevels = llJsonGetValue(message, ["zapLevels"]);
             debug("responder assetNumber:"+assetNumber);
-            debug("responder prisonerClass:"+prisonerClass);
-            debug("responder prisonerMood:"+prisonerMood);
-            debug("responder prisonerLockLevel:"+prisonerLockLevel);
+            debug("responder prisonerClass:"+prisonerClass); 
+            // red can leave; orange/white, green blue/black, violet - maybe, depending on other factors
+            // Four classes can only leave/enter through their color door
+            debug("responder prisonerMood:"+prisonerMood); 
+            // DnD or OOC can leave; all IC moods cannot leave
+            debug("responder prisonerLockLevel:"+prisonerLockLevel); 
+            // locklevel NoRLV Light can leave; 
+            // locklevel Medium can only use correct color door
+            // locklevel Heavy or Hardcore cannot leave
             debug("responder zapLevels:"+zapLevels);
+            // heavy or hardcore zap at highest allowed level
+            // medium zap at lowest level
             
             // now we set the responderMessage
             responderMessage = "Yes"; 
