@@ -216,6 +216,7 @@ doMainMenu(key avatarKey, string message) {
         }
         else if (message == "Release"){
             theLocklevel = "Off";
+            renamerActive = 0;
             llMessageLinked(LINK_THIS, 1401, "Off", avatarKey);
         }
     }
@@ -320,7 +321,10 @@ speechMenu(key avatarKey)
     list buttons = [];
     if (avatarKey == llGetOwner())
     {
-        buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), rlvPresent);
+        // renamerActive sets the state of the checkbox
+        // theLockLevel sets whether the option is available
+        integer locked = theLocklevel != "Off";
+        buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), locked);
     }
     buttons = buttons + ["Gag", "BadWords"];
     setUpMenu("Speech", avatarKey, message, buttons);
@@ -331,6 +335,14 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
     if (messageButtonsTrimmed == "Renamer") {
         renamerActive = !renamerActive;
         llMessageLinked(LINK_THIS, 2101, (string)renamerActive, ""); // ask for database update
+    }
+    
+    if (message == "BadWords") {
+        if (avatarKey == llGetOwner()) {
+            llMessageLinked(LINK_THIS, 2110, "", avatarKey); // ask for list of bad words
+        } else {
+            llMessageLinked(LINK_THIS, 2111, "", avatarKey); // send badwords setup dialogs
+        }
     }
 }
 
@@ -603,7 +615,8 @@ default
     {
         sayDebug("state_entry");
         menuAgentKey = "";
-        theLocklevel = "Off";        
+        theLocklevel = "Off"; 
+        renamerActive = 0;       
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
         llMessageLinked(LINK_THIS, 1402, "", ""); // ask for RLV update
@@ -731,6 +744,9 @@ default
                 theLocklevel = messageButtonsTrimmed;
                 sayDebug("listen set theLocklevel:\""+theLocklevel+"\"");
                 llMessageLinked(LINK_THIS, 1401, theLocklevel, avatarKey);
+                if (theLocklevel == "Off") {
+                    renamerActive = 0;
+                }
                 settingsMenu(avatarKey);
             }
         }
@@ -776,12 +792,14 @@ default
                 theLocklevel = message;
             } else {
                 theLocklevel = "Off";
+                renamerActive = 0;
             }
             sayDebug("link_message set theLocklevel:"+theLocklevel);
         } else if (num == 1403) {
             // RLV Presence
             if (message == "NoRLV") {
                 rlvPresent = 0;
+                renamerActive = 0;
                 theLocklevel = "Off";
             } else if (message == "YesRLV") {
                 rlvPresent = 1;
