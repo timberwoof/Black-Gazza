@@ -353,7 +353,6 @@ default
         // set up the responder
         responderChannel = uuidToInteger(llGetOwner());
         responderListen = llListen(responderChannel,"", "", "");
-        
     }
 
     attach(key id)
@@ -452,7 +451,10 @@ default
                 llOwnerSay("Please select Settings > Asset.");
             } else {
                 sayDebug("set and display assetNumber \""+assetNumber+"\"");
-                llSetObjectName(assetNumber);
+                string ownerName = llGetDisplayName(llGetOwner());
+                list namesList = llParseString2List(ownerName, [" "], [""]);
+                string firstName = llList2String(namesList, 0);
+                llSetObjectName(assetNumber+" ("+firstName+")");
                 displayCentered(assetNumber);
                 displayTitler();
             }
