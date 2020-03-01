@@ -452,6 +452,7 @@ default
                 llOwnerSay("Please select Settings > Asset.");
             } else {
                 sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                llSetObjectName(assetNumber);
                 displayCentered(assetNumber);
                 displayTitler();
             }
