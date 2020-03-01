@@ -77,14 +77,6 @@ sayDebug(string message)
     }
 }
 
-integer invert(integer boolie)
-{
-    if (boolie == 1) 
-        return 0;
-    else
-        return 1;
-}
-
 tempDisplay(string message) 
 // send the message to the alphanumeric Display
 {
@@ -488,11 +480,11 @@ doSetZapLevels(key avatarKey, string message)
     {
         sayDebug("wearer sets allowable zap level: "+message);
         if (message == "Zap Low") {
-            allowZapLow = invert(allowZapLow);
+            allowZapLow = !allowZapLow;
         } else if (message == "Zap Med") {
-            allowZapMed = invert(allowZapMed);
+            allowZapMed = !allowZapMed;
         } else if (message == "Zap High") {
-            allowZapHigh = invert(allowZapHigh);
+            allowZapHigh = !allowZapHigh;
         }
         if (allowZapLow + allowZapMed + allowZapHigh == 0) {
             allowZapHigh = 1;
