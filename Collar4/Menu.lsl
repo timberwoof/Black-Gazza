@@ -9,7 +9,7 @@
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-string version = "2020-02-27";
+string version = "2020-03-01";
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -48,6 +48,7 @@ list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic",
 string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
+integer renamerActive = 0;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -149,7 +150,7 @@ list menuButtonActive(string title, integer onOff)
     }
     else
     {
-        button = "⦻";
+        button = "["+title+"]";//"⦻";
     }
     return [button];
 }
@@ -191,31 +192,35 @@ mainMenu(key avatarKey) {
         message = message + "\nRelease is only availavle to a Guard while prisoner is in RLV Hardcore mode.";
     }
     
-    list buttons = ["Info", "Settings", "Leash", "Hack"];
+    list buttons = ["Info", "Settings", "Hack"];
     buttons = buttons + menuButtonActive("Zap", doZap);
+    buttons = buttons + ["Leash", "Speech"];
     buttons = buttons + menuButtonActive("Safeword", doSafeword);
     buttons = buttons + menuButtonActive("Release", doRelease);
     setUpMenu("Main", avatarKey, message, buttons);
 }
 
 doMainMenu(key avatarKey, string message) {
-        if (message == "Zap"){
+        if (message == "Info"){
+            infoGive(avatarKey);
+        }
+        else if (message == "Settings"){
+            settingsMenu(avatarKey);
+        }
+        else if (message == "Hack"){
+            hackMenu(avatarKey);
+        }
+        else if (message == "Zap"){
             zapMenu(avatarKey);
         }
         else if (message == "Leash"){
             llMessageLinked(LINK_THIS, 1901, "Leash", avatarKey);
         }
-        else if (message == "Info"){
-            infoGive(avatarKey);
-        }
-        else if (message == "Hack"){
-            hackMenu(avatarKey);
+        else if (message == "Speech"){
+            speechMenu(avatarKey);
         }
         else if (message == "Safeword"){
             llMessageLinked(LINK_THIS, 1401, "Safeword", avatarKey);
-        }
-        else if (message == "Settings"){
-            settingsMenu(avatarKey);
         }
         else if (message == "Release"){
             theLocklevel = "Off";
@@ -316,6 +321,29 @@ hackMenu(key avatarKey)
         ;
     }
 }
+
+speechMenu(key avatarKey)
+{
+    string message = "";
+    list buttons = [];
+    if (avatarKey == llGetOwner())
+    {
+        buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), rlvPresent);
+    }
+    buttons = buttons + ["Gag", "BadWords"];
+    setUpMenu("Speech", avatarKey, message, buttons);
+}
+
+doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed) 
+{
+    if (messageButtonsTrimmed == "Renamer") {
+        renamerActive = !renamerActive;
+        llMessageLinked(LINK_THIS, 2101, (string)renamerActive, ""); // ask for database update
+    }
+}
+
+
+
 
 // Settings Menus and Handlers ************************
 // Sets Collar State: Mood, Threat, Lock, Zap levels 
@@ -651,6 +679,12 @@ default
         else if (menuIdentifier == "Settings"){
             sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message);
+        }
+
+        //Speech
+        else if (menuIdentifier == "Speech"){
+            sayDebug("listen: Speech:"+message);
+            doSpeechMenu(avatarKey, message, messageButtonsTrimmed);
         }
 
         // Asset
