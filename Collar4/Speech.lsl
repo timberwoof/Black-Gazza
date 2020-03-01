@@ -10,6 +10,9 @@
 integer OPTION_DEBUG = 1;
 integer rlvPresent = 0;
 integer renamerActive = 0;
+integer renameChannel = 0;
+integer renameListen = 0;
+string assetNumber;
 
 sayDebug(string message)
 {
@@ -31,8 +34,19 @@ default
             renamerActive = (integer)message;
             if (renamerActive) {
                 sayDebug("link_message renamer on");
+                renameChannel = (llFloor(llFrand(10000)+1000));
+                renameListen = llListen(renameChannel, "", llGetOwner(), "");
+                string rlvcommand = "@redirchat:"+(string)renameChannel+"=add";
+                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
+                llOwnerSay(rlvcommand);
             } else {
                 sayDebug("link_message renamer off");
+                string rlvcommand = "@redirchat:"+(string)renameChannel+"=rem";
+                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
+                llOwnerSay(rlvcommand);
+                llListenRemove(renameChannel);
+                renameChannel = 0;
+                renameListen = 0;
             }
         }
     
@@ -44,7 +58,16 @@ default
             } else if (message == "YesRLV") {
                 rlvPresent = 1;
             }    
-        sayDebug("link_message set rlvPresent:"+(string)rlvPresent);
+            sayDebug("link_message set rlvPresent:"+(string)rlvPresent);
+        }
+        
+        if (num == 2000) {
+            assetNumber = message;
+            sayDebug("link_message set "+message);
         }
     }
+    
+    listen(integer channel, string name, key avatarKey, string message){
+        llSay(0,message);
+        }
 }
