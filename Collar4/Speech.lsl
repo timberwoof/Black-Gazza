@@ -14,6 +14,8 @@ integer renameChannel = 0;
 integer renameListen = 0;
 string assetNumber;
 
+list badWords;
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
@@ -21,7 +23,6 @@ sayDebug(string message)
         llWhisper(0,"Speech:"+message);
     }
 }
-
 
 default
 {
@@ -49,13 +50,17 @@ default
                 renameListen = 0;
             }
         }
-    
-        if (num == 1403) {
+        
+        if (num == 2110) {
+            llOwnerSay("");
+        }
+
+        if (num == 1400) {
             // RLV Presence
-            if (message == "NoRLV") {
+            if (message == "Off") {
                 rlvPresent = 0;
                 renamerActive = 0;
-            } else if (message == "YesRLV") {
+            } else {
                 rlvPresent = 1;
             }    
             sayDebug("link_message set rlvPresent:"+(string)rlvPresent);
