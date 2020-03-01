@@ -341,7 +341,7 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
         if (avatarKey == llGetOwner()) {
             llMessageLinked(LINK_THIS, 2110, "", avatarKey); // ask for list of bad words
         } else {
-            llMessageLinked(LINK_THIS, 2111, "", avatarKey); // send badwords setup dialogs
+            llMessageLinked(LINK_THIS, 2110, "", avatarKey); // send badwords setup dialogs
         }
     }
 }
