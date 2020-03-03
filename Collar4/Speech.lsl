@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version 2020-03-01
+// version 2020-03-02
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
@@ -19,6 +19,8 @@ integer renameEmoteListen = 0;
 integer textboxChannel = 0;
 integer textboxListen = 0;
 
+integer badWordsActive = 0;
+
 string assetNumber;
 
 list badWords;
@@ -29,6 +31,13 @@ sayDebug(string message)
     {
         llWhisper(0,"Speech:"+message);
     }
+}
+
+integer detectBadWords(string speech){
+    if (badWordsActive) {
+        llParseString2List(speech, [" "], [""]);
+    }
+    return 1;
 }
 
 default
@@ -77,6 +86,13 @@ default
             llTextBox(avatarKey, message, textboxChannel);
             llSetTimerEvent(30);
         }
+        
+        if (num == 2111) {
+            badWordsActive = 0;
+        }
+        if (num == 2112) {
+            badWordsActive = 1;
+        }
 
         if (num == 1400) {
             // RLV Presence
@@ -97,6 +113,7 @@ default
     
     listen(integer channel, string name, key avatarKey, string message){
         if (channel == renameSpeechChannel) {
+            detectBadWords(message);
             llSay(0,message);
             }
         if (channel == renameEmoteChannel) {
