@@ -7,12 +7,14 @@
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 integer rlvPresent = 0;
 integer renamerActive = 0;
-integer renameChannel = 0;
-integer renameListen = 0;
+integer renameSpeechChannel = 0;
+integer renameSpeechListen = 0;
+integer renameEmoteChannel = 0;
+integer renameEmoteListen = 0;
 
 integer textboxChannel = 0;
 integer textboxListen = 0;
@@ -46,19 +48,22 @@ default
             renamerActive = (integer)message;
             if (renamerActive) {
                 sayDebug("link_message renamer on");
-                renameChannel = llFloor(llFrand(10000)+1000);
-                renameListen = llListen(renameChannel, "", llGetOwner(), "");
-                string rlvcommand = "@redirchat:"+(string)renameChannel+"=add,rediremote:"+(string)renameChannel+"=add";
+                renameSpeechChannel = llFloor(llFrand(10000)+1000);
+                renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
+                renameEmoteChannel = llFloor(llFrand(10000)+1000);
+                renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
+                string rlvcommand;
+                rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
                 sayDebug("link_message renamer rlvcommand:"+rlvcommand);
                 llOwnerSay(rlvcommand);
             } else {
                 sayDebug("link_message renamer off");
-                string rlvcommand = "@redirchat:"+(string)renameChannel+"=rem,rediremote:"+(string)renameChannel+"=rem";
+                string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
                 sayDebug("link_message renamer rlvcommand:"+rlvcommand);
                 llOwnerSay(rlvcommand);
-                llListenRemove(renameChannel);
-                renameChannel = 0;
-                renameListen = 0;
+                llListenRemove(renameSpeechChannel);
+                renameSpeechChannel = 0;
+                renameEmoteListen = 0;
             }
         }
         
@@ -91,7 +96,10 @@ default
     }
     
     listen(integer channel, string name, key avatarKey, string message){
-        if (channel = renameChannel) {
+        if (channel == renameSpeechChannel) {
+            llSay(0,message);
+            }
+        if (channel == renameEmoteChannel) {
             llSay(0,message);
             }
             
