@@ -471,6 +471,7 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         }
         else if (messageButtonsTrimmed == "BadWords"){
             badWordsOn = !badWordsOn;
+            llMessageLinked(LINK_THIS, 2111+badWordsOn, "TIMER MODE", avatarKey);
         }
             
 }
