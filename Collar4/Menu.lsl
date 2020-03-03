@@ -54,6 +54,7 @@ string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
 string threatLevel = "Moderate";
 string batteryLevel = "Unknown";
+integer badWordsOn = 0;
 
 key approveAvatar;
 
@@ -326,7 +327,8 @@ speechMenu(key avatarKey)
         integer locked = theLocklevel != "Off";
         buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), locked);
     }
-    buttons = buttons + ["Gag", "BadWords"];
+    buttons = buttons + "Gag";
+    buttons = buttons + menuButtonActive("BadWords", badWordsOn);
     setUpMenu("Speech", avatarKey, message, buttons);
 }
 
@@ -368,6 +370,7 @@ settingsMenu(key avatarKey) {
     integer setZaps = 0;
     integer setTimer = 0;
     integer setAsset = 0;
+    integer setBadWords = 0;
     
     // Add some things depending on who you are. 
     // What wearer can change
@@ -386,6 +389,7 @@ settingsMenu(key avatarKey) {
             setZaps = 1;
             setTimer = 1;
             setAsset = 1;
+            setBadWords = 1;
         }
         else {
             message = message + "\nSome settings are not available while you are IC.";
@@ -432,11 +436,12 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Timer", setTimer);
     buttons = buttons + menuButtonActive("SetZap", setZaps);
     buttons = buttons + menuButtonActive("Mood", setMood);
+    buttons = buttons + menuButtonActive(menuCheckbox("BadWords",badWordsOn), setBadWords);
     
     setUpMenu("Settings", avatarKey, message, buttons);
 }
     
-doSettingsMenu(key avatarKey, string message) {
+doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         if (message == "Mood"){
             moodMenu(avatarKey);
         }
@@ -464,6 +469,10 @@ doSettingsMenu(key avatarKey, string message) {
         else if (message == "Timer"){
             llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
+        else if (messageButtonsTrimmed == "BadWords"){
+            badWordsOn = !badWordsOn;
+        }
+            
 }
 
 assetMenu(key avatarKey)
@@ -683,7 +692,7 @@ default
         //Settings
         else if (menuIdentifier == "Settings"){
             sayDebug("listen: Settings:"+message);
-            doSettingsMenu(avatarKey, message);
+            doSettingsMenu(avatarKey, message, messageButtonsTrimmed);
         }
 
         //Speech
