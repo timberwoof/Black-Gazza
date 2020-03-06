@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-02-27
+// version: 2020-03-05
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -466,6 +466,11 @@ default
             displayCentered(message);
             llSetTimerEvent(5);
         }
+        
+        // blink battery light for bad words
+        else if (num == 2120) {
+            sayDebug("display "+message+":"+message);
+            }
     }
     
     listen(integer channel, string name, key id, string message)
