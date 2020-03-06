@@ -2,12 +2,12 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version 2020-03-02
+// version 2020-03-05
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer rlvPresent = 0;
 integer renamerActive = 0;
@@ -34,10 +34,24 @@ sayDebug(string message)
 }
 
 integer detectBadWords(string speech){
+    integer countBadWords = 0;
     if (badWordsActive) {
-        llParseString2List(speech, [" "], [""]);
+        list wordsSpoken = llParseString2List(speech, [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
+        sayDebug("detectBadWords wordsSpoken:"+(string)wordsSpoken);
+        integer i;
+        integer j;
+        for (i = 0; i < llGetListLength(badWords); i++) {
+            string theBadWord = llList2String(badWords, i);
+            sayDebug("detectBadWords searching for "+theBadWord);
+            integer where = llListFindList(wordsSpoken, [theBadWord]);
+            if (where >= 0) {
+                sayDebug("detectBadWords detected "+theBadWord);
+                countBadWords++;
+            }
+        }
+        sayDebug("detected "+(string)countBadWords+" bad words");
     }
-    return 1;
+    return countBadWords;
 }
 
 default
@@ -113,14 +127,17 @@ default
     
     listen(integer channel, string name, key avatarKey, string message){
         if (channel == renameSpeechChannel) {
-            detectBadWords(message);
+            integer badWordCount = detectBadWords(message);
+            if (badWordCount > 0) {
+                llMessageLinked(LINK_THIS, 2120, (string)badWordCount, avatarKey);
+            }
             llSay(0,message);
             }
         if (channel == renameEmoteChannel) {
             llSay(0,message);
             }
             
-        if (channel = textboxChannel) {
+        if (channel == textboxChannel) {
             sayDebug("listen "+message);
             list incomingWords = llParseString2List(llToLower(message), [" ", ","], [""]);
             integer i;
