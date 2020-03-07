@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version 2020-03-05
+// version 2020-03-07
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
@@ -36,16 +36,13 @@ sayDebug(string message)
 integer detectBadWords(string speech){
     integer countBadWords = 0;
     if (badWordsActive) {
-        list wordsSpoken = llParseString2List(speech, [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
-        sayDebug("detectBadWords wordsSpoken:"+(string)wordsSpoken);
+        list wordsSpoken = llParseString2List(llToLower(speech), [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
         integer i;
         integer j;
-        for (i = 0; i < llGetListLength(badWords); i++) {
-            string theBadWord = llList2String(badWords, i);
-            sayDebug("detectBadWords searching for "+theBadWord);
-            integer where = llListFindList(wordsSpoken, [theBadWord]);
+        for (i = 0; i < llGetListLength(wordsSpoken); i++) {
+            string aWord = llList2String(wordsSpoken, i);
+            integer where = llListFindList(badWords, [aWord]);
             if (where >= 0) {
-                sayDebug("detectBadWords detected "+theBadWord);
                 countBadWords++;
             }
         }
