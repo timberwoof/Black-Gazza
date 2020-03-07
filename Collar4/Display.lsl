@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-05
+// version: 2020-03-07
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -117,6 +117,10 @@ integer responderListen;
 string assetNumber;
 string zapLevelsJSON;
 
+integer TIMER_BADWORDS = 0;
+integer TIMER_SCROLL = 0;
+integer TIMER_REDISPLAY = 0;
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
@@ -194,6 +198,7 @@ displayCentered(string text){
 
 displayScroll(string text){
 // display a string of more than 12 characters in a lovely scrolling manner. 
+// needs some support from timer 
     sayDebug("displayScroll("+text+")");
     string displayText = "            "; // 12 spaces
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
@@ -464,12 +469,14 @@ default
         else if (num == 2001) {
             sayDebug("display "+message);
             displayCentered(message);
-            llSetTimerEvent(5);
+            TIMER_REDISPLAY = 1;
+            llSetTimerEvent(3);
         }
         
         // blink battery light for bad words
         else if (num == 2120) {
-            sayDebug("display "+message+":"+message);
+            TIMER_BADWORDS = (integer)message;
+            llSetTimerEvent(1);
             }
     }
     
@@ -491,13 +498,34 @@ default
     }
 
     timer() {
-        sayDebug("timer(): display assetNumber "+assetNumber);
-            if (assetNumber == "") {
-                llOwnerSay("Please select Settings > Asset.");
-            } else {
-                sayDebug("set and display assetNumber \""+assetNumber+"\"");
-                displayCentered(assetNumber);
+        sayDebug("timer()");
+            if (TIMER_REDISPLAY > 0) {
+                if (assetNumber == "") {
+                    displayCentered("P-00000");
+                } else {
+                    sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                    displayCentered(assetNumber);
+                }
+                llSetTimerEvent(0);  
+                TIMER_REDISPLAY = 0;
             }
-        llSetTimerEvent(0);  
+            
+            // Blink the battery light off and red for every bad word spokem.
+            // Timer shoud be on one-second interval
+            if (TIMER_BADWORDS > 0) {
+                sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
+                llSetLinkColor(LinkBlinky, RED, 0);
+                llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, RED, 1.0]);
+                TIMER_BADWORDS = - TIMER_BADWORDS;
+            } else if (TIMER_BADWORDS < 0) {
+                sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
+                displayBattery((integer)batteryLevel);
+                llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
+                TIMER_BADWORDS = -TIMER_BADWORDS - 1;
+                if (TIMER_BADWORDS == 0) {
+                    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
+                    llSetTimerEvent(0);  
+                }
+            }
+        }
     }
-}
