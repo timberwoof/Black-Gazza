@@ -8,9 +8,7 @@
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 1;
-
-string hudTitle = "BG Inmate Collar4 Alpha 0"; 
+integer OPTION_DEBUG = 0;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
@@ -153,6 +151,7 @@ sendRLVRestrictCommand(string level) {
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,chatnormal=n,sittp=n,fartouch=n";
             // chatwhisper=y,
+            llOwnerSay("You have been locked into Hardcore mode. There is no safeword. For release, you must ask a Guard to release you.");
         }
         sayDebug(rlvcommand);
         llPlaySound(theSound, 1);
