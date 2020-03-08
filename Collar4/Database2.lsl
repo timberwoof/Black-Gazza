@@ -28,7 +28,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Database:"+message);
+        llOwnerSay("Database:"+message);
     }
 }
 
@@ -36,7 +36,7 @@ sayDebug(string message)
 sendDatabaseQuery() {
     displayCentered("Accessing DB");
     string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-    sayDebug("sendDatabaseQuery:");//+URL);
+    sayDebug("sendDatabaseQuery:"+URL);
     databaseQuery = llHTTPRequest(URL,[],"");
 }
 
