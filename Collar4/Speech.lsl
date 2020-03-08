@@ -20,6 +20,7 @@ integer textboxChannel = 0;
 integer textboxListen = 0;
 
 integer badWordsActive = 0;
+integer gagActive = 0;
 
 string assetNumber;
 
@@ -64,29 +65,7 @@ default
     }
 
     link_message(integer sender_num, integer num, string message, key avatarKey){ 
-        if (num == 2101) {
-            renamerActive = (integer)message;
-            if (renamerActive) {
-                sayDebug("link_message renamer on");
-                renameSpeechChannel = llFloor(llFrand(10000)+1000);
-                renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
-                renameEmoteChannel = llFloor(llFrand(10000)+1000);
-                renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
-                string rlvcommand;
-                rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
-                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
-                llOwnerSay(rlvcommand);
-            } else {
-                sayDebug("link_message renamer off");
-                string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
-                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
-                llOwnerSay(rlvcommand);
-                llListenRemove(renameSpeechChannel);
-                renameSpeechChannel = 0;
-                renameEmoteListen = 0;
-            }
-        }
-        
+        sayDebug("link_message ("+(string)num+")");
         if (num == 2110) {
             string badWordString = llDumpList2String(badWords,", ");
             string message = "The bad word list is\n"+badWordString+"\n\n"+
@@ -97,12 +76,40 @@ default
             llTextBox(avatarKey, message, textboxChannel);
             llSetTimerEvent(30);
         }
+
+        if (num == 2101){
+                sayDebug("link_message renamer off");
+                string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
+                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
+                llOwnerSay(rlvcommand);
+                llListenRemove(renameSpeechChannel);
+                renameSpeechChannel = 0;
+                renameEmoteListen = 0;
+        }
+        if (num == 2102) {
+                sayDebug("link_message renamer on");
+                renameSpeechChannel = llFloor(llFrand(10000)+1000);
+                renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
+                renameEmoteChannel = llFloor(llFrand(10000)+1000);
+                renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
+                string rlvcommand;
+                rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
+                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
+                llOwnerSay(rlvcommand);
+        }
         
         if (num == 2111) {
             badWordsActive = 0;
         }
         if (num == 2112) {
             badWordsActive = 1;
+        }
+
+        if (num == 2131) {
+            gagActive = 0;
+        }
+        if (num == 2132) {
+            gagActive = 1;
         }
 
         if (num == 1400) {
