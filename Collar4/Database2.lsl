@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-02-26
+// version: 2020-03-08
 
 // Link-Messages in the 2000 range
 
@@ -34,10 +34,9 @@ sayDebug(string message)
 
 // fire off a request to the crime database for this wearer. 
 sendDatabaseQuery() {
-    sayDebug("sendDatabaseQuery()");
     displayCentered("Accessing DB");
     string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-    sayDebug("sendDatabaseQuery:"+URL);
+    sayDebug("sendDatabaseQuery:");//+URL);
     databaseQuery = llHTTPRequest(URL,[],"");
 }
 
@@ -81,12 +80,14 @@ default
             sayDebug("assetNumber:"+assetNumber);
             
             llMessageLinked(LINK_THIS, 1800, crime, "");
-            assetNumbers = [assetNumber];
-            sendAssetNumbers();
         }
         else {
             displayCentered("error "+(string)status);
+            llMessageLinked(LINK_THIS, 1800, crime, "Unknown");
+            assetNumber = "ERR-" + (string)status;
         }
+        assetNumbers = [assetNumber];
+        sendAssetNumbers();
     }
     
     link_message( integer sender_num, integer num, string message, key id ){ 
