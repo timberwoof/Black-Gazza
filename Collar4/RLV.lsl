@@ -1,14 +1,14 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-02-29
+// version: 2020-03-07
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 string hudTitle = "BG Inmate Collar4 Alpha 0"; 
 
@@ -207,25 +207,27 @@ SafewordSucceeded() {
 
 // got menu command: play charge sound and ask for zap permission
 startZap(string zapLevel, string who) {
-    llWhisper(0, who+" zaps the inmate.");
-    llPlaySound(soundCharging, 1.0);
-    llSleep(1.5);
-    llLoopSound(soundZapLoop, 1.0);
-    if (haveAnimatePermissions) {
-        stop_anims();
-        llStartAnimation("Zap");
-    }
-    if (zapLevel == "Low") {
-        llSleep(1);
-    } else if (zapLevel == "Med") {
-        llSleep(4);
-    } else if (zapLevel == "Hig") {
-        llSleep(12);
-    }
-    llStopSound();
-    if (haveAnimatePermissions) {
-        stop_anims();
-        llStartAnimation("Stand");
+    if (llSubStringIndex("LowMedHig", zapLevel) >= 0) {
+        llWhisper(0, who+" zaps the inmate.");
+        llPlaySound(soundCharging, 1.0);
+        llSleep(1.5);
+        llLoopSound(soundZapLoop, 1.0);
+        if (haveAnimatePermissions) {
+            stop_anims();
+            llStartAnimation("Zap");
+        }
+        if (zapLevel == "Low") {
+            llSleep(1);
+        } else if (zapLevel == "Med") {
+            llSleep(4);
+        } else if (zapLevel == "Hig") {
+            llSleep(12);
+        }
+        llStopSound();
+        if (haveAnimatePermissions) {
+            stop_anims();
+            llStartAnimation("Stand");
+        }
     }
     llSleep(1); // Some people reported that the sound didn't stop looping.
     llStopSound();
@@ -429,7 +431,8 @@ default
             
         // someone sent the Zap command
         } else if (num == 1301) {
-            // command message is like "Zap Low" 
+            // command message is like "Zap Low" "Zap Med" "Zap Hig" 
+            sayDebug("link_message("+message+")");
             startZap(llGetSubString(message, 4,6), llKey2Name(id));
             
         // timer sent set or reset
