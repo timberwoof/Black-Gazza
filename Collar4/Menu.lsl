@@ -169,7 +169,7 @@ mainMenu(key avatarKey) {
     integer doRelease = 0;
     
     // enable things based on state
-    if (!llSameGroup(avatarKey) && (ICOOCMood == "OOC") && (ICOOCMood =="DnD")) {
+    if (!llSameGroup(avatarKey) && (ICOOCMood != "OOC") && (ICOOCMood != "DnD")) {
         doZap = 1;
     }
     
@@ -348,9 +348,9 @@ speechMenu(key avatarKey)
         }
     } else {
         if (llSameGroup(avatarKey)) {
-            doWordList = 1;
-        } else {
             message = message + "\nOnly Guards can change the word list";
+        } else {
+            doWordList = 1;
         }
     }
     
