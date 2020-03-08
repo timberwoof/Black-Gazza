@@ -9,7 +9,8 @@
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-string version = "2020-03-05";
+string version = "2020-03-07";
+integer OPTION_DEBUG = 0;
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -29,8 +30,6 @@ string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
 string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
 list touchTones;
 
-integer OPTION_DEBUG = 0;
-
 integer menuChannel = 0;
 integer menuListen = 0;
 string menuIdentifier;
@@ -49,12 +48,13 @@ string theLocklevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
 integer renamerActive = 0;
+integer gagActive = 0;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
 string threatLevel = "Moderate";
 string batteryLevel = "Unknown";
-integer badWordsOn = 0;
+integer badWordsActive = 0;
 
 key approveAvatar;
 
@@ -318,17 +318,47 @@ hackMenu(key avatarKey)
 
 speechMenu(key avatarKey)
 {
+    integer itsMe = avatarKey == llGetOwner();
+    integer locked = theLocklevel != "Off";
+    
     string message = "";
     list buttons = [];
-    if (avatarKey == llGetOwner())
-    {
-        // renamerActive sets the state of the checkbox
-        // theLockLevel sets whether the option is available
-        integer locked = theLocklevel != "Off";
-        buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), locked);
+    
+    // assume we can do nothing
+    integer doRenamer = 0;
+    integer doGag = 0;
+    integer doBadWords = 0;
+    integer doWordList = 0;
+    
+    // work out what menu items are available
+    if (locked) {
+        if (itsMe) {
+            doRenamer = 1;
+            doBadWords = renamerActive;
+        }
+        doGag = renamerActive;
+    } else {
+        message = message + "\nRenamer, Gag, and BadWords only work when the collar is locked.";
     }
-    buttons = buttons + "Gag";
-    buttons = buttons + menuButtonActive("BadWords", badWordsOn);
+    if (itsMe) {
+        if (ICOOCMood == "OOC") {
+            doWordList = 1;
+        } else {
+            message = message + "\nYou can only change your word list while OOC.";
+        }
+    } else {
+        if (llSameGroup(avatarKey)) {
+            doWordList = 1;
+        } else {
+            message = message + "\nOnly Guards can change the word list";
+        }
+    }
+    
+    buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), doRenamer);
+    buttons = buttons + menuButtonActive(menuCheckbox("Gag", gagActive), doGag);
+    buttons = buttons + menuButtonActive(menuCheckbox("BadWords", badWordsActive), doBadWords);
+    buttons = buttons + menuButtonActive("WordList", doWordList);
+    
     setUpMenu("Speech", avatarKey, message, buttons);
 }
 
@@ -336,15 +366,24 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
 {
     if (messageButtonsTrimmed == "Renamer") {
         renamerActive = !renamerActive;
-        llMessageLinked(LINK_THIS, 2101, (string)renamerActive, ""); // ask for database update
+        llMessageLinked(LINK_THIS, 2101+renamerActive, "", avatarKey); 
+        sayDebug("doSpeechMenu renamerActive:"+(string)renamerActive);
+        speechMenu(avatarKey);
     }
-    
-    if (message == "BadWords") {
-        if (avatarKey == llGetOwner()) {
-            llMessageLinked(LINK_THIS, 2110, "", avatarKey); // ask for list of bad words
-        } else {
-            llMessageLinked(LINK_THIS, 2110, "", avatarKey); // send badwords setup dialogs
-        }
+    if (message == "WordList") {
+        llMessageLinked(LINK_THIS, 2110, "", avatarKey);
+    }
+    if (messageButtonsTrimmed == "BadWords") {
+        badWordsActive = !badWordsActive;
+        llMessageLinked(LINK_THIS, 2111+badWordsActive, "", avatarKey);
+        sayDebug("doSpeechMenu badWordsActive:"+(string)badWordsActive);
+        speechMenu(avatarKey);
+    }
+    if (messageButtonsTrimmed == "Gag") {
+        gagActive = !gagActive;
+        llMessageLinked(LINK_THIS, 2131+gagActive, "", avatarKey);
+        sayDebug("doSpeechMenu gagActive:"+(string)gagActive);
+        speechMenu(avatarKey);
     }
 }
 
@@ -436,7 +475,7 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Timer", setTimer);
     buttons = buttons + menuButtonActive("SetZap", setZaps);
     buttons = buttons + menuButtonActive("Mood", setMood);
-    buttons = buttons + menuButtonActive(menuCheckbox("BadWords",badWordsOn), setBadWords);
+    buttons = buttons + "Speech";
     
     setUpMenu("Settings", avatarKey, message, buttons);
 }
@@ -469,9 +508,8 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (message == "Timer"){
             llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
-        else if (messageButtonsTrimmed == "BadWords"){
-            badWordsOn = !badWordsOn;
-            llMessageLinked(LINK_THIS, 2111+badWordsOn, "TIMER MODE", avatarKey);
+        else if (message == "Speech"){
+            speechMenu(avatarKey);
         }
             
 }
