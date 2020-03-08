@@ -9,7 +9,7 @@
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-string version = "2020-03-07";
+string version = "2020-03-08";
 integer OPTION_DEBUG = 0;
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
@@ -74,7 +74,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Menu:"+message);
+        llOwnerSay("Menu:"+message);
     }
 }
 
@@ -369,20 +369,19 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
         llMessageLinked(LINK_THIS, 2101+renamerActive, "", avatarKey); 
         sayDebug("doSpeechMenu renamerActive:"+(string)renamerActive);
         speechMenu(avatarKey);
-    }
-    if (message == "WordList") {
+    } else if (message == "WordList") {
         llMessageLinked(LINK_THIS, 2110, "", avatarKey);
-    }
-    if (messageButtonsTrimmed == "BadWords") {
+    } else if (messageButtonsTrimmed == "BadWords") {
         badWordsActive = !badWordsActive;
         llMessageLinked(LINK_THIS, 2111+badWordsActive, "", avatarKey);
         sayDebug("doSpeechMenu badWordsActive:"+(string)badWordsActive);
         speechMenu(avatarKey);
-    }
-    if (messageButtonsTrimmed == "Gag") {
+    } else if (messageButtonsTrimmed == "Gag") {
         gagActive = !gagActive;
         llMessageLinked(LINK_THIS, 2131+gagActive, "", avatarKey);
         sayDebug("doSpeechMenu gagActive:"+(string)gagActive);
+        speechMenu(avatarKey);
+    } else {
         speechMenu(avatarKey);
     }
 }
@@ -602,11 +601,8 @@ lockMenu(key avatarKey)
     if (avatarKey == llGetOwner())
     {
         string message = "Set your Lock Level\n" +
-            "• Each level applies heavier RLV restrictions.\n" +
-            "• Off has no RLV restrictions.\n" +
-            "• Light and Medium can be switched to Off any time.\n" +
-            "• Heavy equires you to actvely Safeword out.\n" +
-            "• Hardcore has the Heavy restrictions but no safeword option. To be released from this level, you must ask a Guard.";
+            "• Each level applies heavier RLV restrictions.\n";
+            
         // LockLevels: 0=Off 1=Light 2=Medium 3=Heavy 4=Hardcore
         // convert our locklevel to an integer
         sayDebug("lockMenu theLocklevel:"+theLocklevel);
@@ -621,17 +617,49 @@ lockMenu(key avatarKey)
         list lockLists = lockListOff + lockListLight + lockListMedium + lockListHeavy + lockListHardcore; // strided list
         list lockListMenu = llList2List(lockLists, iLockLevel*4, (iLockLevel+1)*4); // list of lock levels to add to menu
         sayDebug("lockMenu lockListMenu:"+(string)lockListMenu); 
-               
+        
         //make the button list
         list buttons = [];
+        string allTheButtons = "";
         integer listsIndex;
         for (listsIndex = 0; listsIndex < 4; listsIndex++) {
             integer lockindex =  llList2Integer(lockListMenu, listsIndex);
             if (lockindex != -1) {
                 string lockButton = llList2String(LockLevels, lockindex);
                 buttons = buttons + menuRadioButton(lockButton, theLocklevel); 
+                allTheButtons = allTheButtons + lockButton;
             }
         }
+        
+        // based on what buttons are available, build the message.
+        if (llSubStringIndex(allTheButtons, "Off") >= 0) {
+            message = message + "• Off has no RLV restrictions.\n";
+            }
+        if (llSubStringIndex(allTheButtons, "Light") >= 0) {
+            message = message +  "• Light and Medium can be switched to Off any time.\n";
+            }
+        if (llSubStringIndex(allTheButtons, "Heavy") >= 0) {
+            message = message +  "• Heavy equires you to actvely Safeword out.\n";
+        }
+        if (llSubStringIndex(allTheButtons, "Hardcore") >= 0) {
+            message = message + "• Hardcore has the Heavy restrictions.\n"+
+                "Hardcore has no safeword.\n";
+                "To be released from Hardcore, you must ask a Guard.\n";
+        }
+        
+        setUpMenu("Lock", avatarKey, message, buttons);
+    }
+}
+
+confirmHardcore(key avatarKey) {
+    sayDebug("confirmHardcore");
+    if (avatarKey == llGetOwner()) {
+        string message = "Set your Lock Level to Hardcore?\n"+
+        "• Hardcore has the Heavy restrictions\n"+
+        "• Hardcore has no safeword.\n"+
+        "• To be released from Hardcore, you must ask a Guard.\n\n"+
+        "Confirm that you want te Hardcore lock.";
+        list buttons = ["⨷ Hardcore"];
         setUpMenu("Lock", avatarKey, message, buttons);
     }
 }
@@ -787,11 +815,15 @@ default
 
         // Lock Level
         else if (menuIdentifier == "Lock") {
-            sayDebug("listen: theLocklevel:"+messageButtonsTrimmed);
-            if (messageButtonsTrimmed != "") {
-                theLocklevel = messageButtonsTrimmed;
+            sayDebug("listen Lock: message:"+message);
+            if (message == "○ Hardcore") {
+                confirmHardcore(avatarKey);
+            } else if (message == "⨷ Hardcore") {
                 sayDebug("listen set theLocklevel:\""+theLocklevel+"\"");
-                llMessageLinked(LINK_THIS, 1401, theLocklevel, avatarKey);
+                llMessageLinked(LINK_THIS, 1401, "Hardcore", avatarKey);
+            } else {
+                sayDebug("listen set theLocklevel:\""+theLocklevel+"\"");
+                llMessageLinked(LINK_THIS, 1401, messageButtonsTrimmed, avatarKey);
                 if (theLocklevel == "Off") {
                     renamerActive = 0;
                 }
