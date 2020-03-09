@@ -1,7 +1,7 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-02-22
+// version: 2020-03-08 JSON
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 
@@ -26,11 +26,25 @@ sayDebug(string message)
     }
 }
 
-float calculateDischargeRate(){
-    // given the current RLV state, calculate the battery discharge rate
-    integer index = llListFindList(rlvStates, [theRLVstate]);
-    return llList2Float(dischargeRates, index);
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+        }
+    return result;
+    }
+        
+float updateValue(string json, string jsonKey, float now, float replace) {
+    string value = llJsonGetValue(json, [jsonKey]);
+    if (value != JSON_INVALID) {
+        return replace;
+    } else {
+        return now;
+    }
 }
+
+
 
 dischargeBattery(float seconds)
 {
@@ -59,27 +73,26 @@ default
         dischargeRates = dischargeRates + [4.0]; // Hardcore 4x rate = 6 hours
         theRLVstate = "Off";
         batteryCharge = basicCharge;
-        currentDischargeRate = calculateDischargeRate();
+        currentDischargeRate = 1.0;
         timerInterval = 300.0;
         llSetTimerEvent(timerInterval);
         sayDebug("initialized");
     }
 
-    link_message( integer sender_num, integer num, string message, key id ){
-        sayDebug("link_message "+(string)num+" "+message);
+    link_message( integer sender_num, integer num, string json, key id ){
+        sayDebug("link_message "+json);
         float chargeUsed = 0;
-        if (num == 1100 || num == 1300 || num == 1500) { // set icooc, zap level, threat level
-            chargeUsed = 10 * 60; // 10 minutes for a small adjustment
-        } else if (num == 1200 || num == 1800) { // set prisoner class, crime
-            chargeUsed = 20 * 60; // 20 minutes for database access
-        } else if (num == 1400) { // set lock level
-            // Based on new RLV setting, change discharge rate
-            theRLVstate = message; 
-            chargeUsed = 20 * 60; // 20 minutes for database access
-            currentDischargeRate = calculateDischargeRate();
-        } else if (num == 1301) {
+        
+        chargeUsed = updateValue(json, "prisonerMood", chargeUsed, 600);
+        chargeUsed = updateValue(json, "zapLevels", chargeUsed, 600);
+        chargeUsed = updateValue(json, "prisonerThreat", chargeUsed, 600);
+        chargeUsed = updateValue(json, "prisonerClass", chargeUsed, 1200);
+        chargeUsed = updateValue(json, "prisonerCrime", chargeUsed, 1200);
+        chargeUsed = updateValue(json, "prisonerLockLevel", chargeUsed, 1200);
+        string value = getJSONstring(json, "zapPrisoner", "");
+        if (value != JSON_INVALID) {
             // message is like "Zap Low" 
-            string variation = llGetSubString(message, 4,6);
+            string variation = llGetSubString(value, 4,6);
             if (variation == "Low") {
                 chargeUsed = 60 * 60; // 1 hour for light zap
             } else if (variation == "Med") {
@@ -88,6 +101,7 @@ default
                 chargeUsed = 4 * 60 * 60; // 4 hours for heavy zap
             }
         }
+        currentDischargeRate = llList2Float(dischargeRates, llListFindList(rlvStates, [theRLVstate]));
         if (chargeUsed) dischargeBattery(chargeUsed);
     }
 

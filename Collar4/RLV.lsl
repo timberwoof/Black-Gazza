@@ -1,14 +1,14 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-07
+// version: 2020-03-08 JSON
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
@@ -28,7 +28,7 @@ key primKey;
 string primKeyString;
 
 integer RLVpresent;
-string RLVlevel;
+string prisonerLockLevel;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
 
@@ -46,6 +46,19 @@ sayDebug(string message)
         llOwnerSay("RLV:"+message);
     }
 }
+
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+        }
+    return result;
+    }
+
+sendJSON(string jsonKey, string value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
+    }
 
 generateChannels() {
     sayDebug("generateChannels");
@@ -127,25 +140,25 @@ sendRLVRestrictCommand(string level) {
     // level can be Off Light Medium Heavy Hardcore
     string theSound = soundLatch;
     if (RLVpresent == 1) {
-        RLVlevel = level;
-        sayDebug("sendRLVRestrictCommand("+RLVlevel+")");
+        prisonerLockLevel = level;
+        sayDebug("sendRLVRestrictCommand("+prisonerLockLevel+")");
         llOwnerSay("@clear");
         string rlvcommand = ""; 
-        if (RLVlevel == "Off") {
+        if (prisonerLockLevel == "Off") {
             theSound = soundUnlatch;
-        }else if (RLVlevel == "Light") {
+        }else if (prisonerLockLevel == "Light") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=y,showminimap=y,showloc=y,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
-        } else if (RLVlevel == "Medium") {
+        } else if (prisonerLockLevel == "Medium") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=n,showminimap=n,showloc=y,fly=n,detach=n,sittp=n,fartouch=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,
-        } else if (RLVlevel == "Heavy") {
+        } else if (prisonerLockLevel == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,sittp=n,fartouch=n";
             // chatnormal=y,chatwhisper=y,
-        } else if (RLVlevel == "Hardcore") {
+        } else if (prisonerLockLevel == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
@@ -156,14 +169,13 @@ sendRLVRestrictCommand(string level) {
         sayDebug(rlvcommand);
         llPlaySound(theSound, 1);
         llOwnerSay(rlvcommand);
-        llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
-        llMessageLinked(LINK_THIS, 1403, "yesRLV", "");
-        llMessageLinked(LINK_THIS, 2001, "", "");
-        llOwnerSay("RLV lock level has been set to "+RLVlevel);
+        sendJSON("rlvPresent", "1", "");
+        sendJSON("prisonerLockLevel", prisonerLockLevel, "");
+        llOwnerSay("RLV lock level has been set to "+prisonerLockLevel);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
-        llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
-        llMessageLinked(LINK_THIS, 2001, "", "");
+        sendJSON("rlvPresent", "0", "");
+        sendJSON("prisonerLockLevel", "Off", "");
     }
 }
 
@@ -360,7 +372,7 @@ default
         sayDebug("state_entry");
         llStopSound();
         RLVpresent = 0;
-        RLVlevel = "Off";
+        prisonerLockLevel = "Off";
         HudFunctionState = 0;
         SafewordListen = 0;
         llPreloadSound(soundCharging);
@@ -381,7 +393,7 @@ default
             HudFunctionState = 0;
             checkRLV("attach");
             registerWithDB();    // inmate, offline  
-            sendRLVRestrictCommand(RLVlevel);
+            sendRLVRestrictCommand(prisonerLockLevel);
             sayDebug("attach done");
         } else {
             sayDebug("attach but no ID");
@@ -402,44 +414,33 @@ default
         }
     }
     
-    link_message( integer sender_num, integer num, string message, key id ){ 
-    // We listen in on link messages and pick the ones we're interested in
-    
-        // RLV lock ment sends new RLV lock level
-        if (num == 1401) {
-            if (llSubStringIndex("Off Light Medium Heavy Hardcore", message) > -1) {
-                sayDebug("link_message "+(string)num+" "+message);
-                sendRLVRestrictCommand(message);
-            } else if (message == "Safeword") {
+    link_message( integer sender_num, integer num, string json, key id ){ 
+    // We listen in on link messages and pick the ones we're interested in:
+    // RLV Register
+    // RLV zapPrisoner
+    // RLV <lockLevel>
+
+        string RLVCommand = getJSONstring(json, "RLV", "");
+        if (RLVCommand != "") {
+            
+            if (llSubStringIndex("Off Light Medium Heavy Hardcore", RLVCommand) > -1) {
+                sayDebug("link_message "+(string)num+" "+RLVCommand);
+                sendRLVRestrictCommand(RLVCommand);
+            } else if (RLVCommand == "Safeword") {
                 SendSafewordInstructions();
             }
             
-        // someone requested RLV lock status
-        } else if (num == 1402) { // status request
-            sayDebug("link_message sending RLVlevel:"+RLVlevel);
-            if (RLVpresent) {
-                llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
-            } else {
-                llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
+            if (llSubStringIndex(RLVCommand, "Zap") > -1) {
+                sayDebug("link_message("+RLVCommand+")");
+                startZap(llGetSubString(RLVCommand, 4,6), llKey2Name(id));
             }
-            llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
-            
-        // Menu noticed that RLV was off. Try to set up RLV again. 
-        } else if (num == 1410) {
-            checkRLV("link_message");
-            
-        // someone sent the Zap command
-        } else if (num == 1301) {
-            // command message is like "Zap Low" "Zap Med" "Zap Hig" 
-            sayDebug("link_message("+message+")");
-            startZap(llGetSubString(message, 4,6), llKey2Name(id));
             
         // timer sent set or reset
         } else if (num == 3002) {
-            if (message == "") {
+            if (json == "") {
                 lockTimerReset();
             } else {
-                lockTimerSet((integer)message);
+                lockTimerSet((integer)json);
             }
         }
    }
@@ -467,8 +468,8 @@ default
             sayDebug("status:" + message);   
             RLVpresent = 1;
             llListenRemove(RLVStatusListen);
-            llMessageLinked(LINK_THIS, 1403, "YesRLV", "");
-            llMessageLinked(LINK_THIS, 1400, RLVlevel, "");
+            sendJSON("rlvPresent", "1", "");
+            sendJSON("prisonerLockLevel", prisonerLockLevel, "");
             RLVStatusListen = 0;
             lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
@@ -499,8 +500,8 @@ default
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             lockTimerRestart();
-            llMessageLinked(LINK_THIS, 1403, "NoRLV", "");
-            llMessageLinked(LINK_THIS, 1400, "Off", "");
+            sendJSON("rlvPresent", "0", "");
+            sendJSON("prisonerLockLevel", "Off", "");
         } 
         lockTimer();
     }

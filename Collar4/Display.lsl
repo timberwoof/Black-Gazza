@@ -2,12 +2,12 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-07
+// version: 2020-03-08 JSON
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
 // • blinky lights
-// • battery display
+// • battery displaydi
 // • floaty text
 
 integer OPTION_DEBUG = 0;
@@ -125,7 +125,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Display:"+message);
+        llOwnerSay("Display:"+message);
     }
 }
 
@@ -289,12 +289,12 @@ integer uuidToInteger(key uuid)
 }
 
 // get a value from color stored in the blinky and send it to the link
-string blinkyFaceColorToMeaning(integer face, list colors, list names, integer channel){
+string blinkyFaceColorToMeaning(integer face, list colors, list names, string jsonTag){
     list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
     vector prisonerThreatColor = llList2Vector(colorList,0);
     integer index = llListFindList(colors, [prisonerThreatColor]);
     string stateName = llList2String(names, index); 
-    llMessageLinked(LINK_THIS, channel, stateName, "");
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonTag, stateName]), "");
     return stateName;
 }
 
@@ -344,9 +344,9 @@ default
 
         // Initialize the world
         batteryLevel = "Unknown"; 
-        prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, 1100);
-        prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, 1200);
-        prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, 1500);
+        prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
+        prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, "prisonerClass");
+        prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, "prisonerThreat");
         prisonerCrime = "Unknown";
         displayTitler();
                 
@@ -369,23 +369,24 @@ default
         }
     }
 
-    link_message( integer sender_num, integer num, string message, key id ){ 
-        sayDebug("link_message "+(string)num+" "+message);
+    link_message( integer sender_num, integer num, string json, key id ){ 
+        sayDebug("link_message "+json);
 
         // IC/OOC Mood sets frame color 
-        if (num == 1100) {
-            prisonerMood = message;
-            sayDebug("link_message "+(string)num+" "+prisonerMood+"->prisonerMood");
+        string value = llJsonGetValue(json, ["prisonerMood"]);
+        if (value != JSON_INVALID) {
+            prisonerMood = value;
             integer moodi = llListFindList(moodNames, [prisonerMood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
             displayTitler();
         }
-        
+
         // Prisoner Class sets text color and blinky 3
-        else if (num == 1200) {
-            prisonerClass = message;
+        value = llJsonGetValue(json, ["prisonerClass"]);
+        if (value != JSON_INVALID) {
+            prisonerClass = value;
             sayDebug("link_message "+(string)num+" "+prisonerClass+"->prisonerClass");
             integer classi = llListFindList(classNames, [prisonerClass]);
             prisonerClassColor = llList2Vector(classColors, classi);
@@ -400,12 +401,12 @@ default
             llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
             llSetPrimitiveParams([PRIM_NORMAL, FaceFrame, llList2Key(classBumpmaps, classi), <1,1,0>, <0,0,0>, 0]);
             displayTitler();
-            }
+        }
         
         // Zap Level sets blinky 1
-        else if (num == 1300) {
-            // message contains a json list of settings
-            zapLevelsJSON = message;
+        value = llJsonGetValue(json, ["zapLevels"]);
+        if (value != JSON_INVALID) {
+            zapLevelsJSON = value;
             list zapLevels = llJson2List(zapLevelsJSON);
             sayDebug("link_message "+(string)num+" "+(string)zapLevels+"->message");
             sayDebug("zapLevels list:"+(string)zapLevels);
@@ -418,8 +419,9 @@ default
         }
         
         // Lock level sets blinky 2
-        else if (num == 1400) {
-            prisonerLockLevel = message;
+        value = llJsonGetValue(json, ["prisonerLockLevel"]);
+        if (value != JSON_INVALID) {
+            prisonerLockLevel = value;
             integer locki = llListFindList(lockLevels, [prisonerLockLevel]);
             vector lockcolor = llList2Vector(lockColors, locki);
             sayDebug("lock level message:"+prisonerLockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
@@ -427,55 +429,64 @@ default
         }
         
         // Threat level sets blinky 4
-        else if (num == 1500) {
-            prisonerThreat = message;
+        value = llJsonGetValue(json, ["prisonerThreat"]);
+        if (value != JSON_INVALID) {
+            prisonerThreat = value;
             integer threati = llListFindList(threatLevels, [prisonerThreat]);
             vector threatcolor = llList2Vector(threatColors, threati);
-            sayDebug("threat level message:"+message+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
+            sayDebug("threat level json:"+json+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
             displayTitler();
         }
         
         // Battery Level Report
-        else if (num == 1700) {
-            batteryLevel = message;
-            sayDebug("battery "+message);
-            displayBattery((integer)message);
+        value = llJsonGetValue(json, ["batteryLevel"]);
+        if (value != JSON_INVALID) {
+            batteryLevel = value;
+            sayDebug("batteryLevel "+batteryLevel);
+            displayBattery((integer)batteryLevel);
         }
         
         // Prisoner Crime
-        else if (num == 1800) {
-            prisonerCrime = message;
+        value = llJsonGetValue(json, ["prisonerCrime"]);
+        if (value != JSON_INVALID) {
+            prisonerCrime = value;
             displayTitler();
         }
 
         // set and display asset number
-        else if (num == 2000) {
-            assetNumber = message;
-            if (assetNumber == "") {
-                llOwnerSay("Please select Settings > Asset.");
-            } else {
-                sayDebug("set and display assetNumber \""+assetNumber+"\"");
-                string ownerName = llGetDisplayName(llGetOwner());
-                list namesList = llParseString2List(ownerName, [" "], [""]);
-                string firstName = llList2String(namesList, 0);
-                llSetObjectName(assetNumber+" ("+firstName+")");
-                displayCentered(assetNumber);
-                displayTitler();
-            }
+        value = llJsonGetValue(json, ["assetNumber"]);
+        if (value != JSON_INVALID) {
+            assetNumber = value;
+            sayDebug("set and display assetNumber \""+assetNumber+"\"");
+            string ownerName = llGetDisplayName(llGetOwner());
+            list namesList = llParseString2List(ownerName, [" "], [""]);
+            string firstName = llList2String(namesList, 0);
+            llSetObjectName(assetNumber+" ("+firstName+")");
+            displayCentered(assetNumber);
+            displayTitler();
+        }
+        
+        // display a message
+        value = llJsonGetValue(json, ["Display"]);
+        if (value != JSON_INVALID) {
+            sayDebug("Display "+value);
+            displayCentered(value);
         }
         
         // temporarily display a message
-        else if (num == 2001) {
-            sayDebug("display "+message);
-            displayCentered(message);
+        value = llJsonGetValue(json, ["DisplayTemp"]);
+        if (value != JSON_INVALID) {
+            sayDebug("DisplayTemp "+value);
+            displayCentered(value);
             TIMER_REDISPLAY = 1;
             llSetTimerEvent(3);
         }
         
         // blink battery light for bad words
-        else if (num == 2120) {
-            TIMER_BADWORDS = (integer)message;
+        value = llJsonGetValue(json, ["badWordCount"]);
+        if (value != JSON_INVALID) {
+            TIMER_BADWORDS = (integer)value;
             llSetTimerEvent(1);
             }
     }
