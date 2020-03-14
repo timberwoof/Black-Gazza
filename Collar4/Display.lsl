@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-08 JSON
+// version: 2020-03-14 JSON
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -486,6 +486,7 @@ default
         // blink battery light for bad words
         value = llJsonGetValue(json, ["badWordCount"]);
         if (value != JSON_INVALID) {
+            sayDebug("badWordCount "+value);
             TIMER_BADWORDS = (integer)value;
             llSetTimerEvent(1);
             }
