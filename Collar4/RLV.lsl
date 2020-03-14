@@ -435,6 +435,11 @@ default
                 startZap(llGetSubString(RLVCommand, 4,6), llKey2Name(id));
             }
             
+            if (llSubStringIndex(RLVCommand, "Register") > -1) {
+                sayDebug("link_message("+RLVCommand+")");
+                checkRLV("link request");
+            }
+            
         // timer sent set or reset
         } else if (num == 3002) {
             if (json == "") {
