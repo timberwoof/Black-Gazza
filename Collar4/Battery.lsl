@@ -1,7 +1,7 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-08 JSON
+// version: 2020-03-14 JSON
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 
@@ -26,6 +26,10 @@ sayDebug(string message)
     }
 }
 
+sendJSONinteger(string jsonKey, integer value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
+    }
+    
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -55,7 +59,7 @@ dischargeBattery(float seconds)
     }
     sayDebug("dischargeBattery:"+(string)seconds+" seconds leaves "+(string)batteryCharge+" charge.");
     integer displayLevel = (integer)llFloor(batteryCharge/basicCharge*100);
-    llMessageLinked(LINK_THIS, 1700, (string)displayLevel, ""); // send status message
+    sendJSONinteger("batteryLevel", displayLevel, "");
 }
 
 default
