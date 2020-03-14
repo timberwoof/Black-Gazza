@@ -1,14 +1,14 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-08 JSON
+// version: 2020-03-14 JSON
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
