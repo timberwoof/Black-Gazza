@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-08 JSON
+// version: 2020-03-14 JSONN
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -11,7 +11,7 @@
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
 string version = "2020-03-08 JSON";
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -385,14 +385,22 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
 {
     if (messageButtonsTrimmed == "Renamer") {
         renamerActive = !renamerActive;
-        sendJSONinteger("setRenamer", renamerActive, avatarKey);
+        if (renamerActive) {
+            sendJSON("Speech", "RenamerON", avatarKey);
+        } else {
+            sendJSON("Speech", "RenamerOFF", avatarKey);
+        }
         sayDebug("doSpeechMenu renamerActive:"+(string)renamerActive);
         speechMenu(avatarKey);
     } else if (message == "WordList") {
-        sendJSON("RLV","WordList", avatarKey);
+        sendJSON("Speech","WordList", avatarKey);
     } else if (messageButtonsTrimmed == "BadWords") {
         badWordsActive = !badWordsActive;
-        sendJSONinteger("setBadWordsActive", badWordsActive, avatarKey);
+        if (badWordsActive) {
+            sendJSON("Speech", "BadWordsON", avatarKey);
+        } else {
+            sendJSON("Speech", "BadWordsOFF", avatarKey);
+        }
         sayDebug("doSpeechMenu badWordsActive:"+(string)badWordsActive);
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "Gag") {
