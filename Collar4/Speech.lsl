@@ -9,22 +9,26 @@
 
 integer OPTION_DEBUG = 0;
 
+string assetNumber;
+
 integer rlvPresent = 0;
 integer renamerActive = 0;
 integer renameSpeechChannel = 0;
 integer renameSpeechListen = 0;
 integer renameEmoteChannel = 0;
 integer renameEmoteListen = 0;
-
 integer textboxChannel = 0;
 integer textboxListen = 0;
 
+integer DisplayTokActive = 0;
 integer badWordsActive = 0;
 integer gagActive = 0;
 
-string assetNumber;
-
 list badWords;
+list listWordsSpoken;
+integer numWordsToSpeak = 0;
+integer numWordsSpoken = 0;
+string stringWordsSpoken;
 
 sayDebug(string message)
 {
@@ -38,6 +42,10 @@ sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
     }
 
+sendJSON(string jsonKey, string value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
+    }
+    
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -50,12 +58,12 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
 integer detectBadWords(string speech){
     integer countBadWords = 0;
     if (badWordsActive) {
-        list wordsSpoken = llParseString2List(llToLower(speech), 
+        listWordsSpoken = llParseString2List(llToLower(speech), 
             [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
         integer i;
         integer j;
-        for (i = 0; i < llGetListLength(wordsSpoken); i++) {
-            string aWord = llList2String(wordsSpoken, i);
+        for (i = 0; i < llGetListLength(listWordsSpoken); i++) {
+            string aWord = llList2String(listWordsSpoken, i);
             integer where = llListFindList(badWords, [aWord]);
             if (where >= 0) {
                 countBadWords++;
@@ -64,6 +72,17 @@ integer detectBadWords(string speech){
         sayDebug("detected "+(string)countBadWords+" bad words");
     }
     return countBadWords;
+}
+
+displayTok(string speech){
+    listWordsSpoken = llParseString2List(llToLower(speech), 
+        [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
+    numWordsToSpeak = llGetListLength(listWordsSpoken);
+    string firstWord = llList2String(listWordsSpoken, 0);
+    sendJSON("DisplayTemp", firstWord, "");
+    numWordsSpoken = 1;
+    stringWordsSpoken = firstWord;
+    llSetTimerEvent(1);
 }
 
 default
@@ -129,6 +148,13 @@ default
             gagActive = 1;
         }
 
+        if (speechCommand == "DisplayTokOFF") {
+            DisplayTokActive = 0;
+        }
+        if (speechCommand == "DisplayTokON") {
+            DisplayTokActive = 1;
+        }
+
         string RLVCommand = getJSONstring(json, "RLV", "");
         if (RLVCommand == "Off") {
             rlvPresent = 0;
@@ -145,17 +171,25 @@ default
     }
     
     listen(integer channel, string name, key avatarKey, string message){
+        // handle player's redirected speech
         if (channel == renameSpeechChannel) {
-            integer badWordCount = detectBadWords(message);
-            if (badWordCount > 0) {
-                sendJSONinteger("badWordCount", badWordCount, avatarKey);
+            if (!DisplayTokActive) {
+                llSay(0,message);
+                integer badWordCount = detectBadWords(message);
+                if (badWordCount > 0) {
+                    sendJSONinteger("badWordCount", badWordCount, avatarKey);
+                }
+            } else {
+                displayTok(message);
             }
-            llSay(0,message);
-            }
+        }
+        
+        // handle player's emotes
         if (channel == renameEmoteChannel) {
             llSay(0,message);
             }
             
+        // handle the bad word list dialog
         if (channel == textboxChannel) {
             sayDebug("listen "+message);
             list incomingWords = llParseString2List(llToLower(message), [" ", ","], [""]);
@@ -192,8 +226,19 @@ default
     }
         
     timer() {
-        llListenRemove(textboxListen);
-        textboxListen = 0;
-        textboxChannel = 0;
+        if (numWordsSpoken < numWordsToSpeak) {
+            string nextWord = llList2String(listWordsSpoken, numWordsSpoken);
+            numWordsSpoken = numWordsSpoken + 1;
+            sendJSON("DisplayTemp", nextWord, "");
+            stringWordsSpoken = stringWordsSpoken + " " + nextWord;
+        } else {
+            llSay(0,"'s collar display reads: " + stringWordsSpoken);
+            llSetTimerEvent(0);
+        }
+        if (textboxListen != 0) {
+            llListenRemove(textboxListen);
+            textboxListen = 0;
+            textboxChannel = 0;
+        }
     }
 }
