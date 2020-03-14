@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version 2020-03-08
+// version: 2020-03-14 JSON
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
@@ -30,14 +30,28 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Speech:"+message);
+        llOwnerSay("Speech:"+message);
     }
 }
 
+sendJSONinteger(string jsonKey, integer value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
+    }
+
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+        }
+    return result;
+    }
+    
 integer detectBadWords(string speech){
     integer countBadWords = 0;
     if (badWordsActive) {
-        list wordsSpoken = llParseString2List(llToLower(speech), [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
+        list wordsSpoken = llParseString2List(llToLower(speech), 
+            [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
         integer i;
         integer j;
         for (i = 0; i < llGetListLength(wordsSpoken); i++) {
@@ -62,11 +76,14 @@ default
             ownerName = ownerName + " " + displayName;
         }
         badWords = llParseString2List(ownerName, [" "], [""]);
+        badWords = badWords + ["pink","fluffy","unicorns","dancing","rainbows"];
     }
 
-    link_message(integer sender_num, integer num, string message, key avatarKey){ 
-        sayDebug("link_message ("+(string)num+")");
-        if (num == 2110) {
+    link_message(integer sender_num, integer num, string json, key avatarKey){
+        sayDebug("link_message "+json);
+        
+        string speechCommand = getJSONstring(json, "Speech", "");
+        if (speechCommand == "WordList") {
             string badWordString = llDumpList2String(badWords,", ");
             string message = "The bad word list is\n"+badWordString+"\n\n"+
                 "Add or remove bad words with\n"+
@@ -77,7 +94,7 @@ default
             llSetTimerEvent(30);
         }
 
-        if (num == 2101){
+        if (speechCommand == "RenamerOFF"){
                 sayDebug("link_message renamer off");
                 string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
                 sayDebug("link_message renamer rlvcommand:"+rlvcommand);
@@ -86,7 +103,7 @@ default
                 renameSpeechChannel = 0;
                 renameEmoteListen = 0;
         }
-        if (num == 2102) {
+        if (speechCommand == "RenamerON") {
                 sayDebug("link_message renamer on");
                 renameSpeechChannel = llFloor(llFrand(10000)+1000);
                 renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
@@ -98,34 +115,32 @@ default
                 llOwnerSay(rlvcommand);
         }
         
-        if (num == 2111) {
+        if (speechCommand == "BadWordsOFF") {
             badWordsActive = 0;
         }
-        if (num == 2112) {
+        if (speechCommand == "BadWordsON") {
             badWordsActive = 1;
         }
 
-        if (num == 2131) {
+        if (speechCommand == "GagOFF") {
             gagActive = 0;
         }
-        if (num == 2132) {
+        if (speechCommand == "GagON") {
             gagActive = 1;
         }
 
-        if (num == 1400) {
-            // RLV Presence
-            if (message == "Off") {
-                rlvPresent = 0;
-                renamerActive = 0;
-            } else {
-                rlvPresent = 1;
-            }    
-            sayDebug("link_message set rlvPresent:"+(string)rlvPresent);
-        }
+        string RLVCommand = getJSONstring(json, "RLV", "");
+        if (RLVCommand == "Off") {
+            rlvPresent = 0;
+            renamerActive = 0;
+        } else {
+            rlvPresent = 1;
+        }    
         
-        if (num == 2000) {
-            assetNumber = message;
-            sayDebug("link_message set "+message);
+        string assetCommand = getJSONstring(json, "assetNumber", "");
+        if (assetCommand != "") {
+            assetNumber = assetCommand;
+            sayDebug("link_message set assetNumber"+assetNumber);
         }
     }
     
@@ -133,7 +148,7 @@ default
         if (channel == renameSpeechChannel) {
             integer badWordCount = detectBadWords(message);
             if (badWordCount > 0) {
-                llMessageLinked(LINK_THIS, 2120, (string)badWordCount, avatarKey);
+                sendJSONinteger("badWordCount", badWordCount, avatarKey);
             }
             llSay(0,message);
             }
