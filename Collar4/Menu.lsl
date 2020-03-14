@@ -50,6 +50,7 @@ list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer rlvPresent = 0;
 integer renamerActive = 0;
 integer gagActive = 0;
+integer DisplayTokActive = 0;
 
 string prisonerCrime = "Unknown";
 string assetNumber = "Unknown";
@@ -348,16 +349,18 @@ speechMenu(key avatarKey)
     integer doGag = 0;
     integer doBadWords = 0;
     integer doWordList = 0;
+    integer doDisplayTok = 0;
     
     // work out what menu items are available
     if (locked) {
         if (itsMe) {
             doRenamer = 1;
             doBadWords = renamerActive;
+            doDisplayTok = renamerActive;
         }
         doGag = renamerActive;
     } else {
-        message = message + "\nRenamer, Gag, and BadWords only work when the collar is locked.";
+        message = message + "\nRenamer, Gag, BadWords, and Display only work when the collar is locked.";
     }
     if (itsMe) {
         if (prisonerMood == "OOC") {
@@ -376,6 +379,7 @@ speechMenu(key avatarKey)
     buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), doRenamer);
     buttons = buttons + menuButtonActive(menuCheckbox("Gag", gagActive), doGag);
     buttons = buttons + menuButtonActive(menuCheckbox("BadWords", badWordsActive), doBadWords);
+    buttons = buttons + menuButtonActive(menuCheckbox("DisplayTok", DisplayTokActive), doDisplayTok);
     buttons = buttons + menuButtonActive("WordList", doWordList);
     
     setUpMenu("Speech", avatarKey, message, buttons);
@@ -405,8 +409,21 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "Gag") {
         gagActive = !gagActive;
-        sendJSONinteger("setGag", gagActive, avatarKey);
+        if (gagActive) {
+            sendJSON("Speech", "GagON", avatarKey);
+        } else {
+            sendJSON("Speech", "GagOFF", avatarKey);
+        }
         sayDebug("doSpeechMenu gagActive:"+(string)gagActive);
+        speechMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "DisplayTok") {
+        DisplayTokActive = !DisplayTokActive;
+        if (DisplayTokActive) {
+            sendJSON("Speech", "DisplayTokON", avatarKey);
+        } else {
+            sendJSON("Speech", "DisplayTokOFF", avatarKey);
+        }
+        sayDebug("doSpeechMenu DisplayTokActive:"+(string)DisplayTokActive);
         speechMenu(avatarKey);
     } else {
         speechMenu(avatarKey);
