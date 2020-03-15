@@ -36,6 +36,10 @@ integer menuListen = 0;
 string menuIdentifier;
 key menuAgentKey;
 
+integer wearerChannel = 1;
+integer wearerListen = 0;
+string menuPhrase;
+
 integer allowZapLow = 1;
 integer allowZapMed = 1;
 integer allowZapHigh = 1;
@@ -739,6 +743,13 @@ default
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
         doSetZapLevels(llGetOwner(),""); // initialize
+        
+        string canonicalName = llToLower(llKey2Name(llGetOwner()));
+        list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
+        string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
+        menuPhrase = initials + "menu";
+        llOwnerSay("Access the collar menu by typing /1"+menuPhrase);
+        wearerListen = llListen(wearerChannel, "", "", menuPhrase);
     }
 
     touch_start(integer total_number)
@@ -770,6 +781,11 @@ default
     }
     
     listen(integer channel, string name, key avatarKey, string message){
+        if (channel == wearerChannel & message == menuPhrase) {
+            mainMenu(avatarKey);
+            return;
+        }
+        
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
