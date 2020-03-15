@@ -422,6 +422,7 @@ default
 
         string RLVCommand = getJSONstring(json, "RLV", "");
         if (RLVCommand != "") {
+            sayDebug("link_message "+RLVCommand);
             
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", RLVCommand) > -1) {
                 sayDebug("link_message "+(string)num+" "+RLVCommand);

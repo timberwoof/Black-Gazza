@@ -878,7 +878,7 @@ default
         // Zap the inmate
         else if (menuIdentifier == "Zap") {
             sayDebug("listen: Zap:"+message);
-            sendJSON("RLV", "zapPrisoner", avatarKey);
+            sendJSON("RLV", message, avatarKey);
         }
 
         // Set Zap Level
