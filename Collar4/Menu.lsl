@@ -742,8 +742,19 @@ default
         renamerActive = 0;       
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
-        doSetZapLevels(llGetOwner(),""); // initialize
         
+        // Initialize Unworn
+        if (llGetAttached() == 0) {
+            llSetObjectName("Black Gazza LOC-4 "+version);
+            sendJSON("assetNumber", "P-00000", "");            
+            sendJSON("prisonerClass", "white", "");
+            sendJSON("prisonerCrime", "unknown", "");
+            sendJSON("prisonerThreat", "None", "");
+            sendJSON("prisonerMood", "OOC", "");            
+        }
+
+        doSetZapLevels(llGetOwner(),""); // initialize
+
         string canonicalName = llToLower(llKey2Name(llGetOwner()));
         list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
         string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
