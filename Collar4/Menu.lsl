@@ -192,8 +192,9 @@ mainMenu(key avatarKey) {
     integer doZap = 0;
     integer doSafeword = 0;
     integer doRelease = 0;
+    integer hardcore = 0;
     
-    // enable things based on state
+    // enable or disable things based on state
     if (!llSameGroup(avatarKey) && (prisonerMood != "OOC") && (prisonerMood != "DnD")) {
         doZap = 1;
     }
@@ -207,12 +208,17 @@ mainMenu(key avatarKey) {
     if (prisonerLockLevel != "Off" && !llSameGroup(avatarKey)) {
         doRelease = 1;
     } else {
-        message = message + "\nRelease is only availavle to a Guard while prisoner is in RLV Hardcore mode.";
+        message = message + "\nWhile prisoner is in RLV Hardcore mode, Release command is only available to a Guard.";
+    }
+    
+    if (prisonerLockLevel == "Hardcore" && llGetOwner() == avatarKey) {
+        hardcore = 1;
     }
     
     list buttons = ["Info", "Settings", "Hack"];
     buttons = buttons + menuButtonActive("Zap", doZap);
-    buttons = buttons + ["Leash", "Speech"];
+    buttons = buttons + menuButtonActive("Leash", !hardcore);
+    buttons = buttons + menuButtonActive("Speech", !hardcore);
     buttons = buttons + menuButtonActive("Safeword", doSafeword);
     buttons = buttons + menuButtonActive("Release", doRelease);
     setUpMenu("Main", avatarKey, message, buttons);
@@ -456,6 +462,7 @@ settingsMenu(key avatarKey) {
     integer setTimer = 0;
     integer setAsset = 0;
     integer setBadWords = 0;
+    integer setSpeech = 0;
     
     // Add some things depending on who you are. 
     // What wearer can change
@@ -475,6 +482,7 @@ settingsMenu(key avatarKey) {
             setTimer = 1;
             setAsset = 1;
             setBadWords = 1;
+            setSpeech = 1;
         }
         else {
             message = message + "\nSome settings are not available while you are IC.";
@@ -504,6 +512,7 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: heavy-owner");
             setZaps = 0;
             setTimer = 0;
+            setSpeech = 0;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         } else {
             sayDebug("settingsMenu: heavy-guard");
@@ -512,7 +521,11 @@ settingsMenu(key avatarKey) {
             message = message + "\nSome settings are not available to you while you are a guard.";
         }
     }
-    
+
+    if ((prisonerLockLevel == "Hardcore") && (avatarKey == llGetOwner())) {
+        setLock = 0;
+    }
+        
     list buttons = [];
     buttons = buttons + menuButtonActive("Asset", setAsset);
     buttons = buttons + menuButtonActive("Class", setClass);
@@ -521,7 +534,7 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Timer", setTimer);
     buttons = buttons + menuButtonActive("SetZap", setZaps);
     buttons = buttons + menuButtonActive("Mood", setMood);
-    buttons = buttons + "Speech";
+    buttons = buttons + menuButtonActive("Speech", setSpeech);
     
     setUpMenu("Settings", avatarKey, message, buttons);
 }
