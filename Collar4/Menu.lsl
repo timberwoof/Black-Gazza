@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-14 JSONN
+string version = "2020-03-14 JSON";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -10,7 +10,6 @@
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-string version = "2020-03-08 JSON";
 integer OPTION_DEBUG = 0;
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
