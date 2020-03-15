@@ -350,23 +350,9 @@ default
         prisonerCrime = "Unknown";
         displayTitler();
                 
-        // set the name of the collar
-        if (llGetAttached() != 0) {
-            llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
-        }
-
         // set up the responder
         responderChannel = uuidToInteger(llGetOwner());
         responderListen = llListen(responderChannel,"", "", "");
-    }
-
-    attach(key id)
-    {
-        sayDebug("attach");
-        if (id) {
-            llSetObjectName(llGetDisplayName(llGetOwner())+"'s LOC-4");
-            batteryLevel = "0";  // remove when we do "real" battery levels      
-        }
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
