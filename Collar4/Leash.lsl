@@ -2,11 +2,12 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-02-27
+// version: 2020-03-14 JSON
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
+
 string prisonerNumber = "P-99999"; // to make the menus nice
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -21,10 +22,19 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Leash:"+message);
+        llOwnerSay("Leash:"+message);
     }
 }
 
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+        }
+    return result;
+    }
+    
 setUpMenu(key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 {
@@ -148,15 +158,20 @@ default
         sensorState = "";
     }
 
-    link_message( integer sender_num, integer num, string message, key id ){ 
-        if (num == 1901 && message == "Leash"){
+    link_message( integer sender_num, integer num, string json, key id ){ 
+    
+        string value = llJsonGetValue(json, ["Leash"]);
+        if (value != JSON_INVALID) {
             // leash command
-            sayDebug("link_message("+(string)num+","+message+")");;
+            sayDebug("link_message("+(string)num+","+json+")");;
             leashMenuFilter(id);
-        } else if (num == 2000) {
+        }
+
+        value = llJsonGetValue(json, ["assetNumber"]);
+        if (value != JSON_INVALID) {
             // database status
-            sayDebug("link_message("+(string)num+","+message+")");
-            prisonerNumber = message;
+            sayDebug("link_message("+(string)num+","+json+")");
+            prisonerNumber = value;
         }
     }
     
