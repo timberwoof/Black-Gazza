@@ -6,9 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-03-14 JSONN
-
-// Link-Messages in the 2000 range
+// version: 2020-03-15
 
 integer OPTION_DEBUG = 0;
 key databaseQuery;
@@ -49,7 +47,16 @@ default
     {
         sayDebug("state_entry");
         llSleep(2); // wait for other scripts to awaken. 
-        sendDatabaseQuery();
+        if (llGetAttached() != 0) {
+            sendDatabaseQuery();
+        } else {
+            assetNumber = "P-00000";
+            prisonerCrime = "Unknown";
+            string statusJsonList = llList2Json(JSON_OBJECT, [
+                "assetNumber", assetNumber, 
+                "prisonerCrime", prisonerCrime]);
+            llMessageLinked(LINK_THIS, 0, statusJsonList, "");
+        }
     }
 
     http_response(key request_id, integer status, list metadata, string message)

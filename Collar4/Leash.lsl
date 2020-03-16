@@ -2,11 +2,11 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-03-14 JSON
+// version: 2020-03-15
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 string prisonerNumber = "P-99999"; // to make the menus nice
 integer menuChannel = 0;

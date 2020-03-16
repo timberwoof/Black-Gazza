@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-14 JSON
+// version: 2020-03-15
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -344,15 +344,21 @@ default
 
         // Initialize the world
         batteryLevel = "Unknown"; 
-        prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
-        prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, "prisonerClass");
-        prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, "prisonerThreat");
         prisonerCrime = "Unknown";
+        if (llGetAttached() != 0) {
+            prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
+            prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, "prisonerClass");
+            prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, "prisonerThreat");
+            // set up the responder
+            responderChannel = uuidToInteger(llGetOwner());
+            responderListen = llListen(responderChannel,"", "", "");
+        } else {
+            assetNumber = "P-00000";
+            prisonerMood = "OOC";
+            prisonerClass = "white";
+            prisonerThreat = "none";
+        }
         displayTitler();
-                
-        // set up the responder
-        responderChannel = uuidToInteger(llGetOwner());
-        responderListen = llListen(responderChannel,"", "", "");
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
