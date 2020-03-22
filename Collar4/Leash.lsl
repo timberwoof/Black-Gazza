@@ -2,7 +2,7 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-03-15
+// version: 2020-03-22
 
 // Handles all leash menu, authroization, and leashing functionality
 
@@ -149,13 +149,26 @@ integer getLinkWithName(string name) {
 
 default
 {
-    state_entry()
+    state_entry() // reset
     {
+        sayDebug("state_entry");
         leashParticlesOff();
         leashRingPrim = getLinkWithName("leashPoint");
         leasherAvatar = llGetOwner();
-        llMessageLinked(LINK_THIS, 2002, "Request", "");
         sensorState = "";
+    }
+    
+    attach(key avatar) {
+        sayDebug("attach");
+        if (leashTarget != NULL_KEY) {
+            if (sensorState == "LeashAgent") {
+                llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
+                leashParticlesOn(leashTarget);
+            } else if (sensorState == "LeashObject") {
+                llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
+                leashParticlesOn(leashTarget);
+            }
+        }
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
@@ -190,7 +203,7 @@ default
             leashTarget = avatarKey;
             leashParticlesOn(leashTarget);
             llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
-            sensorState = "Leash";
+            sensorState = "LeashAgent";
             leashMenu(leasherAvatar);
         } else if (message == "Leash To") {
             sayDebug("find leash points");
@@ -208,7 +221,7 @@ default
             key leashTarget = llList2Key(leashPoints,pointi);
             leashParticlesOn(leashTarget);
             llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
-            sensorState = "Leash";
+            sensorState = "LeashObject";
             leashMenu(leasherAvatar);
         } else if (message == "Unleash") {
             llSensorRemove();
@@ -225,7 +238,7 @@ default
     {
         float distance; 
         
-        if (sensorState == "Leash") {
+        if (sensorState == "LeashAgent" || sensorState == "LeashObject") {
             // distance to avatar holding the leash or the object leashed to.
             distance = llVecDist(llGetPos(), llDetectedPos(0));
             if (distance >= leashLength) {
