@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-15
+// version: 2020-03-22
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
@@ -367,7 +367,7 @@ lockTimer() {
 
 default
 {
-    state_entry()
+    state_entry() // reset
     {
         sayDebug("state_entry");
         llStopSound();
@@ -379,8 +379,8 @@ default
         llPreloadSound(soundZapLoop);
         if (llGetAttached() != 0) {
             checkRLV("state_entry");
+            llListen(ZapChannel, "", "", "");
         }
-        llListen(ZapChannel, "", "", "");
         sayDebug("state_entry done");
     }
 
@@ -389,20 +389,20 @@ default
         if (id) {
             sayDebug("attach");
             hudAttached = 1;
-            RLVpresent = 0;
             HudFunctionState = 0;
-            checkRLV("attach");
-            registerWithDB();    // inmate, offline  
+            checkRLV("atatch");
             sendRLVRestrictCommand(prisonerLockLevel);
+            llListen(ZapChannel, "", "", "");
+            registerWithDB();    // inmate, offline  
             sayDebug("attach done");
         } else {
-            sayDebug("attach but no ID");
+            sayDebug("detach");
             hudAttached = 0;
             HudFunctionState = 0;
             sendRLVRestrictCommand("Off");
             sendRLVRestrictCommand("Off");
             registerWithDB();    // inmate, offline  
-            sayDebug("attach but no ID done");
+            sayDebug("detach done");
         }
     }
 
