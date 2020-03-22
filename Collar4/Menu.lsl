@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-03-15";
+string version = "2020-03-22";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -742,11 +742,21 @@ tone(integer number) {
     }
 }
 
+attachStartup() {
+    // set up chanel 1 menu command
+    string canonicalName = llToLower(llKey2Name(llGetOwner()));
+    list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
+    string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
+    menuPhrase = initials + "menu";
+    llOwnerSay("Access the collar menu by typing /1"+menuPhrase);
+    wearerListen = llListen(wearerChannel, "", "", menuPhrase);
+}
+
 // Event Handlers ***************************
 
 default
 {
-    state_entry()
+    state_entry() // reset
     {
         sayDebug("state_entry");
         menuAgentKey = "";
@@ -758,21 +768,20 @@ default
         // Initialize Unworn
         if (llGetAttached() == 0) {
             llSetObjectName("Black Gazza LOC-4 "+version);
-            sendJSON("assetNumber", "P-00000", "");            
+            sendJSON("assetNumber", "P-00000", "");
             sendJSON("prisonerClass", "white", "");
             sendJSON("prisonerCrime", "unknown", "");
             sendJSON("prisonerThreat", "None", "");
             sendJSON("prisonerMood", "OOC", "");            
+            doSetZapLevels(llGetOwner(),""); // initialize
+        } else {
+             attachStartup();
         }
 
-        doSetZapLevels(llGetOwner(),""); // initialize
-
-        string canonicalName = llToLower(llKey2Name(llGetOwner()));
-        list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
-        string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
-        menuPhrase = initials + "menu";
-        llOwnerSay("Access the collar menu by typing /1"+menuPhrase);
-        wearerListen = llListen(wearerChannel, "", "", menuPhrase);
+    }
+    
+    attach(key avatar) {
+        attachStartup();
     }
 
     touch_start(integer total_number)
