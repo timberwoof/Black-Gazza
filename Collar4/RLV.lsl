@@ -8,7 +8,7 @@
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
@@ -127,7 +127,7 @@ checkRLV(string why) {
         llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
         generateChannels();
         string statusquery="version="+(string)RLVStatusChannel;
-        sayDebug(statusquery);
+        sayDebug("checkRLV statusquery:"+statusquery);
         llOwnerSay("@"+statusquery);
         // "the timeout should be long enough, like 30 seconds to one minute 
         // in order to receive the automatic reply from the viewer." 
@@ -147,7 +147,7 @@ sendRLVRestrictCommand(string level) {
         if (prisonerLockLevel == "Off") {
             theSound = soundUnlatch;
         }else if (prisonerLockLevel == "Light") {
-            rlvcommand = "@tplm=n,tploc=n,showworldmap=y,showminimap=y,showloc=y,fly=n,detach=n";
+            rlvcommand = "@tplm=n,tploc=n,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
         } else if (prisonerLockLevel == "Medium") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=n,showminimap=n,showloc=y,fly=n,detach=n,sittp=n,fartouch=n";
@@ -166,9 +166,11 @@ sendRLVRestrictCommand(string level) {
             // chatwhisper=y,
             llOwnerSay("You have been locked into Hardcore mode. There is no safeword. For release, you must ask a Guard to release you.");
         }
-        sayDebug(rlvcommand);
         llPlaySound(theSound, 1);
-        llOwnerSay(rlvcommand);
+        if (rlvcommand != "") {
+            sayDebug("sendRLVRestrictCommand: "+rlvcommand);
+            llOwnerSay(rlvcommand);
+        }
         sendJSON("rlvPresent", "1", "");
         sendJSON("prisonerLockLevel", prisonerLockLevel, "");
         llOwnerSay("RLV lock level has been set to "+prisonerLockLevel);
@@ -390,8 +392,7 @@ default
             sayDebug("attach");
             hudAttached = 1;
             HudFunctionState = 0;
-            checkRLV("atatch");
-            sendRLVRestrictCommand(prisonerLockLevel);
+            checkRLV("attach");
             llListen(ZapChannel, "", "", "");
             registerWithDB();    // inmate, offline  
             sayDebug("attach done");
@@ -399,7 +400,6 @@ default
             sayDebug("detach");
             hudAttached = 0;
             HudFunctionState = 0;
-            sendRLVRestrictCommand("Off");
             sendRLVRestrictCommand("Off");
             registerWithDB();    // inmate, offline  
             sayDebug("detach done");
@@ -414,7 +414,7 @@ default
         }
     }
     
-    link_message( integer sender_num, integer num, string json, key id ){ 
+    link_message(integer sender_num, integer num, string json, key id ){ 
     // We listen in on link messages and pick the ones we're interested in:
     // RLV Register
     // RLV zapPrisoner
@@ -425,19 +425,16 @@ default
             sayDebug("link_message "+RLVCommand);
             
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", RLVCommand) > -1) {
-                sayDebug("link_message "+(string)num+" "+RLVCommand);
                 sendRLVRestrictCommand(RLVCommand);
             } else if (RLVCommand == "Safeword") {
                 SendSafewordInstructions();
             }
             
             if (llSubStringIndex(RLVCommand, "Zap") > -1) {
-                sayDebug("link_message("+RLVCommand+")");
                 startZap(llGetSubString(RLVCommand, 4,6), llKey2Name(id));
             }
             
             if (llSubStringIndex(RLVCommand, "Register") > -1) {
-                sayDebug("link_message("+RLVCommand+")");
                 checkRLV("link request");
             }
             
@@ -469,13 +466,14 @@ default
             }
         }
         
-        // response from RLV system in the viewer
+        // Response from RLV system in the viewer.
+        // We just restarted or logged back in. 
         if (channel == RLVStatusChannel) {
             sayDebug("status:" + message);   
             RLVpresent = 1;
             llListenRemove(RLVStatusListen);
             sendJSON("rlvPresent", "1", "");
-            sendJSON("prisonerLockLevel", prisonerLockLevel, "");
+            sendRLVRestrictCommand(prisonerLockLevel);
             RLVStatusListen = 0;
             lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
