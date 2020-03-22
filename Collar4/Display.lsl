@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-// version: 2020-03-15
+string version = "2020-03-22";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -62,10 +62,10 @@ integer FaceFrame = 0;
 integer FacePadding = 1;
 
 integer LinkBlinky = 17;
-integer FaceBlinky1 = 1;
-integer FaceBlinky2 = 2;
-integer FaceBlinky3 = 3;
-integer FaceBlinky4 = 4;
+integer FaceBlinkyZap = 1;
+integer FaceBlinkyLock = 2;
+integer FaceBlinkyClass = 3;
+integer FaceBlinkyThreat = 4;
 
 integer LinkAlphanumFrame = 17;
 integer FaceAlphanumFrame = 5;
@@ -120,6 +120,8 @@ string zapLevelsJSON;
 integer TIMER_BADWORDS = 0;
 integer TIMER_SCROLL = 0;
 integer TIMER_REDISPLAY = 0;
+
+key avatar = NULL_KEY;
 
 sayDebug(string message)
 {
@@ -298,10 +300,39 @@ string blinkyFaceColorToMeaning(integer face, list colors, list names, string js
     return stateName;
 }
 
+setPrisonerClass(string prisonerClass) {
+    integer classi = llListFindList(classNames, [prisonerClass]);
+    prisonerClassColor = llList2Vector(classColors, classi);
+    prisonerClassLong = llList2String(classNamesLong, classi);
+
+    setTextColor(prisonerClassColor);
+            
+    // set the blinky color
+    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor, 1.0]);
+            
+    // set the collar frame texture, reflectivity, and bumpiness
+    llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
+    llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
+    llSetPrimitiveParams([PRIM_NORMAL, FaceFrame, llList2Key(classBumpmaps, classi), <1,1,0>, <0,0,0>, 0]);
+    displayTitler();
+}
+
+
+// try to recover some settings based on colors of faces
+attachStartup() {
+    prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
+    prisonerClass = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "prisonerClass");
+    prisonerThreat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "prisonerThreat");
+    // set up the responder
+    responderChannel = uuidToInteger(llGetOwner());
+    responderListen = llListen(responderChannel,"", "", "");
+    }
+
 default
 {
-    state_entry()
+    state_entry() // reset
     {
+        llSetObjectName("BG L-CON Collar V4 "+version);
         sayDebug("state_entry");
         
         // set up lists and shit
@@ -318,9 +349,6 @@ default
             BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
         classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
             BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
-        prisonerClass = "white";
-        prisonerClassColor = WHITE;
-        setTextColor(CYAN);
         
         // LinksAlphanum
         integer i;
@@ -346,18 +374,27 @@ default
         batteryLevel = "Unknown"; 
         prisonerCrime = "Unknown";
         if (llGetAttached() != 0) {
-            prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
-            prisonerClass = blinkyFaceColorToMeaning(FaceBlinky3, classColors, classNames, "prisonerClass");
-            prisonerThreat = blinkyFaceColorToMeaning(FaceBlinky4, threatColors, threatLevels, "prisonerThreat");
-            // set up the responder
-            responderChannel = uuidToInteger(llGetOwner());
-            responderListen = llListen(responderChannel,"", "", "");
+            attachStartup();
         } else {
             assetNumber = "P-00000";
             prisonerMood = "OOC";
             prisonerClass = "white";
+            prisonerClassColor = WHITE;
             prisonerThreat = "none";
+            
+            setPrisonerClass(prisonerClass);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyZap, BLACK, 1.0]);            
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);            
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, BLACK, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, LIGHT_GRAY, 1.0]);
         }
+        displayTitler();
+        displayCentered(assetNumber);
+    }
+    
+    attach(key theAvatar) {
+        avatar = theAvatar;
+        attachStartup();
         displayTitler();
     }
 
@@ -379,20 +416,9 @@ default
         value = llJsonGetValue(json, ["prisonerClass"]);
         if (value != JSON_INVALID) {
             prisonerClass = value;
+            setPrisonerClass(prisonerClass);
             sayDebug("link_message "+(string)num+" "+prisonerClass+"->prisonerClass");
-            integer classi = llListFindList(classNames, [prisonerClass]);
-            prisonerClassColor = llList2Vector(classColors, classi);
-            prisonerClassLong = llList2String(classNamesLong, classi);
-            setTextColor(prisonerClassColor);
             
-            // set the blinky color
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky3, prisonerClassColor, 1.0]);
-            
-            // set the collar frame texture, reflectivity, and bumpiness
-            llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
-            llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
-            llSetPrimitiveParams([PRIM_NORMAL, FaceFrame, llList2Key(classBumpmaps, classi), <1,1,0>, <0,0,0>, 0]);
-            displayTitler();
         }
         
         // Zap Level sets blinky 1
@@ -403,11 +429,13 @@ default
             sayDebug("link_message "+(string)num+" "+(string)zapLevels+"->message");
             sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
-            // color tells the highest allowed zap level
-            if (llList2Integer(zapLevels,0)) lightcolor = YELLOW;
-            if (llList2Integer(zapLevels,1)) lightcolor = ORANGE;
-            if (llList2Integer(zapLevels,2)) lightcolor = RED;
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky1, lightcolor, 1.0]);            
+            if (assetNumber != "P-00000") {
+                // color tells the highest allowed zap level
+                if (llList2Integer(zapLevels,0)) lightcolor = YELLOW;
+                if (llList2Integer(zapLevels,1)) lightcolor = ORANGE;
+                if (llList2Integer(zapLevels,2)) lightcolor = RED;
+            }
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyZap, lightcolor, 1.0]);            
         }
         
         // Lock level sets blinky 2
@@ -417,7 +445,7 @@ default
             integer locki = llListFindList(lockLevels, [prisonerLockLevel]);
             vector lockcolor = llList2Vector(lockColors, locki);
             sayDebug("lock level message:"+prisonerLockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky2, lockcolor, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, lockcolor, 1.0]);
         }
         
         // Threat level sets blinky 4
@@ -427,7 +455,7 @@ default
             integer threati = llListFindList(threatLevels, [prisonerThreat]);
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level json:"+json+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinky4, threatcolor, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, threatcolor, 1.0]);
             displayTitler();
         }
         
@@ -448,7 +476,7 @@ default
 
         // set and display asset number
         value = llJsonGetValue(json, ["assetNumber"]);
-        if (value != JSON_INVALID) {
+        if (avatar!= NULL_KEY && value != JSON_INVALID) {
             assetNumber = value;
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
             string ownerName = llGetDisplayName(llGetOwner());
