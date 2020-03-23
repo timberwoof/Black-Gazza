@@ -8,7 +8,7 @@
 // Receives status requests on link number 1402
 // Sends RLVstatus status on link number 1403
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
@@ -173,6 +173,7 @@ sendRLVRestrictCommand(string level) {
         }
         sendJSON("rlvPresent", "1", "");
         sendJSON("prisonerLockLevel", prisonerLockLevel, "");
+        sendJSON("Speech", "resetRenamer", "");
         llOwnerSay("RLV lock level has been set to "+prisonerLockLevel);
     } else {
         sayDebug("sendRLVRestrictCommand but no RLV present");
