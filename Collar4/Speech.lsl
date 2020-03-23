@@ -12,6 +12,7 @@ integer OPTION_DEBUG = 0;
 string assetNumber;
 
 integer rlvPresent = 0;
+string prisonerLockLevel = "";
 integer renamerActive = 0;
 integer renameSpeechChannel = 0;
 integer renameSpeechListen = 0;
@@ -55,6 +56,15 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     return result;
     }
     
+integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
+    integer result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = (integer)value;
+        }
+    return result;
+    }
+
 integer detectBadWords(string speech){
     integer countBadWords = 0;
     if (badWordsActive) {
@@ -85,9 +95,31 @@ displayTok(string speech){
     llSetTimerEvent(1);
 }
 
+sendRLVRestrictCommand() {
+    renameSpeechChannel = llFloor(llFrand(10000)+1000);
+    renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
+    renameEmoteChannel = llFloor(llFrand(10000)+1000);
+    renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
+    string rlvcommand;
+    rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
+    sayDebug("sendRLVRestrictCommand rlvcommand:"+rlvcommand);
+    llOwnerSay(rlvcommand);
+    renamerActive = 1;
+}
+
+sendRLVReleaseCommand() {
+    string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
+    sayDebug("sendRLVReleaseCommand rlvcommand:"+rlvcommand);
+    llOwnerSay(rlvcommand);
+    llListenRemove(renameSpeechChannel);
+    renameSpeechChannel = 0;
+    renameEmoteListen = 0;
+    renamerActive = 0;
+}
+
 default
 {
-    state_entry()
+    state_entry() // reset
     {
         string ownerName = llToLower(llKey2Name(llGetOwner()));
         string displayName = llToLower(llGetDisplayName(llGetOwner()));
@@ -96,6 +128,17 @@ default
         }
         badWords = llParseString2List(ownerName, [" "], [""]);
         badWords = badWords + ["pink","fluffy","unicorns","dancing","rainbows"];
+    }
+
+     attach(key id) // log in
+     {
+        if (id) {
+            sayDebug("attach");
+            sayDebug("attach done");
+        } else {
+            sayDebug("detach");
+            sayDebug("detach done");
+        }
     }
 
     link_message(integer sender_num, integer num, string json, key avatarKey){
@@ -113,25 +156,21 @@ default
             llSetTimerEvent(30);
         }
 
+        string renamerCommand = JSON_INVALID;
         if (speechCommand == "RenamerOFF"){
-                sayDebug("link_message renamer off");
-                string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
-                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
-                llOwnerSay(rlvcommand);
-                llListenRemove(renameSpeechChannel);
-                renameSpeechChannel = 0;
-                renameEmoteListen = 0;
+            sendRLVReleaseCommand();
         }
         if (speechCommand == "RenamerON") {
-                sayDebug("link_message renamer on");
-                renameSpeechChannel = llFloor(llFrand(10000)+1000);
-                renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
-                renameEmoteChannel = llFloor(llFrand(10000)+1000);
-                renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
-                string rlvcommand;
-                rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
-                sayDebug("link_message renamer rlvcommand:"+rlvcommand);
-                llOwnerSay(rlvcommand);
+            if (prisonerLockLevel != "Off") {
+                sendRLVReleaseCommand();
+                sendRLVRestrictCommand();
+            }
+        }
+        if (speechCommand == "resetRenamer") {
+            if (renamerActive == 1) {
+                sendRLVReleaseCommand();
+                sendRLVRestrictCommand();
+            }
         }
         
         if (speechCommand == "BadWordsOFF") {
@@ -155,14 +194,9 @@ default
             DisplayTokActive = 1;
         }
 
-        string RLVCommand = getJSONstring(json, "RLV", "");
-        if (RLVCommand == "Off") {
-            rlvPresent = 0;
-            renamerActive = 0;
-        } else {
-            rlvPresent = 1;
-        }    
-        
+        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
+                
         string assetCommand = getJSONstring(json, "assetNumber", "");
         if (assetCommand != "") {
             assetNumber = assetCommand;
