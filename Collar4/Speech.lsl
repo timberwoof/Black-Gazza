@@ -26,8 +26,8 @@ integer badWordsActive = 0;
 integer gagActive = 0;
 
 list badWords;
-list listWordsSpoken;
-integer numWordsToSpeak = 0;
+list listWordsSpoken; // needed globally for displaytok
+integer numWordsToSpeak = 0; // needed globally for displaytok
 integer numWordsSpoken = 0;
 string stringWordsSpoken;
 
@@ -65,51 +65,61 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     return result;
     }
 
-integer detectBadWords(string speech){
-    integer countBadWords = 0;
-    if (badWordsActive) {
+processSpeech(string speech, key avatarKey){
+    if (badWordsActive | DisplayTokActive) {
+        sayDebug("processSpeech listWordsSpoken");
         listWordsSpoken = llParseString2List(llToLower(speech), 
             [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
+        numWordsToSpeak = llGetListLength(listWordsSpoken);
+    }
+        
+    // parse the speech for bad words
+    if(badWordsActive) {
+        sayDebug("processSpeech badWordsActive");
+        integer countBadWords = 0;
         integer i;
-        integer j;
-        for (i = 0; i < llGetListLength(listWordsSpoken); i++) {
+        for (i = 0; i < numWordsToSpeak; i++) {
             string aWord = llList2String(listWordsSpoken, i);
             integer where = llListFindList(badWords, [aWord]);
             if (where >= 0) {
                 countBadWords++;
+                // *** replace words for displaytok here
             }
         }
         sayDebug("detected "+(string)countBadWords+" bad words");
+        if (countBadWords > 0) {
+            sendJSONinteger("badWordCount", countBadWords, avatarKey);
+        }
     }
-    return countBadWords;
+    
+    if(DisplayTokActive) {
+        sayDebug("processSpeech DisplayTokActive");
+        string firstWord = llList2String(listWordsSpoken, 0);
+        sendJSON("DisplayTemp", firstWord, "");
+        numWordsSpoken = 1;
+        stringWordsSpoken = firstWord;
+        llSetTimerEvent(1); // start the display cycle
+    } else {
+        llSay(0,speech);
+    }
+    
 }
 
-displayTok(string speech){
-    listWordsSpoken = llParseString2List(llToLower(speech), 
-        [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
-    numWordsToSpeak = llGetListLength(listWordsSpoken);
-    string firstWord = llList2String(listWordsSpoken, 0);
-    sendJSON("DisplayTemp", firstWord, "");
-    numWordsSpoken = 1;
-    stringWordsSpoken = firstWord;
-    llSetTimerEvent(1);
-}
-
-sendRLVRestrictCommand() {
+sendRLVRestrictCommand(string why) {
     renameSpeechChannel = llFloor(llFrand(10000)+1000);
     renameSpeechListen = llListen(renameSpeechChannel, "", llGetOwner(), "");
     renameEmoteChannel = llFloor(llFrand(10000)+1000);
     renameEmoteListen = llListen(renameEmoteChannel, "", llGetOwner(), "");
     string rlvcommand;
     rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
-    sayDebug("sendRLVRestrictCommand rlvcommand:"+rlvcommand);
+    sayDebug("sendRLVRestrictCommand "+why+" rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
     renamerActive = 1;
 }
 
-sendRLVReleaseCommand() {
+sendRLVReleaseCommand(string why) {
     string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
-    sayDebug("sendRLVReleaseCommand rlvcommand:"+rlvcommand);
+    sayDebug("sendRLVReleaseCommand "+why+" rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
     llListenRemove(renameSpeechChannel);
     renameSpeechChannel = 0;
@@ -158,18 +168,18 @@ default
 
         string renamerCommand = JSON_INVALID;
         if (speechCommand == "RenamerOFF"){
-            sendRLVReleaseCommand();
+            sendRLVReleaseCommand("link_message RenamerOFF");
         }
         if (speechCommand == "RenamerON") {
             if (prisonerLockLevel != "Off") {
-                sendRLVReleaseCommand();
-                sendRLVRestrictCommand();
+                sendRLVReleaseCommand("link_message RenamerON");
+                sendRLVRestrictCommand("link_message RenamerON");
             }
         }
         if (speechCommand == "resetRenamer") {
             if (renamerActive == 1) {
-                sendRLVReleaseCommand();
-                sendRLVRestrictCommand();
+                sendRLVReleaseCommand("link_message resetRenamer");
+                sendRLVRestrictCommand("link_message resetRenamer");
             }
         }
         
@@ -195,6 +205,14 @@ default
         }
 
         prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        string RLVCommand = getJSONstring(json, "prisonerLockLevel", "");
+        if (RLVCommand == "Off") {
+            sendRLVReleaseCommand("link_message prisonerLockLevel OFF");
+            DisplayTokActive = 0;
+            badWordsActive = 0;
+            gagActive = 0;
+            renamerActive = 0;
+        }
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
                 
         string assetCommand = getJSONstring(json, "assetNumber", "");
@@ -207,15 +225,7 @@ default
     listen(integer channel, string name, key avatarKey, string message){
         // handle player's redirected speech
         if (channel == renameSpeechChannel) {
-            if (!DisplayTokActive) {
-                llSay(0,message);
-                integer badWordCount = detectBadWords(message);
-                if (badWordCount > 0) {
-                    sendJSONinteger("badWordCount", badWordCount, avatarKey);
-                }
-            } else {
-                displayTok(message);
-            }
+            processSpeech(message, avatarKey);
         }
         
         // handle player's emotes
