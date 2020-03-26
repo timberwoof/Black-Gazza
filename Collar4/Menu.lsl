@@ -10,7 +10,7 @@ string version = "2020-03-25";
 // reference: useful unicode characters
 // https://unicode-search.net/unicode-namesearch.pl?term=CIRCLE
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
 key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
@@ -114,6 +114,7 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
 {
     sayDebug("setUpMenu "+identifier);
     
+    buttons = buttons + ["Close"];
     if (identifier != "Main") {
         buttons = buttons + ["Main"];
     }
@@ -733,13 +734,29 @@ threatMenu(key avatarKey) {
     setUpMenu("Threat", avatarKey, message, buttons);
 }
 
-tone(integer number) {
-    string numbers = (string)number;
+tone(string number) {
     integer i;
-    for (i = 0; i < llStringLength(numbers); i++) {
-        integer digit = (integer)llGetSubString(numbers, i, i);
+    for (i = 0; i < llStringLength(number); i++) {
+        integer digit = (integer)llGetSubString(number, i, i);
         llPlaySound(llList2String(touchTones, digit), 0.2);
+        llSleep(.2);
     }
+}
+
+toneAlpha(string message) {
+    message = llToLower(message);
+    string characters = "0123456789abcdefghijklmnopqrstuvwxyz";
+    string digits     = "012345678922233344455566677778889999";
+    string digitized = "";
+    integer i;
+    for (i = 0; i < llStringLength(message); i++) {
+        integer index = llSubStringIndex(characters, llGetSubString(message, i, i));
+        if (index > -1) {
+            digitized = digitized + llGetSubString(digits, index, index);
+            }
+        }
+    sayDebug("toneAlpha("+message+") returns "+digitized);
+    tone(digitized);
 }
 
 attachStartup() {
@@ -813,6 +830,8 @@ default
     }
     
     listen(integer channel, string name, key avatarKey, string message){
+        
+        // listen for the /1flmenu command
         if (channel == wearerChannel & message == menuPhrase) {
             mainMenu(avatarKey);
             return;
@@ -821,7 +840,11 @@ default
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
-        tone(channel);
+        
+        // beep
+        toneAlpha(message);
+        
+        // display the menu item
         if (llGetSubString(message,1,1) == " ") {
             sendJSON("DisplayTemp", messageButtonsTrimmed, avatarKey);
         } else {
@@ -833,6 +856,10 @@ default
         menuListen = 0;
         menuAgentKey = "";
         llSetTimerEvent(0);
+        
+        if (message == "Close") {
+            return;
+            }
         
         // Main button
         if (message == "Main") {
