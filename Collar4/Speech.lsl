@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version: 2020-03-22
+// version: 2020-03-25
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
