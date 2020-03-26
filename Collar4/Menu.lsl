@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-03-22";
+string version = "2020-03-25";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -912,9 +912,6 @@ default
             } else {
                 sayDebug("listen set prisonerLockLevel:\""+prisonerLockLevel+"\"");
                 sendJSON("RLV", messageButtonsTrimmed, avatarKey);
-                if (prisonerLockLevel == "Off") {
-                    renamerActive = 0;
-                }
                 settingsMenu(avatarKey);
             }
         }
@@ -953,7 +950,16 @@ default
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
         prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
         renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
+        badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
+        gagActive = getJSONinteger(json, "gagActive", gagActive);
+        DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
         batteryLevel = getJSONstring(json, "batteryLevel", batteryLevel);
+        if (prisonerLockLevel == "Off") {
+            renamerActive = 0;
+            badWordsActive = 0;
+            gagActive = 0; 
+            DisplayTokActive = 0;
+        }
     }
     
     timer() 
