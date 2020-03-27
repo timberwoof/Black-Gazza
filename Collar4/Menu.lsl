@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-03-25";
+string version = "2020-03-26";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -172,6 +172,15 @@ list menuButtonActive(string title, integer onOff)
         button = "["+title+"]";//"⦻";
     }
     return [button];
+}
+
+integer getLinkWithName(string name) {
+    integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
+    integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
+    for (; i < x; ++i)
+        if (llGetLinkName(i) == name) 
+            return i; // Found it! Exit loop early with result
+    return -1; // No prim with that name, return -1.
 }
 
 // Menus and Handlers ****************
@@ -739,7 +748,7 @@ tone(string number) {
     for (i = 0; i < llStringLength(number); i++) {
         integer digit = (integer)llGetSubString(number, i, i);
         llPlaySound(llList2String(touchTones, digit), 0.2);
-        llSleep(.2);
+        llSleep(.1);
     }
 }
 
@@ -782,6 +791,9 @@ default
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
             touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
         
+        LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
+        batteryIconLink = getLinkWithName("powerDisplay");
+
         // Initialize Unworn
         if (llGetAttached() == 0) {
             llSetObjectName("Black Gazza LOC-4 "+version);
@@ -818,7 +830,7 @@ default
                 llInstantMessage(avatarKey, assetNumber+" Zap: "+ZapLevels);
                 }
             else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, assetNumber+" Lock Level: "+prisonerLockLevel);}
-            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, assetNumber+" Class: "+prisonerClass + ": "+class2Description(prisonerClass));}
+            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, assetNumber+" Class: "+class2Description(prisonerClass));}
             else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, assetNumber+" Threat: "+prisonerThreat);}
             else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+batteryLevel+"%");
         } else if (touchedLink == batteryCoverLink) {
