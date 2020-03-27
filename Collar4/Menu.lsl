@@ -550,6 +550,7 @@ settingsMenu(key avatarKey) {
 }
     
 doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
+    sayDebug("doSettingsMenu("+message+")");
         if (message == "Mood"){
             moodMenu(avatarKey);
         }
@@ -625,23 +626,17 @@ doSetZapLevels(key avatarKey, string message)
 
 classMenu(key avatarKey)
 {
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Set your Prisoner Class";
-        list buttons = [];
-        integer index = 0;
-        integer length = llGetListLength(prisonerClasses);
-        for (index = 0; index < length; index++) {
-            string class = llList2String(prisonerClasses, index);
-            buttons = buttons + menuRadioButton(class, prisonerClass);
-        }
-        buttons = buttons + "Settings";
-        setUpMenu("Class", avatarKey, message, buttons);
+    sayDebug("classMenu");
+    string message = "Set your Prisoner Class";
+    list buttons = [];
+    integer index = 0;
+    integer length = llGetListLength(prisonerClasses);
+    for (index = 0; index < length; index++) {
+        string class = llList2String(prisonerClasses, index);
+        buttons = buttons + menuRadioButton(class, prisonerClass);
     }
-    else
-    {
-        ; // no one else gets a thing
-    }
+    buttons = buttons + "Settings";
+    setUpMenu("Class", avatarKey, message, buttons);
 }
 
 moodMenu(key avatarKey)
