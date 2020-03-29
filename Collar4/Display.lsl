@@ -10,7 +10,7 @@ string version = "2020-03-22";
 // • battery displaydi
 // • floaty text
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 0 ;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -75,7 +75,7 @@ list LinksAlphanum = [];
 integer linkTitler = 0;
 
 // BG_CollarV4_PowerDisplay_PNG
-string batteryLevel;
+string batteryCharge;
 key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
 integer batteryIconLink = 16;
 integer batteryIconFace = 0;
@@ -114,7 +114,7 @@ string prisonerThreat;
 integer responderChannel;
 integer responderListen;
 
-string assetNumber;
+string assetNumber = "P-00000";
 string zapLevelsJSON;
 
 integer TIMER_BADWORDS = 0;
@@ -131,6 +131,19 @@ sayDebug(string message)
     }
 }
 
+sendJSON(string jsonKey, string value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
+    }
+    
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+        }
+    return result;
+    }
+    
 integer getLinkWithName(string name) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
@@ -371,7 +384,7 @@ default
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
         // Initialize the world
-        batteryLevel = "Unknown"; 
+        batteryCharge = "Unknown"; 
         prisonerCrime = "Unknown";
         if (llGetAttached() != 0) {
             attachStartup();
@@ -460,24 +473,23 @@ default
         }
         
         // Battery Level Report
-        value = llJsonGetValue(json, ["batteryLevel"]);
+        value = llJsonGetValue(json, ["batteryCharge"]);
         if (value != JSON_INVALID) {
-            batteryLevel = value;
-            sayDebug("batteryLevel "+batteryLevel);
-            displayBattery((integer)batteryLevel);
+            batteryCharge = value;
+            sayDebug("batteryCharge "+batteryCharge);
+            displayBattery((integer)batteryCharge);
         }
         
         // Prisoner Crime
-        value = llJsonGetValue(json, ["prisonerCrime"]);
-        if (value != JSON_INVALID) {
-            prisonerCrime = value;
+        string newPrisonerCrime = getJSONstring(json, "prisonerCrime", prisonerCrime);
+        if (newPrisonerCrime != prisonerCrime) {
+            prisonerCrime = newPrisonerCrime;
             displayTitler();
-        }
+            }
 
-        // set and display asset number
-        value = llJsonGetValue(json, ["assetNumber"]);
-        if (avatar!= NULL_KEY && value != JSON_INVALID) {
-            assetNumber = value;
+        string newAssetNumber = getJSONstring(json, "assetNumber", assetNumber);
+        if (newAssetNumber != assetNumber) {
+            assetNumber = newAssetNumber;
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
             string ownerName = llGetDisplayName(llGetOwner());
             list namesList = llParseString2List(ownerName, [" "], [""]);
@@ -485,7 +497,7 @@ default
             llSetObjectName(assetNumber+" ("+firstName+")");
             displayCentered(assetNumber);
             displayTitler();
-        }
+            }
         
         // display a message
         value = llJsonGetValue(json, ["Display"]);
@@ -521,7 +533,7 @@ default
                 "prisonerClass", prisonerClass, 
                 "prisonerThreat", prisonerThreat,
                 "prisonerMood", prisonerMood, 
-                "batteryLevel", batteryLevel, 
+                "batteryCharge", batteryCharge, 
                 "prisonerLockLevel", prisonerLockLevel, 
                 "zapLevels", zapLevelsJSON]);
             sayDebug("listen("+name+","+message+") responds with " + statusJsonList);
@@ -532,12 +544,11 @@ default
     timer() {
         sayDebug("timer()");
             if (TIMER_REDISPLAY > 0) {
-                if (assetNumber == "") {
-                    displayCentered("P-00000");
-                } else {
-                    sayDebug("set and display assetNumber \""+assetNumber+"\"");
-                    displayCentered(assetNumber);
+                if (assetNumber == "P-00000") {
+                    sendJSON("database", "getupdate", llGetOwner());
                 }
+                sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                displayCentered(assetNumber);
                 llSetTimerEvent(0);  
                 TIMER_REDISPLAY = 0;
             }
@@ -551,7 +562,7 @@ default
                 TIMER_BADWORDS = - TIMER_BADWORDS;
             } else if (TIMER_BADWORDS < 0) {
                 sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-                displayBattery((integer)batteryLevel);
+                displayBattery((integer)batteryCharge);
                 llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
                 TIMER_BADWORDS = -TIMER_BADWORDS - 1;
                 if (TIMER_BADWORDS == 0) {
