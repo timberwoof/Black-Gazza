@@ -8,7 +8,7 @@
 // July 2019, February 2020
 // version: 2020-03-22
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 key databaseQuery;
 string myQueryStatus;
 
@@ -41,6 +41,10 @@ displayCentered(string message) {
     llMessageLinked(LINK_THIS, 0, json, "");
 }
 
+sendJSON(string jsonKey, string value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
+    }
+    
 default
 {
     state_entry() // reset
@@ -85,10 +89,9 @@ default
             displayCentered("error "+(string)status);
             assetNumber = "ERR-" + (string)status;
         }
-        string statusJsonList = llList2Json(JSON_OBJECT, [
-            "assetNumber", assetNumber, 
-            "prisonerCrime", prisonerCrime]);
-        llMessageLinked(LINK_THIS, 0, statusJsonList, "");
+        sendJSON("assetNumber", assetNumber, llGetOwner());
+        sendJSON("prisonerCrime", prisonerCrime, llGetOwner());
+    
     }
     
     link_message( integer sender_num, integer num, string json, key id ){ 
