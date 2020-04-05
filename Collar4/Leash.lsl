@@ -8,13 +8,18 @@
 
 integer OPTION_DEBUG = 0;
 
-string prisonerNumber = "P-99999"; // to make the menus nice
+integer rlvPresent = 0;
+string prisonerLockLevel = "";
+integer sitActive = 0;
+
+string prisonerNumber = "P-00000"; // to make the menus nice
 integer menuChannel = 0;
 integer menuListen = 0;
 key leasherAvatar;
 integer leashLength = 5;
 key leashTarget;
 string sensorState = "Leash";
+string action = "Leash";
 list leashPoints;
 integer leashRingPrim;
 
@@ -35,6 +40,15 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     return result;
     }
     
+integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
+    integer result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = (integer)value;
+        }
+    return result;
+    }
+
 list menuRadioButton(string title, string match)
 // make radio button menu item out of a button and the state text
 {
@@ -76,6 +90,7 @@ setUpMenu(key avatarKey, string message, list buttons)
 }
 
 leashMenuFilter(key avatarKey) {
+    // action = "Leash" or "ForceSit"
     // If an inmate wants to leash you, ask your permission. 
     // If you or anybody esle wants to leash you, just present the leash menu. 
     sayDebug("leashMenuFilter leasherAvatar:"+(string)leasherAvatar);
@@ -89,27 +104,45 @@ leashMenuFilter(key avatarKey) {
     } else if (leasherAvatar == llGetOwner() || avatarKey != llGetOwner()) {
         sayDebug("leashMenuFilter okay");
         leasherAvatar = avatarKey; // remember who wanted to leash
-        leashMenu(avatarKey);
+        if (action == "Leash") {
+            leashMenu(avatarKey);
+        } else {
+            sitMenu(avatarKey, "leashMenuFilter okay");
+        }
     } else {
-        llInstantMessage(avatarKey, "You are not permitted to mess with the leash.");
-        llSay (0, prisonerNumber + " tugs on the leash.");
+        if (action == "Leash") {
+            llInstantMessage(avatarKey, "You are not permitted to mess with the leash.");
+            llSay (0, prisonerNumber + " tugs on the leash.");
+        } else {
+            llInstantMessage(avatarKey, "You are not permitted to stand.");
+            llSay (0, prisonerNumber + " struggles.");
+        }
     }
 
 }
 
 key leashMenuAsk(key avatarKey) {
+    // action == "Leash" or "ForceSit"
     sayDebug("leashMenuAsk");
-    llInstantMessage(avatarKey,"Requesting permission to leash.");
-    string message = llGetDisplayName(avatarKey) + " wants to leash you.";
+    string informingLeasher;
+    string askingWearer;
+    if (action == "Leash") {
+        informingLeasher = "Requesting permission to leash.";
+        askingWearer = llGetDisplayName(avatarKey) + " wants to leash you.";
+    } else {
+        informingLeasher = "Requesting permission to force-sit.";
+        askingWearer = llGetDisplayName(avatarKey) + " wants to force you to sit";
+    }
+    llInstantMessage(avatarKey,informingLeasher);
     list buttons = ["Okay", "No"];
-    setUpMenu(llGetOwner(), message, buttons);
+    setUpMenu(llGetOwner(), askingWearer, buttons);
     return avatarKey;
 }
 
 leashMenu(key avatarKey)
 // We passed all the tests. Present the leash menu. 
 {
-    sayDebug("leashMenu sensorState:"+sensorState);
+    sayDebug("leashMenu("+action+") sensorState:"+sensorState);
     string message = "Set "+prisonerNumber+"'s Leash.";
     list buttons = [];
     
@@ -131,6 +164,17 @@ leashMenu(key avatarKey)
     buttons = buttons + menuButtonActive("Unleash", unleash);
     
     setUpMenu(avatarKey, message, buttons);    
+}
+
+sitMenu(key avatarKey, string calledBy)
+// We passed all the tests. Present the Sit menu.
+{
+    sayDebug("sitMenu("+action+") calledBy:"+calledBy+" sensorState:"+sensorState);
+    string message = "Force "+prisonerNumber+" to sit.";
+    list buttons = [];
+    buttons = buttons + menuButtonActive("Sit On", rlvPresent & !sitActive);
+    buttons = buttons + menuButtonActive("Unsit", sitActive);
+    setUpMenu(avatarKey, message, buttons);        
 }
 
 leashParticlesOn(string whocalled, key target) {
@@ -181,6 +225,21 @@ integer getLinkWithName(string name) {
     return -1; // No prim with that name, return -1.
 }
 
+sendRLVSitCommand(key what) {
+    string rlvcommand;
+    rlvcommand = "@sit:"+(string)what+"=force,unsit=n";
+    sayDebug("sendRLVRestrictCommand rlvcommand:"+rlvcommand);
+    llOwnerSay(rlvcommand);
+    sitActive = 1;
+}
+
+sendRLVReleaseCommand() {
+    string rlvcommand = "@unsit=y,unsit=force";
+    sayDebug("sendRLVReleaseCommand rlvcommand:"+rlvcommand);
+    llOwnerSay(rlvcommand);
+    sitActive = 0;
+}
+
 default
 {
     state_entry() // reset
@@ -207,31 +266,46 @@ default
 
     link_message( integer sender_num, integer num, string json, key id ){ 
     
-        string value = llJsonGetValue(json, ["Leash"]);
-        if (value != JSON_INVALID) {
+        action = llJsonGetValue(json, ["Leash"]);
+        if (action != JSON_INVALID) {
             // leash command
-            sayDebug("link_message("+(string)num+","+json+")");;
+            sayDebug("link_message("+(string)num+","+json+") action:"+action);
             leashMenuFilter(id);
         }
 
-        value = llJsonGetValue(json, ["assetNumber"]);
+        string value = llJsonGetValue(json, ["assetNumber"]);
         if (value != JSON_INVALID) {
             // database status
             sayDebug("link_message("+(string)num+","+json+")");
             prisonerNumber = value;
         }
+        
+        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        string RLVCommand = getJSONstring(json, "prisonerLockLevel", "");
+        if (RLVCommand == "Off") {
+            sendRLVReleaseCommand();
+        }
+        rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
     }
     
     
     listen( integer channel, string name, key avatarKey, string message ){
-        sayDebug("listen("+message+")");
+        sayDebug("listen("+message+")  action:"+action);
         llListenRemove(menuListen);
         menuListen = 0;
         llSetTimerEvent(0);
         if (message == "Okay"){
-            leashMenu(leasherAvatar);
+            if (action == "Leash") {
+                leashMenu(leasherAvatar);
+            } else {
+                sitMenu(leasherAvatar, "Listen Okay");
+            }            
         } else if (message == "No"){
-            llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
+            if (action == "Leash") {
+                llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
+            } else {
+                llInstantMessage(leasherAvatar,"Permission to force sit was not granted.");
+            }
         } else if (message == "Grab Leash") {
             sayDebug("grab leash");
             leashTarget = avatarKey;
@@ -239,7 +313,7 @@ default
             llSensorRepeat("", leashTarget, AGENT, 96, PI, 1);
             sensorState = "LeashAgent";
             leashMenu(leasherAvatar);
-        } else if (message == "Leash To") {
+        } else if ((message == "Leash To") | (message == "Sit On")){
             sayDebug("find leash points");
             leashPoints = [];
             llSensor("", NULL_KEY, ( ACTIVE | PASSIVE | SCRIPTED ), 5, PI);
@@ -250,18 +324,29 @@ default
             leashLength = (integer)llGetSubString(message,2,3);
             leashMenu(leasherAvatar);
         } else if (llGetSubString(message,0,4) == "Point") {
-            sayDebug("leash to point");
+            sayDebug("Point  action:"+action);
             integer pointi = (integer)llGetSubString(message,6,7);
             leashTarget = llList2Key(leashPoints,pointi);
-            leashParticlesOn("listen Point", leashTarget);
-            llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
-            sensorState = "LeashObject";
-            leashMenu(leasherAvatar);
+            if (action == "Leash") {
+                leashParticlesOn("listen Point", leashTarget);
+                llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
+                sensorState = "LeashObject";
+                leashMenu(leasherAvatar);
+            } else {
+                llSensorRemove();
+                sensorState = "SitObject";
+                sendRLVSitCommand(leashTarget);
+                sitMenu(leasherAvatar, "leash to Point");
+            }            
         } else if (message == "Unleash") {
             llSensorRemove();
             leashParticlesOff();
             leasherAvatar = llGetOwner();
             leashTarget = "";
+            sensorState = "";
+        } else if (message == "Unsit") {
+            sendRLVReleaseCommand();
+            leasherAvatar = llGetOwner();
             sensorState = "";
         } else {
             llOwnerSay("Leash Error: Unhandled listen message: "+name+": "+message);
@@ -284,7 +369,12 @@ default
             // we got a list of nearby objects we might be able to leash to.
             // Male a dialog box out of th elist. 
             sayDebug("sensor("+(string)detected+")");
-            string message = "Select a leash Point:\n";
+            string message;
+            if (action == "Leash") {
+                message = "Select a leash Point:\n";
+            } else {
+                message = "Select a seat:\n";
+            }
             list buttons = [];
             integer pointi;
             if (detected > 12) detected = 12;
@@ -295,7 +385,7 @@ default
                 buttons = buttons + ["Point "+(string)pointi];
             }
             setUpMenu(leasherAvatar, message, buttons);
-        }
+        } 
     }
     
     no_sensor()
