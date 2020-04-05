@@ -39,9 +39,11 @@ integer wearerChannel = 1;
 integer wearerListen = 0;
 string menuPhrase;
 
+// Punishments
 integer allowZapLow = 1;
 integer allowZapMed = 1;
 integer allowZapHigh = 1;
+integer allowVision = 1;
 
 list assetNumbers;
 string prisonerMood = "OOC";
@@ -56,9 +58,9 @@ integer gagActive = 0;
 integer DisplayTokActive = 0;
 
 string prisonerCrime = "Unknown";
-string assetNumber = "Unknown";
+string assetNumber = "P-00000";
 string prisonerThreat = "Moderate";
-string batteryLevel = "Unknown";
+string batteryLevel = "100";
 integer badWordsActive = 0;
 
 key approveAvatar;
@@ -188,7 +190,7 @@ integer getLinkWithName(string name) {
 mainMenu(key avatarKey) {
     string message = "Main";
 
-    if (assetNumber == "Unknown") {
+    if (assetNumber == "P-00000") {
         sendJSON("database", "getupdate", avatarKey);
     }
     
@@ -199,14 +201,21 @@ mainMenu(key avatarKey) {
         }
     
     // assume some things are not available
-    integer doZap = 0;
+    integer doPunish = 0;
+    integer doForceSit = 0;
     integer doSafeword = 0;
     integer doRelease = 0;
     integer hardcore = 0;
     
     // enable or disable things based on state
-    if (!llSameGroup(avatarKey) && (prisonerMood != "OOC") && (prisonerMood != "DnD")) {
-        doZap = 1;
+    if ((prisonerMood != "OOC") && (prisonerMood != "DnD") && !llSameGroup(avatarKey)) {
+        doPunish = 1;
+        doForceSit = 1;
+    }
+    
+    if (prisonerMood == "OOC") {
+        doPunish = 1;
+        doForceSit = 1;
     }
     
     if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != "Off") {
@@ -226,9 +235,10 @@ mainMenu(key avatarKey) {
     }
     
     list buttons = ["Info", "Settings", "Hack"];
-    buttons = buttons + menuButtonActive("Zap", doZap);
+    buttons = buttons + menuButtonActive("Punish", doPunish);
     buttons = buttons + menuButtonActive("Leash", !hardcore);
     buttons = buttons + menuButtonActive("Speech", !hardcore);
+    buttons = buttons + menuButtonActive("ForceSit", doForceSit);
     buttons = buttons + menuButtonActive("Safeword", doSafeword);
     buttons = buttons + menuButtonActive("Release", doRelease);
     setUpMenu("Main", avatarKey, message, buttons);
@@ -244,8 +254,11 @@ doMainMenu(key avatarKey, string message) {
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
-        else if (message == "Zap"){
-            zapMenu(avatarKey);
+        else if (message == "Punish"){
+            punishMenu(avatarKey);
+        }
+        else if (message == "ForceSit"){
+            sendJSON("Leash", "ForceSit", avatarKey);
         }
         else if (message == "Leash"){
             sendJSON("Leash", "Leash", avatarKey);
@@ -265,15 +278,16 @@ doMainMenu(key avatarKey, string message) {
 // Top-level menu items for immediate use in roleplay:
 // Zap, Leash, Info, Hack, Safeword, Settings
 
-zapMenu(key avatarKey)
+punishMenu(key avatarKey)
 {
     // the zap menu never includes radio buttons in front of the Zap word
-    string message = "Zap";
+    string message = "Punish";
     list buttons = [];
     buttons = buttons + menuButtonActive("Zap Low", allowZapLow);
     buttons = buttons + menuButtonActive("Zap Med", allowZapMed);
     buttons = buttons + menuButtonActive("Zap High", allowZapHigh);
-    setUpMenu("Zap", avatarKey, message, buttons);
+    buttons = buttons + menuButtonActive("Vision" , allowVision);
+    setUpMenu("Punish", avatarKey, message, buttons);
 }
 
 string class2Description(string class) {
@@ -303,18 +317,19 @@ infoGive(key avatarKey){
         ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
         menuCheckbox("Medium", allowZapMed) +  "  " +
         menuCheckbox("High", allowZapHigh);
+        // allowVision
         message = message + 
         "Crime: " + prisonerCrime + "\n" +
         "Class: "+class2Description(prisonerClass)+"\n" +
         "Threat: " + prisonerThreat + "\n" +
-        "Zap Levels: " + ZapLevels + "\n"; 
+        "Punishment: shock " + ZapLevels + "\n"; 
     } else {
         string restricted = "RESTRICTED INFO";
         message = message + 
         "Crime: " + restricted + "\n" +
         "Class: "+restricted+"\n" +
         "Threat: " + restricted + "\n" +
-        "Zap Levels: " + restricted + "\n"; 
+        "Punishment: " + restricted + "\n"; 
     }
     message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
     message = message + "------------------\nOOC Information:\n";
@@ -468,7 +483,7 @@ settingsMenu(key avatarKey) {
     integer setMood = 0;
     integer setThreat = 0;
     integer setLock = 0;
-    integer setZaps = 0;
+    integer SetPunishments = 0;
     integer setTimer = 0;
     integer setAsset = 0;
     integer setBadWords = 0;
@@ -488,7 +503,7 @@ settingsMenu(key avatarKey) {
             // IC or DnD you change everything
             setClass = 1;
             setThreat = 1;
-            setZaps = 1;
+            SetPunishments = 1;
             setTimer = 1;
             setAsset = 1;
             setBadWords = 1;
@@ -520,13 +535,13 @@ settingsMenu(key avatarKey) {
     if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
         if (avatarKey == llGetOwner()) {
             sayDebug("settingsMenu: heavy-owner");
-            setZaps = 0;
+            SetPunishments = 0;
             setTimer = 0;
             setSpeech = 0;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         } else {
             sayDebug("settingsMenu: heavy-guard");
-            setZaps = 1;
+            SetPunishments = 1;
             setTimer = 1;
             message = message + "\nSome settings are not available to you while you are a guard.";
         }
@@ -542,7 +557,7 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Threat", setThreat);
     buttons = buttons + menuButtonActive("Lock", setLock);
     buttons = buttons + menuButtonActive("Timer", setTimer);
-    buttons = buttons + menuButtonActive("SetZap", setZaps);
+    buttons = buttons + menuButtonActive("Punishment", SetPunishments);
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive("Speech", setSpeech);
     
@@ -569,8 +584,8 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (message == "Threat"){
             threatMenu(avatarKey);
         }
-        else if (message == "SetZap"){
-            ZapLevelMenu(avatarKey);
+        else if (message == "Punishment"){
+            PunishmentLevelMenu(avatarKey);
         }
         else if (message == "Asset"){
             assetMenu(avatarKey);
@@ -590,7 +605,7 @@ assetMenu(key avatarKey)
     setUpMenu("Asset", avatarKey, message, assetNumbers);
 }
 
-ZapLevelMenu(key avatarKey)
+PunishmentLevelMenu(key avatarKey)
 {
     // the zap Level Menu always includes checkboxes in front of the Zap word. 
     // This is not a maximum zap radio button, it is checkboxes. 
@@ -600,11 +615,12 @@ ZapLevelMenu(key avatarKey)
     buttons = buttons + menuCheckbox("Zap Low", allowZapLow);
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
     buttons = buttons + menuCheckbox("Zap High", allowZapHigh);
+    buttons = buttons + menuCheckbox("Vision", allowVision);
     buttons = buttons + "Settings";
-    setUpMenu("ZapLevel", avatarKey, message, buttons);
+    setUpMenu("Punishments", avatarKey, message, buttons);
 }
 
-doSetZapLevels(key avatarKey, string message)
+doSetPunishmentLevels(key avatarKey, string message)
 {
     if (avatarKey == llGetOwner()) 
     {
@@ -615,12 +631,15 @@ doSetZapLevels(key avatarKey, string message)
             allowZapMed = !allowZapMed;
         } else if (message == "Zap High") {
             allowZapHigh = !allowZapHigh;
+        } else if (message == "Vision") {
+            allowVision = !allowVision;
         }
         if (allowZapLow + allowZapMed + allowZapHigh == 0) {
             allowZapHigh = 1;
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         sendJSON("zapLevels", zapJsonList, avatarKey);
+        sendJSONinteger("allowVision", allowVision, avatarKey);
     }
 }
 
@@ -797,7 +816,7 @@ default
             sendJSON("prisonerCrime", "unknown", "");
             sendJSON("prisonerThreat", "None", "");
             sendJSON("prisonerMood", "OOC", "");            
-            doSetZapLevels(llGetOwner(),""); // initialize
+            doSetPunishmentLevels(llGetOwner(),""); // initialize
         } else {
              attachStartup();
         }
@@ -849,7 +868,7 @@ default
         sayDebug("listen menuIdentifier: "+menuIdentifier);
         
         // beep
-        toneAlpha(message);
+        toneAlpha(llGetSubString(message,0,3));
         
         // display the menu item
         if (llGetSubString(message,1,1) == " ") {
@@ -919,19 +938,19 @@ default
         }
         
         // Zap the inmate
-        else if (menuIdentifier == "Zap") {
+        else if (menuIdentifier == "Punish") {
             sayDebug("listen: Zap:"+message);
             sendJSON("RLV", message, avatarKey);
         }
 
         // Set Zap Level
-        else if (menuIdentifier == "ZapLevel") {
+        else if (menuIdentifier == "Punishments") {
             sayDebug("listen: Set Zap:"+message);
             if (message == "Settings") {
                 settingsMenu(avatarKey);
             } else {
-                doSetZapLevels(avatarKey, messageButtonsTrimmed);
-                ZapLevelMenu(avatarKey);
+                doSetPunishmentLevels(avatarKey, messageButtonsTrimmed);
+                PunishmentLevelMenu(avatarKey);
             }
         }
 
