@@ -12,11 +12,11 @@ string version = "2020-04-05";
 
 integer OPTION_DEBUG = 0;
 
-key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
-key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
-key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
-key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
-key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
+//key sWelcomeGroup="49b2eab0-67e6-4d07-8df1-21d3e03069d0";
+//key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
+//key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
+//key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
+//key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -234,7 +234,7 @@ mainMenu(key avatarKey) {
         hardcore = 1;
     }
     
-    list buttons = [buttonInfo, buttonSettings, "Hack"];
+    list buttons = [buttonInfo, buttonSettings]; //, "Hack"];
     buttons = buttons + menuButtonActive(buttonPunish, doPunish);
     buttons = buttons + menuButtonActive(buttonLeash, !hardcore);
     buttons = buttons + menuButtonActive(buttonSpeech, !hardcore);
@@ -251,9 +251,9 @@ doMainMenu(key avatarKey, string message) {
         else if (message == buttonSettings){
             settingsMenu(avatarKey);
         }
-        else if (message == "Hack"){
-            hackMenu(avatarKey);
-        }
+        //else if (message == "Hack"){
+        //    hackMenu(avatarKey);
+        //}
         else if (message == buttonPunish){
             punishMenu(avatarKey);
         }
@@ -310,7 +310,7 @@ string batteryGraph(string batteryLevel) {
 
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
-    string message = "\n------------------\nPrisoner Information \n" +
+    string message = "Prisoner Information \n" +
     "Number: " + assetNumber + "\n";
     if (!llSameGroup(avatarKey) || avatarKey == llGetOwner()) {
         string ZapLevels = "";
@@ -332,7 +332,7 @@ infoGive(key avatarKey){
         "Punishment: " + restricted + "\n"; 
     }
     message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
-    message = message + "------------------\nOOC Information:\n";
+    message = message + "OOC Information:\n";
     message = message + "Version: " + version + "\n";
     message = message + "Mood: " + prisonerMood + "\n";
     if (rlvPresent) {
@@ -341,34 +341,42 @@ infoGive(key avatarKey){
         message = message + "RLV not detected.\n";
     }
     
+    if (OPTION_DEBUG) {
+        message = message + "Used Memory: " + (string)llGetUsedMemory() + ".\n";
+    }
+
+    
     // Prepare a list of documents to hand out 
     list buttons = []; 
     integer numNotecards = llGetInventoryNumber(INVENTORY_NOTECARD);
     if (numNotecards > 0) {
-        message = message + "------------------\nChoose a Notecard:";
+        message = message + "Choose a Notecard:";
         integer index;
         for (index = 0; index < numNotecards; index++) {
             integer inumber = index+1;
-            message += "\n" + (string)inumber + " - " + llGetInventoryName(INVENTORY_NOTECARD,index);
+            string title = llGetSubString(llGetInventoryName(INVENTORY_NOTECARD,index), 0, 20);
+            message += "\n" + (string)inumber + " - " + title;
             buttons += ["Doc "+(string)inumber];
         }
     }
+    message = llGetSubString(message, 0, 511);
     setUpMenu(buttonInfo, avatarKey, message, buttons);
+    
 }
 
-hackMenu(key avatarKey)
-{
-    if (avatarKey == llGetOwner())
-    {
-        string message = "Hack";
-        list buttons = ["hack", "Maintenance", "Fix"];
-        setUpMenu("Hack", avatarKey, message, buttons);
-    }
-    else
-    {
-        ;
-    }
-}
+//hackMenu(key avatarKey)
+//{
+//    if (avatarKey == llGetOwner())
+//    {
+//        string message = "Hack";
+//        list buttons = ["hack", "Maintenance", "Fix"];
+//        setUpMenu("Hack", avatarKey, message, buttons);
+//    }
+//    else
+//    {
+//        ;
+//    }
+//}
 
 speechMenu(key avatarKey)
 {
@@ -485,7 +493,7 @@ settingsMenu(key avatarKey) {
     integer setLock = 0;
     integer SetPunishments = 0;
     integer setTimer = 0;
-    integer setAsset = 0;
+    //integer setAsset = 0;
     integer setBadWords = 0;
     integer setSpeech = 0;
     
@@ -505,7 +513,7 @@ settingsMenu(key avatarKey) {
             setThreat = 1;
             SetPunishments = 1;
             setTimer = 1;
-            setAsset = 1;
+            //setAsset = 1;
             setBadWords = 1;
             setSpeech = 1;
         }
@@ -552,7 +560,7 @@ settingsMenu(key avatarKey) {
     }
         
     list buttons = [];
-    buttons = buttons + menuButtonActive("Asset", setAsset);
+    //buttons = buttons + menuButtonActive("Asset", setAsset);
     buttons = buttons + menuButtonActive("Class", setClass);
     buttons = buttons + menuButtonActive("Threat", setThreat);
     buttons = buttons + menuButtonActive("Lock", setLock);
@@ -587,9 +595,9 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (message == "Punishment"){
             PunishmentLevelMenu(avatarKey);
         }
-        else if (message == "Asset"){
-            assetMenu(avatarKey);
-        }
+        //else if (message == "Asset"){
+        //    assetMenu(avatarKey);
+        //}
         else if (message == "Timer"){
             llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
@@ -599,11 +607,11 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
             
 }
 
-assetMenu(key avatarKey)
-{
-    string message = "Choose which Asset Number your collar will show.";
-    setUpMenu("Asset", avatarKey, message, assetNumbers);
-}
+//assetMenu(key avatarKey)
+//{
+//    string message = "Choose which Asset Number your collar will show.";
+//    setUpMenu("Asset", avatarKey, message, assetNumbers);
+//}
 
 PunishmentLevelMenu(key avatarKey)
 {
@@ -885,15 +893,15 @@ default
         }
 
         // Asset
-        else if (menuIdentifier == "Asset") {
-            sayDebug("listen: Asset:"+message);
-            if (message != "OK") {
-                assetNumber = message;
-                // The wearer chose this asset number so transmit it and display it
-                sendJSON("assetNumber", assetNumber, avatarKey);
-                settingsMenu(avatarKey);
-            }
-        }
+        //else if (menuIdentifier == "Asset") {
+        //    sayDebug("listen: Asset:"+message);
+        //    if (message != "OK") {
+        //        assetNumber = message;
+        //        // The wearer chose this asset number so transmit it and display it
+        //        sendJSON("assetNumber", assetNumber, avatarKey);
+        //        settingsMenu(avatarKey);
+        //    }
+        //}
         
         // Class
         else if (menuIdentifier == "Class") {
