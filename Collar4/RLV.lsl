@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-25
+// version: 2020-04-05
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
@@ -26,11 +26,14 @@ string avatarKeyString;
 string avatarName;
 key primKey;
 string primKeyString;
+string assetNumber = "P-00000";
 
 integer RLVpresent;
 string prisonerLockLevel;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
+
+integer visionTimeout = 0;
 
 key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
 key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
@@ -136,7 +139,7 @@ checkRLV(string why) {
     }
 }
 
-sendRLVRestrictCommand(string level) {
+sendRLVRestrictCommand(string level, key id) {
     // level can be Off Light Medium Heavy Hardcore
     string theSound = soundLatch;
     if (RLVpresent == 1) {
@@ -146,6 +149,7 @@ sendRLVRestrictCommand(string level) {
         string rlvcommand = ""; 
         if (prisonerLockLevel == "Off") {
             theSound = soundUnlatch;
+            llInstantMessage(id, assetNumber + " has been unlocked."); 
         }else if (prisonerLockLevel == "Light") {
             rlvcommand = "@tplm=n,tploc=n,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
@@ -208,21 +212,35 @@ SafewordFailed() {
     //lockTimerRestart();
 }
 
-SafewordSucceeded() {
+SafewordSucceeded(key id) {
     llShout(0, "Safeword Succeeded. Removing RLV restrictions.");
     llListenRemove(SafewordListen);
     SafewordChannel = 0;
     SafewordListen = 0;
-    sendRLVRestrictCommand("Off");
+    sendRLVRestrictCommand("Off", id);
 }
  
 // =====================
 // Zap
 
 // got menu command: play charge sound and ask for zap permission
-startZap(string zapLevel, string who) {
+startZap(string zapLevel, key who) {
     if (llSubStringIndex("LowMedHig", zapLevel) >= 0) {
-        llWhisper(0, who+" zaps the inmate.");
+        
+        // announce in chat what's happening
+        string name;
+        string description = llList2String(llGetObjectDetails(who, [OBJECT_DESC]),0);
+        if (description == "") {
+            // if it's an avatar, get its first name
+            string zapName = llGetDisplayName(who);
+            list namesList = llParseString2List(zapName, [" "], [""]);
+            name = llList2String(namesList, 0);
+        } else {
+            // if it's an object, get its name
+            name = llList2String(llGetObjectDetails(who, [OBJECT_NAME]),0);
+        }       
+        llWhisper(0, name+" zaps the inmate.");
+        
         llPlaySound(soundCharging, 1.0);
         llSleep(1.5);
         llLoopSound(soundZapLoop, 1.0);
@@ -233,17 +251,18 @@ startZap(string zapLevel, string who) {
         if (zapLevel == "Low") {
             llSleep(1);
         } else if (zapLevel == "Med") {
-            llSleep(4);
+            llSleep(2);
         } else if (zapLevel == "Hig") {
-            llSleep(12);
+            llSleep(4);
         }
         llStopSound();
+        
         if (haveAnimatePermissions) {
             stop_anims();
             llStartAnimation("Stand");
         }
     }
-    llSleep(1); // Some people reported that the sound didn't stop looping.
+    llSleep(1);
     llStopSound();
 }
 
@@ -256,6 +275,36 @@ stop_anims()
     {
         llStopAnimation(llList2Key(animationList, i));
     }
+}
+
+
+restrictVision(integer enabled) {
+    if (RLVpresent == 1) {
+        string rlvcommand;
+        string message;
+        if (enabled) {
+            rlvcommand = "@shownames_sec=n,showhovertextall=n,"+
+            // setenv_daytime:0.0=force,
+            "setenv_hazedensity:1.9=force,setenv_densitymultiplier:0.5=force,setenv_distancemultiplier:1.8=force,setenv_hazehorizon:0.2=force,"+
+            "getenv_hazedensity=42,getenv_densitymultiplier=42,getenv_distancemultiplier=42,getenv_hazehorizon=42";
+            
+                //"setenv_scenegamma:0.1=force"; // 0-10; 10 is bright this one's good
+                //"camdrawmin:5=n,camdrawmax:10=n,camdrawalphamin:1.0=n,camdrawalphamax:0.0=n";
+            message = "You are being punished for a transgression. Your collar has injected you with a drug that will restrict your vision for some time.";
+            visionTimeout = 1;
+            llSetTimerEvent(15);
+        } else {
+            rlvcommand = "@shownames_sec=y,showhovertextall=y,setenv_daytime:-1.0=force";//+
+                //"setenv_hazedensity:0.0=force"; // 0-1
+                //"setenv_scenegamma:1.0=force";
+                //"camdrawmin:5=y,”camdrawmax:10=y,camdrawalphamin:1.0=y,camdrawalphamax:0.0=y";
+            message = "The vision restriction drug has worn off.";
+            visionTimeout = 0;
+        }
+        sayDebug("sendRLVRestrictCommand: "+rlvcommand);
+        llOwnerSay(rlvcommand);
+        llOwnerSay(message);
+    }    
 }
 
 
@@ -355,7 +404,7 @@ lockTimer() {
     if (lockTimerunning == 1 && lockTimeremaining <= lockTimerInterval) {
         // time has run out...
         llOwnerSay("Timelock has ended. Releasing.");
-        sendRLVRestrictCommand("Off");
+        sendRLVRestrictCommand("Off", llGetOwner());
         HudFunctionState = 0;
         registerWithDB(); // prisoner, off
         lockTimerReset();
@@ -384,6 +433,9 @@ default
             checkRLV("state_entry");
             llListen(ZapChannel, "", "", "");
         }
+        
+        llListen(42, "", "", "");
+        
         sayDebug("state_entry done");
     }
 
@@ -401,7 +453,7 @@ default
             sayDebug("detach");
             hudAttached = 0;
             HudFunctionState = 0;
-            sendRLVRestrictCommand("Off");
+            sendRLVRestrictCommand("Off", llGetOwner());
             registerWithDB();    // inmate, offline  
             sayDebug("detach done");
         }
@@ -421,24 +473,31 @@ default
     // RLV zapPrisoner
     // RLV <lockLevel>
 
+        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
+
         string RLVCommand = getJSONstring(json, "RLV", "");
         if (RLVCommand != "") {
             sayDebug("link_message "+RLVCommand);
             
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", RLVCommand) > -1) {
-                sendRLVRestrictCommand(RLVCommand);
+                sendRLVRestrictCommand(RLVCommand, id);
             } else if (RLVCommand == "Safeword") {
                 SendSafewordInstructions();
             }
             
             if (llSubStringIndex(RLVCommand, "Zap") > -1) {
-                startZap(llGetSubString(RLVCommand, 4,6), llKey2Name(id));
+                startZap(llGetSubString(RLVCommand, 4,6), id);
+            }
+            
+            if (RLVCommand == "Vision") {
+                restrictVision(1);
             }
             
             if (llSubStringIndex(RLVCommand, "Register") > -1) {
                 checkRLV("link request");
             }
             
+
         // timer sent set or reset
         } else if (num == 3002) {
             if (json == "") {
@@ -461,7 +520,7 @@ default
         if (channel == SafewordChannel && id == llGetOwner()) {
             sayDebug("safeword:" + message);   
             if (message == (string)Safeword) {
-                SafewordSucceeded();
+                SafewordSucceeded(id);
             } else {
                 SafewordFailed();
             }
@@ -474,7 +533,7 @@ default
             RLVpresent = 1;
             llListenRemove(RLVStatusListen);
             sendJSON("rlvPresent", "1", "");
-            sendRLVRestrictCommand(prisonerLockLevel);
+            sendRLVRestrictCommand(prisonerLockLevel, id);
             RLVStatusListen = 0;
             lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
@@ -484,11 +543,14 @@ default
         if (channel == ZapChannel) {
             sayDebug("listen ZapChannel");   
             if (message == (string)llGetOwner()) {
-                startZap("Low", name);
+                startZap("Low", id);
             }
         }
+        
+        if (channel==42){
+            llOwnerSay(message);
+            }
     }
-
 
     timer()
     {
@@ -507,7 +569,9 @@ default
             lockTimerRestart();
             sendJSON("rlvPresent", "0", "");
             sendJSON("prisonerLockLevel", "Off", "");
-        } 
+        } else if (visionTimeout > 0) {
+            restrictVision(0);
+        }
         lockTimer();
     }
 
