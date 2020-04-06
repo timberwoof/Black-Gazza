@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-03-26";
+string version = "2020-04-05";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -17,18 +17,6 @@ key sMainGroup="ce9356ec-47b1-5690-d759-04d8c8921476";
 key sGuardGroup="b3947eb2-4151-bd6d-8c63-da967677bc69";
 key sBlackGazzaRPStaff="900e67b1-5c64-7eb2-bdef-bc8c04582122";
 key sOfficers="dd7ff140-9039-9116-4801-1f378af1a002";
-
-string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
-string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
-string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
-string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
-string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
-string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
-string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
-string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
-string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
-string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
-list touchTones;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -757,31 +745,6 @@ threatMenu(key avatarKey) {
     setUpMenu("Threat", avatarKey, message, buttons);
 }
 
-tone(string number) {
-    integer i;
-    for (i = 0; i < llStringLength(number); i++) {
-        integer digit = (integer)llGetSubString(number, i, i);
-        llPlaySound(llList2String(touchTones, digit), 0.2);
-        llSleep(.1);
-    }
-}
-
-toneAlpha(string message) {
-    message = llToLower(message);
-    string characters = "0123456789abcdefghijklmnopqrstuvwxyz";
-    string digits     = "012345678922233344455566677778889999";
-    string digitized = "";
-    integer i;
-    for (i = 0; i < llStringLength(message); i++) {
-        integer index = llSubStringIndex(characters, llGetSubString(message, i, i));
-        if (index > -1) {
-            digitized = digitized + llGetSubString(digits, index, index);
-            }
-        }
-    sayDebug("toneAlpha("+message+") returns "+digitized);
-    tone(digitized);
-}
-
 attachStartup() {
     // set up chanel 1 menu command
     string canonicalName = llToLower(llKey2Name(llGetOwner()));
@@ -802,9 +765,6 @@ default
         menuAgentKey = "";
         prisonerLockLevel = "Off"; 
         renamerActive = 0;       
-        touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
-            touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
-        
         LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
         batteryIconLink = getLinkWithName("powerDisplay");
 
@@ -867,8 +827,6 @@ default
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
         
-        // beep
-        toneAlpha(llGetSubString(message,0,3));
         
         // display the menu item
         if (llGetSubString(message,1,1) == " ") {
