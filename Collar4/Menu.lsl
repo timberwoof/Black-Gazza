@@ -34,12 +34,13 @@ integer allowZapHigh = 1;
 integer allowVision = 1;
 
 list assetNumbers;
-string prisonerMood = "OOC";
+string prisonerMood;
 string prisonerClass = "white";
 list prisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
 list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
-string prisonerLockLevel = "Off";
+string prisonerLockLevel;
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
+string lockLevelOff = "Off";
 integer rlvPresent = 0;
 integer renamerActive = 0;
 integer gagActive = 0;
@@ -62,6 +63,17 @@ integer batteryIconLink = 16;
 integer batteryIconFace = 0;
 integer batteryCoverLink = 1;
 integer batteryCoverFace = 6;
+
+string menuMain = "Main";
+string moodOOC = "OOC";
+string buttonInfo = "Info";
+string buttonSettings = "Settings";
+string buttonPunish = "Punish";
+string buttonLeash = "Leash";
+string buttonSpeech = "Speech";
+string buttonForceSit = "ForceSit";
+string buttonSafeword = "Safeword";
+string buttonRelease = "Release";
 
 // Utilities *******
 
@@ -105,8 +117,8 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
     sayDebug("setUpMenu "+identifier);
     
     buttons = buttons + ["Close"];
-    if (identifier != "Main") {
-        buttons = buttons + ["Main"];
+    if (identifier != menuMain) {
+        buttons = buttons + [menuMain];
     }
     
     sendJSON("DisplayTemp", "menu access", avatarKey);
@@ -176,7 +188,7 @@ integer getLinkWithName(string name) {
 // Menus and Handlers ****************
 
 mainMenu(key avatarKey) {
-    string message = "Main";
+    string message = menuMain;
 
     if (assetNumber == "P-00000") {
         sendJSON("database", "getupdate", avatarKey);
@@ -196,23 +208,23 @@ mainMenu(key avatarKey) {
     integer hardcore = 0;
     
     // enable or disable things based on state
-    if ((prisonerMood != "OOC") && (prisonerMood != "DnD") && !llSameGroup(avatarKey)) {
+    if ((prisonerMood != moodOOC) && (prisonerMood != "DnD") && !llSameGroup(avatarKey)) {
         doPunish = 1;
         doForceSit = 1;
     }
     
-    if (prisonerMood == "OOC") {
+    if (prisonerMood == moodOOC) {
         doPunish = 1;
         doForceSit = 1;
     }
     
-    if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != "Off") {
+    if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != lockLevelOff) {
         doSafeword = 1;
     } else {
         message = message + "\nSafeword is only availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
     
-    if (prisonerLockLevel != "Off" && !llSameGroup(avatarKey)) {
+    if (prisonerLockLevel != lockLevelOff && !llSameGroup(avatarKey)) {
         doRelease = 1;
     } else {
         message = message + "\nWhile prisoner is in RLV Hardcore mode, Release command is only available to a Guard.";
@@ -222,43 +234,43 @@ mainMenu(key avatarKey) {
         hardcore = 1;
     }
     
-    list buttons = ["Info", "Settings", "Hack"];
-    buttons = buttons + menuButtonActive("Punish", doPunish);
-    buttons = buttons + menuButtonActive("Leash", !hardcore);
-    buttons = buttons + menuButtonActive("Speech", !hardcore);
-    buttons = buttons + menuButtonActive("ForceSit", doForceSit);
-    buttons = buttons + menuButtonActive("Safeword", doSafeword);
-    buttons = buttons + menuButtonActive("Release", doRelease);
-    setUpMenu("Main", avatarKey, message, buttons);
+    list buttons = [buttonInfo, buttonSettings, "Hack"];
+    buttons = buttons + menuButtonActive(buttonPunish, doPunish);
+    buttons = buttons + menuButtonActive(buttonLeash, !hardcore);
+    buttons = buttons + menuButtonActive(buttonSpeech, !hardcore);
+    buttons = buttons + menuButtonActive(buttonForceSit, doForceSit);
+    buttons = buttons + menuButtonActive(buttonSafeword, doSafeword);
+    buttons = buttons + menuButtonActive(buttonRelease, doRelease);
+    setUpMenu(menuMain, avatarKey, message, buttons);
 }
 
 doMainMenu(key avatarKey, string message) {
-        if (message == "Info"){
+        if (message == buttonInfo){
             infoGive(avatarKey);
         }
-        else if (message == "Settings"){
+        else if (message == buttonSettings){
             settingsMenu(avatarKey);
         }
         else if (message == "Hack"){
             hackMenu(avatarKey);
         }
-        else if (message == "Punish"){
+        else if (message == buttonPunish){
             punishMenu(avatarKey);
         }
-        else if (message == "ForceSit"){
-            sendJSON("Leash", "ForceSit", avatarKey);
+        else if (message == buttonForceSit){
+            sendJSON(buttonLeash, buttonForceSit, avatarKey);
         }
-        else if (message == "Leash"){
-            sendJSON("Leash", "Leash", avatarKey);
+        else if (message == buttonLeash){
+            sendJSON(buttonLeash, buttonLeash, avatarKey);
         }
-        else if (message == "Speech"){
+        else if (message == buttonSpeech){
             speechMenu(avatarKey);
         }
-        else if (message == "Safeword"){
-            sendJSON("RLV", "Safeword", avatarKey);
+        else if (message == buttonSafeword){
+            sendJSON("RLV", buttonSafeword, avatarKey);
         }
-        else if (message == "Release"){
-            sendJSON("RLV", "Off", avatarKey);
+        else if (message == buttonRelease){
+            sendJSON("RLV", lockLevelOff, avatarKey);
         }
     }
 
@@ -269,13 +281,13 @@ doMainMenu(key avatarKey, string message) {
 punishMenu(key avatarKey)
 {
     // the zap menu never includes radio buttons in front of the Zap word
-    string message = "Punish";
+    string message = buttonPunish;
     list buttons = [];
     buttons = buttons + menuButtonActive("Zap Low", allowZapLow);
     buttons = buttons + menuButtonActive("Zap Med", allowZapMed);
     buttons = buttons + menuButtonActive("Zap High", allowZapHigh);
     buttons = buttons + menuButtonActive("Vision" , allowVision);
-    setUpMenu("Punish", avatarKey, message, buttons);
+    setUpMenu(buttonPunish, avatarKey, message, buttons);
 }
 
 string class2Description(string class) {
@@ -341,7 +353,7 @@ infoGive(key avatarKey){
             buttons += ["Doc "+(string)inumber];
         }
     }
-    setUpMenu("Info", avatarKey, message, buttons);
+    setUpMenu(buttonInfo, avatarKey, message, buttons);
 }
 
 hackMenu(key avatarKey)
@@ -361,7 +373,7 @@ hackMenu(key avatarKey)
 speechMenu(key avatarKey)
 {
     integer itsMe = avatarKey == llGetOwner();
-    integer locked = prisonerLockLevel != "Off";
+    integer locked = prisonerLockLevel != lockLevelOff;
     
     string message = "";
     list buttons = [];
@@ -385,7 +397,7 @@ speechMenu(key avatarKey)
         message = message + "\nRenamer, Gag, BadWords, and Display only work when the collar is locked.";
     }
     if (itsMe) {
-        if (prisonerMood == "OOC") {
+        if (prisonerMood == moodOOC) {
             doWordList = 1;
         } else {
             message = message + "\nYou can only change your word list while OOC.";
@@ -404,7 +416,7 @@ speechMenu(key avatarKey)
     buttons = buttons + menuButtonActive(menuCheckbox("DisplayTok", DisplayTokActive), doDisplayTok);
     buttons = buttons + menuButtonActive("WordList", doWordList);
     
-    setUpMenu("Speech", avatarKey, message, buttons);
+    setUpMenu(buttonSpeech, avatarKey, message, buttons);
 }
 
 doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed) 
@@ -412,38 +424,38 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
     if (messageButtonsTrimmed == "Renamer") {
         renamerActive = !renamerActive;
         if (renamerActive) {
-            sendJSON("Speech", "RenamerON", avatarKey);
+            sendJSON(buttonSpeech, "RenamerON", avatarKey);
         } else {
-            sendJSON("Speech", "RenamerOFF", avatarKey);
+            sendJSON(buttonSpeech, "RenamerOFF", avatarKey);
         }
         sayDebug("doSpeechMenu renamerActive:"+(string)renamerActive);
         speechMenu(avatarKey);
     } else if (message == "WordList") {
-        sendJSON("Speech","WordList", avatarKey);
+        sendJSON(buttonSpeech,"WordList", avatarKey);
     } else if (messageButtonsTrimmed == "BadWords") {
         badWordsActive = !badWordsActive;
         if (badWordsActive) {
-            sendJSON("Speech", "BadWordsON", avatarKey);
+            sendJSON(buttonSpeech, "BadWordsON", avatarKey);
         } else {
-            sendJSON("Speech", "BadWordsOFF", avatarKey);
+            sendJSON(buttonSpeech, "BadWordsOFF", avatarKey);
         }
         sayDebug("doSpeechMenu badWordsActive:"+(string)badWordsActive);
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "Gag") {
         gagActive = !gagActive;
         if (gagActive) {
-            sendJSON("Speech", "GagON", avatarKey);
+            sendJSON(buttonSpeech, "GagON", avatarKey);
         } else {
-            sendJSON("Speech", "GagOFF", avatarKey);
+            sendJSON(buttonSpeech, "GagOFF", avatarKey);
         }
         sayDebug("doSpeechMenu gagActive:"+(string)gagActive);
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "DisplayTok") {
         DisplayTokActive = !DisplayTokActive;
         if (DisplayTokActive) {
-            sendJSON("Speech", "DisplayTokON", avatarKey);
+            sendJSON(buttonSpeech, "DisplayTokON", avatarKey);
         } else {
-            sendJSON("Speech", "DisplayTokOFF", avatarKey);
+            sendJSON(buttonSpeech, "DisplayTokOFF", avatarKey);
         }
         sayDebug("doSpeechMenu DisplayTokActive:"+(string)DisplayTokActive);
         speechMenu(avatarKey);
@@ -464,7 +476,7 @@ settingsMenu(key avatarKey) {
     // IC/OOC mood - OOC, DnD or other
     // RLV lock level - Off, Light, Medium, Heavy, Lardcore
     
-    string message = "Settings";
+    string message = buttonSettings;
 
     // 1. Assume nothing is allowed
     integer setClass = 0;
@@ -486,7 +498,7 @@ settingsMenu(key avatarKey) {
         setLock = 1;
         
         // Some things you can only change OOC
-        if ((prisonerMood == "OOC") || (prisonerMood == "DnD")) {
+        if ((prisonerMood == moodOOC) || (prisonerMood == "DnD")) {
             sayDebug("settingsMenu: ooc");
             // IC or DnD you change everything
             setClass = 1;
@@ -508,7 +520,7 @@ settingsMenu(key avatarKey) {
         setThreat = 1;
         
         // some things guard can change only OOC
-        if (prisonerMood == "OOC") {
+        if (prisonerMood == moodOOC) {
             sayDebug("settingsMenu: ooc");
             // OOC, guards can change some things
             // DnD means Do Not Disturb
@@ -547,9 +559,9 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Timer", setTimer);
     buttons = buttons + menuButtonActive("Punishment", SetPunishments);
     buttons = buttons + menuButtonActive("Mood", setMood);
-    buttons = buttons + menuButtonActive("Speech", setSpeech);
+    buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
     
-    setUpMenu("Settings", avatarKey, message, buttons);
+    setUpMenu(buttonSettings, avatarKey, message, buttons);
 }
     
 doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
@@ -581,7 +593,7 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (message == "Timer"){
             llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
         }
-        else if (message == "Speech"){
+        else if (message == buttonSpeech){
             speechMenu(avatarKey);
         }
             
@@ -604,7 +616,7 @@ PunishmentLevelMenu(key avatarKey)
     buttons = buttons + menuCheckbox("Zap Med", allowZapMed);
     buttons = buttons + menuCheckbox("Zap High", allowZapHigh);
     buttons = buttons + menuCheckbox("Vision", allowVision);
-    buttons = buttons + "Settings";
+    buttons = buttons + buttonSettings;
     setUpMenu("Punishments", avatarKey, message, buttons);
 }
 
@@ -642,7 +654,7 @@ classMenu(key avatarKey)
         string class = llList2String(prisonerClasses, index);
         buttons = buttons + menuRadioButton(class, prisonerClass);
     }
-    buttons = buttons + "Settings";
+    buttons = buttons + buttonSettings;
     setUpMenu("Class", avatarKey, message, buttons);
 }
 
@@ -652,7 +664,7 @@ moodMenu(key avatarKey)
     {
         string message = "Set your Mood";
         list buttons = [];
-        buttons = buttons + menuRadioButton("OOC", prisonerMood);
+        buttons = buttons + menuRadioButton(moodOOC, prisonerMood);
         buttons = buttons + menuRadioButton("Submissive", prisonerMood);
         buttons = buttons + menuRadioButton("Versatile", prisonerMood);
         buttons = buttons + menuRadioButton("Dominant", prisonerMood);
@@ -703,7 +715,7 @@ lockMenu(key avatarKey)
         }
         
         // based on what buttons are available, build the message.
-        if (llSubStringIndex(allTheButtons, "Off") >= 0) {
+        if (llSubStringIndex(allTheButtons, lockLevelOff) >= 0) {
             message = message + "• Off has no RLV restrictions.\n";
             }
         if (llSubStringIndex(allTheButtons, "Light") >= 0) {
@@ -763,7 +775,7 @@ default
     {
         sayDebug("state_entry");
         menuAgentKey = "";
-        prisonerLockLevel = "Off"; 
+        prisonerLockLevel = lockLevelOff; 
         renamerActive = 0;       
         LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
         batteryIconLink = getLinkWithName("powerDisplay");
@@ -775,7 +787,7 @@ default
             sendJSON("prisonerClass", "white", "");
             sendJSON("prisonerCrime", "unknown", "");
             sendJSON("prisonerThreat", "None", "");
-            sendJSON("prisonerMood", "OOC", "");            
+            sendJSON("prisonerMood", moodOOC, "");            
             doSetPunishmentLevels(llGetOwner(),""); // initialize
         } else {
              attachStartup();
@@ -819,14 +831,17 @@ default
         
         // listen for the /1flmenu command
         if (channel == wearerChannel & message == menuPhrase) {
-            mainMenu(avatarKey);
+            if (menuAgentKey != "") {
+                mainMenu(avatarKey);
+            } else {
+                llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
+            }
             return;
         }
         
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
         sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
         sayDebug("listen menuIdentifier: "+menuIdentifier);
-        
         
         // display the menu item
         if (llGetSubString(message,1,1) == " ") {
@@ -838,6 +853,7 @@ default
         // reset the menu setup
         llListenRemove(menuListen);
         menuListen = 0;
+        menuChannel = 0;
         menuAgentKey = "";
         llSetTimerEvent(0);
         
@@ -846,24 +862,24 @@ default
             }
         
         // Main button
-        if (message == "Main") {
+        if (message == menuMain) {
             mainMenu(avatarKey);
         }
         
         //Main Menu
-        else if ((menuIdentifier == "Main") || (message == "Settings")) {
+        else if ((menuIdentifier == menuMain) || (message == buttonSettings)) {
             sayDebug("listen: Main:"+message);
             doMainMenu(avatarKey, message);
         }
         
         //Settings
-        else if (menuIdentifier == "Settings"){
+        else if (menuIdentifier == buttonSettings){
             sayDebug("listen: Settings:"+message);
             doSettingsMenu(avatarKey, message, messageButtonsTrimmed);
         }
 
         //Speech
-        else if (menuIdentifier == "Speech"){
+        else if (menuIdentifier == buttonSpeech){
             sayDebug("listen: Speech:"+message);
             doSpeechMenu(avatarKey, message, messageButtonsTrimmed);
         }
@@ -896,7 +912,7 @@ default
         }
         
         // Zap the inmate
-        else if (menuIdentifier == "Punish") {
+        else if (menuIdentifier == buttonPunish) {
             sayDebug("listen: Zap:"+message);
             sendJSON("RLV", message, avatarKey);
         }
@@ -904,7 +920,7 @@ default
         // Set Zap Level
         else if (menuIdentifier == "Punishments") {
             sayDebug("listen: Set Zap:"+message);
-            if (message == "Settings") {
+            if (message == buttonSettings) {
                 settingsMenu(avatarKey);
             } else {
                 doSetPunishmentLevels(avatarKey, messageButtonsTrimmed);
@@ -936,7 +952,7 @@ default
         }
         
         // Document
-        else if (menuIdentifier == "Info") {
+        else if (menuIdentifier == buttonInfo) {
             integer inumber = (integer)llGetSubString(message,4,4) - 1;
             sayDebug("listen: message:"+message+ " inumber:"+(string)inumber);
             if (inumber > -1) {
@@ -965,7 +981,7 @@ default
         gagActive = getJSONinteger(json, "gagActive", gagActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
         batteryLevel = getJSONstring(json, "batteryLevel", batteryLevel);
-        if (prisonerLockLevel == "Off") {
+        if (prisonerLockLevel == lockLevelOff) {
             renamerActive = 0;
             badWordsActive = 0;
             gagActive = 0; 
