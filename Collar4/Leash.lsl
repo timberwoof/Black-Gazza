@@ -2,7 +2,7 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-03-22
+// version: 2020-04-06
 
 // Handles all leash menu, authroization, and leashing functionality
 
@@ -11,6 +11,7 @@ integer OPTION_DEBUG = 0;
 integer rlvPresent = 0;
 string prisonerLockLevel = "";
 integer sitActive = 0;
+integer sitPending = 0;
 
 string prisonerNumber = "P-00000"; // to make the menus nice
 integer menuChannel = 0;
@@ -18,8 +19,8 @@ integer menuListen = 0;
 key leasherAvatar;
 integer leashLength = 5;
 key leashTarget;
-string sensorState = "Leash";
-string action = "Leash";
+string sensorState;
+string action;
 list leashPoints;
 integer leashRingPrim;
 
@@ -93,9 +94,10 @@ leashMenuFilter(key avatarKey) {
     // action = "Leash" or "ForceSit"
     // If an inmate wants to leash you, ask your permission. 
     // If you or anybody esle wants to leash you, just present the leash menu. 
-    sayDebug("leashMenuFilter leasherAvatar:"+(string)leasherAvatar);
-    sayDebug("leashMenuFilter avatarKey:"+(string)avatarKey);
-    sayDebug("leashMenuFilter llGetOwner:"+(string)llGetOwner());
+    sayDebug("leashMenuFilter leasherAvatar: "+(string)leasherAvatar);
+    sayDebug("leashMenuFilter avatarKey: "+(string)avatarKey);
+    sayDebug("leashMenuFilter llGetOwner: "+(string)llGetOwner());
+    sayDebug("leashMenuFilter action: "+action);
     if (avatarKey != llGetOwner() && llSameGroup(avatarKey) && avatarKey != leasherAvatar) {
         // another inmate wants to mess with the leash
         sayDebug("leashMenuFilter ask");
@@ -123,7 +125,7 @@ leashMenuFilter(key avatarKey) {
 
 key leashMenuAsk(key avatarKey) {
     // action == "Leash" or "ForceSit"
-    sayDebug("leashMenuAsk");
+    sayDebug("leashMenuAsk action: "+action);
     string informingLeasher;
     string askingWearer;
     if (action == "Leash") {
@@ -142,7 +144,7 @@ key leashMenuAsk(key avatarKey) {
 leashMenu(key avatarKey)
 // We passed all the tests. Present the leash menu. 
 {
-    sayDebug("leashMenu("+action+") sensorState:"+sensorState);
+    sayDebug("leashMenu action:"+action+" sensorState:"+sensorState);
     string message = "Set "+prisonerNumber+"'s Leash.";
     list buttons = [];
     
@@ -169,7 +171,7 @@ leashMenu(key avatarKey)
 sitMenu(key avatarKey, string calledBy)
 // We passed all the tests. Present the Sit menu.
 {
-    sayDebug("sitMenu("+action+") calledBy:"+calledBy+" sensorState:"+sensorState);
+    sayDebug("sitMenu calledBy:"+calledBy+" action:"+action+" sensorState:"+sensorState);
     string message = "Force "+prisonerNumber+" to sit.";
     list buttons = [];
     buttons = buttons + menuButtonActive("Sit On", rlvPresent & !sitActive);
@@ -260,20 +262,24 @@ default
             } else if (sensorState == "LeashObject") {
                 llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
                 leashParticlesOn("attach leashTarget", leashTarget);
+            } else if (sitActive == 1) {
+                // We may not be ready for RLV yet. 
+                sitPending = 1; 
             }
         }
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
     
-        action = llJsonGetValue(json, ["Leash"]);
-        if (action != JSON_INVALID) {
+        string value = llJsonGetValue(json, ["Leash"]);
+        if (value != JSON_INVALID) {
             // leash command
-            sayDebug("link_message("+(string)num+","+json+") action:"+action);
+            action = value;
+            sayDebug("link_message("+json+") action:"+action);
             leashMenuFilter(id);
         }
 
-        string value = llJsonGetValue(json, ["assetNumber"]);
+        value = llJsonGetValue(json, ["assetNumber"]);
         if (value != JSON_INVALID) {
             // database status
             sayDebug("link_message("+(string)num+","+json+")");
@@ -286,6 +292,10 @@ default
             sendRLVReleaseCommand();
         }
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
+        if (rlvPresent == 1 & sitPending == 1) {
+            sendRLVSitCommand(leashTarget);
+            sitPending = 0;
+        }
     }
     
     
@@ -307,6 +317,7 @@ default
                 llInstantMessage(leasherAvatar,"Permission to force sit was not granted.");
             }
         } else if (message == "Grab Leash") {
+            // sensor must keep track of the agent who grabbed the leash
             sayDebug("grab leash");
             leashTarget = avatarKey;
             leashParticlesOn("listen Grab Leash", leashTarget);
@@ -314,16 +325,18 @@ default
             sensorState = "LeashAgent";
             leashMenu(leasherAvatar);
         } else if ((message == "Leash To") | (message == "Sit On")){
+            // sensor must find possible leash points
             sayDebug("find leash points");
             leashPoints = [];
             llSensor("", NULL_KEY, ( ACTIVE | PASSIVE | SCRIPTED ), 5, PI);
             sensorState = "Findpost";
         } else if (llSubStringIndex(message, "m") > -1) {
+            // message was leash length like "○ 5 m" or "○ 10 m"
             sayDebug("set leash length");
-            // message was like "○ 5 m" or "○ 10 m"
             leashLength = (integer)llGetSubString(message,2,3);
             leashMenu(leasherAvatar);
         } else if (llGetSubString(message,0,4) == "Point") {
+            // message was a specific leash point number
             sayDebug("Point  action:"+action);
             integer pointi = (integer)llGetSubString(message,6,7);
             leashTarget = llList2Key(leashPoints,pointi);
@@ -334,7 +347,7 @@ default
                 leashMenu(leasherAvatar);
             } else {
                 llSensorRemove();
-                sensorState = "SitObject";
+                sensorState = "";
                 sendRLVSitCommand(leashTarget);
                 sitMenu(leasherAvatar, "leash to Point");
             }            
@@ -366,9 +379,9 @@ default
                 llStopMoveToTarget();
             }
         } else if (sensorState == "Findpost") {
-            // we got a list of nearby objects we might be able to leash to.
-            // Male a dialog box out of th elist. 
-            sayDebug("sensor("+(string)detected+")");
+            // we got a list of nearby objects we might be able to leash to or sit on.
+            // Male a dialog box out of the list. 
+            sayDebug("sensor("+(string)detected+")  action: "+action);
             string message;
             if (action == "Leash") {
                 message = "Select a leash Point:\n";
