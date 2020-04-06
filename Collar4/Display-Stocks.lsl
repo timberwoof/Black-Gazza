@@ -18,22 +18,29 @@ vector GRAY = <0.5, 0.5, 0.5>;
 vector LIGHT_GRAY = <0.7, 0.7, 0.7>;
 vector DARK_BLUE = <0.0, 0.0, 0.2>;
 vector BLUE = <0.0, 0.0, 1.0>;
+vector BLUE2 = <0.32, 0.32, .84>;
 vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
 vector MAGENTA = <1.0, 0.0, 1.0>;
+vector MAGENTA2 = <1, .2, .66>;
 vector CYAN = <0.0, 1.0, 1.0>;
+vector CYAN2 = <0.0, 1.0, 1.0>;
 vector WHITE = <1.0, 1.0, 1.0>;
-vector RED = <1.0, 0.0, 0.0>;
+vector RED = <1.0, 0.32, 0.32>;
+vector RED2 = <.87, 0.12, 0.12>;
 vector REDORANGE = <1.0, 0.25, 0.0>;
 vector ORANGE = <1.0, 0.5, 0.0>;
+vector ORANGE2 = <1, 0.66, 0.2>;
 vector YELLOW = <1.0, 1.0, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
+vector GREEN2 = <0.32, 1, 0.32>;
 vector PURPLE = <0.7, 0.1, 1.0>;
 
 list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
 list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
 list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
 list threatColors = [GREEN, YELLOW, ORANGE, RED];
-        
+list classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, WHITE];
+list classFrameColors = [WHITE, MAGENTA2, RED2, ORANGE2, GREEN2, BLUE2, DARK_GRAY];
 
 integer LinkFrame = 1;
 integer FaceFrame = 0;
@@ -83,11 +90,8 @@ string prisonerClass;
 string prisonerClassLong;
 list classNames;
 list classNamesLong;
-list classColors;
-list classTextures;
-list classSpeculars;
-list classBumpmaps;
 vector prisonerClassColor;
+vector frameClassColor;
 string prisonerLockLevel;
 
 string prisonerCrime;
@@ -333,6 +337,23 @@ default
         // set up the responder
         responderChannel = uuidToInteger(llGetOwner());
         responderListen = llListen(responderChannel,"", "", "");
+        
+        if (llGetAttached() > 0) {
+            llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
+            }
+    }
+    
+    attach(key avatar) {
+        llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
+        }
+
+    run_time_permissions(integer perm)
+    {
+        if (perm & PERMISSION_TRIGGER_ANIMATION)
+        {
+            llStartAnimation("binder4a");
+            llSetTimerEvent(5);
+        }
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
@@ -356,6 +377,7 @@ default
             sayDebug("link_message "+(string)num+" "+prisonerClass+"->prisonerClass");
             integer classi = llListFindList(classNames, [prisonerClass]);
             prisonerClassColor = llList2Vector(classColors, classi);
+            frameClassColor = llList2Vector(classFrameColors, classi);
             prisonerClassLong = llList2String(classNamesLong, classi);
             setTextColor(prisonerClassColor);
             
@@ -363,7 +385,7 @@ default
             llSetLinkPrimitiveParamsFast(LinkBlinky3,[PRIM_COLOR, FaceBlinky3, prisonerClassColor, 1.0]);
             
             // set the collar frame color
-            llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FaceFrame, prisonerClassColor, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FaceFrame, frameClassColor, 1.0]);
             displayTitler();
         }
         
@@ -500,8 +522,12 @@ default
                 TIMER_BADWORDS = -TIMER_BADWORDS - 1;
                 if (TIMER_BADWORDS == 0) {
                     llSetLinkPrimitiveParamsFast(LinkDisplayFrame,[PRIM_COLOR, FaceDisplayFrame, moodColor, 1.0]);
-                    llSetTimerEvent(0);  
+                    llSetTimerEvent(5);  
                 }
             }
+            
+            else {
+                llStartAnimation("binder4a");
+                }
         }
     }
