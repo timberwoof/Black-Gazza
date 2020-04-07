@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-05";
+string version = "2020-04-06";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -208,7 +208,7 @@ mainMenu(key avatarKey) {
     integer hardcore = 0;
     
     // enable or disable things based on state
-    if ((prisonerMood != moodOOC) && (prisonerMood != "DnD") && !llSameGroup(avatarKey)) {
+    if ((prisonerMood != moodOOC) && (prisonerMood != "DnD")) {
         doPunish = 1;
         doForceSit = 1;
     }
@@ -311,7 +311,7 @@ string batteryGraph(string batteryLevel) {
 infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string message = "Prisoner Information \n" +
-    "Number: " + assetNumber + "\n";
+    "\nNumber: " + assetNumber + "\n";
     if (!llSameGroup(avatarKey) || avatarKey == llGetOwner()) {
         string ZapLevels = "";
         ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
@@ -332,7 +332,7 @@ infoGive(key avatarKey){
         "Punishment: " + restricted + "\n"; 
     }
     message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
-    message = message + "OOC Information:\n";
+    message = message + "\nOOC Information:\n";
     message = message + "Version: " + version + "\n";
     message = message + "Mood: " + prisonerMood + "\n";
     if (rlvPresent) {
@@ -350,7 +350,7 @@ infoGive(key avatarKey){
     list buttons = []; 
     integer numNotecards = llGetInventoryNumber(INVENTORY_NOTECARD);
     if (numNotecards > 0) {
-        message = message + "Choose a Notecard:";
+        message = message + "\nChoose a Notecard:";
         integer index;
         for (index = 0; index < numNotecards; index++) {
             integer inumber = index+1;
