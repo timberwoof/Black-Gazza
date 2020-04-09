@@ -203,19 +203,46 @@ mainMenu(key avatarKey) {
     // assume some things are not available
     integer doPunish = 0;
     integer doForceSit = 0;
+    integer doLeash = 0;
+    integer doSpeech = 0;
     integer doSafeword = 0;
     integer doRelease = 0;
-    integer hardcore = 0;
     
-    // enable or disable things based on state
-    if ((prisonerMood != moodOOC) && (prisonerMood != "DnD")) {
-        doPunish = 1;
-        doForceSit = 1;
+    // Collar functions controlled by Mood: punish, force sit, leash, speech
+    if (prisonerMood == "DnD") {
+        if (avatarKey == llGetOwner()) {
+            doPunish = 1;
+            doForceSit = 1;
+            doLeash = 1;
+            doSpeech = 1;
+        }
+    } else if (prisonerMood == moodOOC) {
+            // everyone can do everything (but you better ask)
+            doPunish = 1;
+            doForceSit = 1;
+            doLeash = 1;
+            doSpeech = 1;
+    } else { // prisonerMood == anything else
+        if (avatarKey == llGetOwner()) {
+            // wearer can't do anything
+        } else if (llSameGroup(avatarKey)) {
+            // other prisoners can leash and force sit
+            doForceSit = 1;
+            doLeash = 1;
+        } else {
+            // Guards can do anything
+            doPunish = 1;
+            doForceSit = 1;
+            doLeash = 1;
+            doSpeech = 1;
+        }
     }
     
-    if (prisonerMood == moodOOC) {
-        doPunish = 1;
-        doForceSit = 1;
+    // Collar functions controlled by locklevel: Safeword and Release
+    if (prisonerLockLevel == "Hardcore" && !llSameGroup(avatarKey)) {
+        doRelease = 1;
+    } else {
+        message = message + "\nWhile prisoner is in RLV Hardcore mode, Release command is only available to a Guard.";
     }
     
     if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != lockLevelOff) {
@@ -224,21 +251,11 @@ mainMenu(key avatarKey) {
         message = message + "\nSafeword is only availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
     
-    if (prisonerLockLevel != lockLevelOff && !llSameGroup(avatarKey)) {
-        doRelease = 1;
-    } else {
-        message = message + "\nWhile prisoner is in RLV Hardcore mode, Release command is only available to a Guard.";
-    }
-    
-    if (prisonerLockLevel == "Hardcore" && llGetOwner() == avatarKey) {
-        hardcore = 1;
-    }
-    
     list buttons = [buttonInfo, buttonSettings]; //, "Hack"];
     buttons = buttons + menuButtonActive(buttonPunish, doPunish);
-    buttons = buttons + menuButtonActive(buttonLeash, !hardcore);
-    buttons = buttons + menuButtonActive(buttonSpeech, !hardcore);
     buttons = buttons + menuButtonActive(buttonForceSit, doForceSit);
+    buttons = buttons + menuButtonActive(buttonLeash, doLeash);
+    buttons = buttons + menuButtonActive(buttonSpeech, doSpeech);
     buttons = buttons + menuButtonActive(buttonSafeword, doSafeword);
     buttons = buttons + menuButtonActive(buttonRelease, doRelease);
     setUpMenu(menuMain, avatarKey, message, buttons);
