@@ -1,13 +1,13 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-03-28
+// version: 2020-04-10
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 
 // Sends battery state commands to Display. 
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 float basicCharge; // battery capacity in seconds
 float batteryCharge; // seconds left
