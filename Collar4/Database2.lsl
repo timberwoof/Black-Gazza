@@ -6,9 +6,9 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-03-22
+// version: 2020-04-10
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 key databaseQuery;
 string myQueryStatus;
 
