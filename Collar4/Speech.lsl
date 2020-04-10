@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version: 2020-03-25
+// version: 2020-04-10
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
@@ -24,6 +24,8 @@ integer textboxListen = 0;
 integer DisplayTokActive = 0;
 integer badWordsActive = 0;
 integer gagActive = 0;
+
+integer batteryLevel = 0;
 
 list badWords;
 list listWordsSpoken; // needed globally for displaytok
@@ -93,12 +95,17 @@ processSpeech(string speech, key avatarKey){
     }
     
     if(DisplayTokActive) {
-        sayDebug("processSpeech DisplayTokActive");
-        string firstWord = llList2String(listWordsSpoken, 0);
-        sendJSON("DisplayTemp", firstWord, "");
-        numWordsSpoken = 1;
-        stringWordsSpoken = firstWord;
-        llSetTimerEvent(1); // start the display cycle
+        if (batteryLevel > 0) {
+            sayDebug("processSpeech DisplayTokActive");
+            string firstWord = llList2String(listWordsSpoken, 0);
+            sendJSON("DisplayTemp", firstWord, "");
+            numWordsSpoken = 1;
+            stringWordsSpoken = firstWord;
+            llSetTimerEvent(1); // start the display cycle
+        } else {
+            sayDebug("processSpeech DisplayTokActive batterylevel:"+(string)batteryLevel);
+            sendJSON("DisplayTemp", "---", "");
+        }
     } else {
         llSay(0,speech);
     }
@@ -220,6 +227,8 @@ default
             assetNumber = assetCommand;
             sayDebug("link_message set assetNumber"+assetNumber);
         }
+        
+        batteryLevel = getJSONinteger(json, "batteryLevel", batteryLevel);
     }
     
     listen(integer channel, string name, key avatarKey, string message){
