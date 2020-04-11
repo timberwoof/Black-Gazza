@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version: 2020-04-10
+// version: 2020-04-11
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
@@ -25,13 +25,21 @@ integer DisplayTokActive = 0;
 integer badWordsActive = 0;
 integer gagActive = 0;
 
+integer speechPenaltyDisplay = 0;
+integer speechPenaltyGarbleWord = 0;
+integer speechPenaltyGarbleTime = 0;
+integer speechPenaltyBuzz = 0;
+integer speechPenaltyZap = 0;
+
 integer batteryLevel = 0;
 
 list badWords;
 list listWordsSpoken; // needed globally for displaytok
-integer numWordsToSpeak = 0; // needed globally for displaytok
-integer numWordsSpoken = 0;
+integer numWordsSpoken = 0; // needed globally for displaytok
+integer numWordsDisplayed = 0;
 string stringWordsSpoken;
+integer numTimesToZap = 0;
+integer numTimesToBuzz = 0;
 
 sayDebug(string message)
 {
@@ -72,7 +80,7 @@ processSpeech(string speech, key avatarKey){
         sayDebug("processSpeech listWordsSpoken");
         listWordsSpoken = llParseString2List(llToLower(speech), 
             [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
-        numWordsToSpeak = llGetListLength(listWordsSpoken);
+        numWordsSpoken = llGetListLength(listWordsSpoken);
     }
         
     // parse the speech for bad words
@@ -80,7 +88,7 @@ processSpeech(string speech, key avatarKey){
         sayDebug("processSpeech badWordsActive");
         integer countBadWords = 0;
         integer i;
-        for (i = 0; i < numWordsToSpeak; i++) {
+        for (i = 0; i < numWordsSpoken; i++) {
             string aWord = llList2String(listWordsSpoken, i);
             integer where = llListFindList(badWords, [aWord]);
             if (where >= 0) {
@@ -89,8 +97,19 @@ processSpeech(string speech, key avatarKey){
             }
         }
         sayDebug("detected "+(string)countBadWords+" bad words");
+        
         if (countBadWords > 0) {
+            // inform Display
             sendJSONinteger("badWordCount", countBadWords, avatarKey);
+            
+            if (speechPenaltyBuzz) {
+                numTimesToBuzz = countBadWords;
+                llSetTimerEvent(3); // start the buzz cycle
+            }
+            if (speechPenaltyZap) {
+                numTimesToZap = countBadWords;
+                llSetTimerEvent(3); // start the zap cycle
+            }
         }
     }
     
@@ -99,7 +118,7 @@ processSpeech(string speech, key avatarKey){
             sayDebug("processSpeech DisplayTokActive");
             string firstWord = llList2String(listWordsSpoken, 0);
             sendJSON("DisplayTemp", firstWord, "");
-            numWordsSpoken = 1;
+            numWordsDisplayed = 1;
             stringWordsSpoken = firstWord;
             llSetTimerEvent(1); // start the display cycle
         } else {
@@ -159,8 +178,6 @@ default
     }
 
     link_message(integer sender_num, integer num, string json, key avatarKey){
-        sayDebug("link_message "+json);
-        
         string speechCommand = getJSONstring(json, "Speech", "");
         if (speechCommand == "WordList") {
             string badWordString = llDumpList2String(badWords,", ");
@@ -172,8 +189,6 @@ default
             llTextBox(avatarKey, message, textboxChannel);
             llSetTimerEvent(30);
         }
-
-        string renamerCommand = JSON_INVALID;
         if (speechCommand == "RenamerOFF"){
             sendRLVReleaseCommand("link_message RenamerOFF");
         }
@@ -189,26 +204,41 @@ default
                 sendRLVRestrictCommand("link_message resetRenamer");
             }
         }
-        
         if (speechCommand == "BadWordsOFF") {
             badWordsActive = 0;
-        }
-        if (speechCommand == "BadWordsON") {
+        } else if (speechCommand == "BadWordsON") {
             badWordsActive = 1;
-        }
-
-        if (speechCommand == "GagOFF") {
+        } else  if (speechCommand == "GagOFF") {
             gagActive = 0;
-        }
-        if (speechCommand == "GagON") {
+        } else if (speechCommand == "GagON") {
             gagActive = 1;
-        }
-
-        if (speechCommand == "DisplayTokOFF") {
+        } else  if (speechCommand == "DisplayTokOFF") {
             DisplayTokActive = 0;
-        }
-        if (speechCommand == "DisplayTokON") {
+        } else if (speechCommand == "DisplayTokON") {
             DisplayTokActive = 1;
+        }
+        
+        string penaltyCommand = getJSONstring(json, "Penalties", "");
+        if (penaltyCommand == "DisplayON") {
+            speechPenaltyDisplay = 1;
+        } else if (penaltyCommand == "DisplayOFF") {
+            speechPenaltyDisplay = 0;
+        } else if (penaltyCommand == "GarbleWordON") {
+            speechPenaltyGarbleWord = 1;
+        } else if (penaltyCommand == "GarbleWordOFF") {
+            speechPenaltyGarbleWord = 0;
+        } else if (penaltyCommand == "GarbleTimeON") {
+            speechPenaltyGarbleTime = 1;
+        } else if (penaltyCommand == "GarbleTimeOFF") {
+            speechPenaltyGarbleTime = 0;
+        } else if (penaltyCommand == "BuzzON") {
+            speechPenaltyBuzz = 1;
+        } else if (penaltyCommand == "BuzzOFF") {
+            speechPenaltyBuzz = 0;
+        } else if (penaltyCommand == "ZapON") {
+            speechPenaltyZap = 1;
+        } else if (penaltyCommand == "ZapOFF") {
+            speechPenaltyZap = 0;
         }
 
         prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
@@ -279,13 +309,27 @@ default
     }
         
     timer() {
-        if (numWordsSpoken < numWordsToSpeak) {
-            string nextWord = llList2String(listWordsSpoken, numWordsSpoken);
-            numWordsSpoken = numWordsSpoken + 1;
+        sayDebug("timer");
+        if (DisplayTokActive & numWordsDisplayed < numWordsSpoken) {
+            string nextWord = llList2String(listWordsSpoken, numWordsDisplayed);
+            numWordsDisplayed = numWordsDisplayed + 1;
             sendJSON("DisplayTemp", nextWord, "");
             stringWordsSpoken = stringWordsSpoken + " " + nextWord;
-        } else {
+        }
+        if (speechPenaltyZap & numTimesToZap > 0) {
+            sendJSON("RLV", "Zap Low", llGetOwner());
+            numTimesToZap = numTimesToZap - 1;
+        }
+        if (speechPenaltyBuzz & numTimesToBuzz > 0) {
+            llPlaySound("d679e663-bba3-9caa-08f7-878f65966194",1);
+            numTimesToBuzz = numTimesToBuzz -1;
+        }
+        if (DisplayTokActive & stringWordsSpoken != "") {
             llSay(0,"'s collar display reads: " + stringWordsSpoken);
+            stringWordsSpoken = "";
+            llSetTimerEvent(0);
+        }
+        if (numTimesToZap == 0 & numTimesToBuzz == 0) {
             llSetTimerEvent(0);
         }
         if (textboxListen != 0) {
