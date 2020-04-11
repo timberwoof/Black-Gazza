@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-10";
+string version = "2020-04-11";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -370,6 +370,7 @@ setPrisonerClass(string prisonerClass) {
 
 // try to recover some settings based on colors of faces
 attachStartup() {
+    sayDebug("attachStartup");
     prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
     prisonerClass = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "prisonerClass");
     prisonerThreat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "prisonerThreat");
@@ -424,7 +425,7 @@ default
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
         // Initialize the world
-        batteryCharge = "Unknown"; 
+        batteryCharge = "0"; 
         prisonerCrime = "Unknown";
         if (llGetAttached() != 0) {
             attachStartup();
@@ -527,6 +528,7 @@ default
             displayTitler();
             }
 
+        // Prisoner Asset Number
         string newAssetNumber = getJSONstring(json, "assetNumber", assetNumber);
         if (newAssetNumber != assetNumber) {
             assetNumber = newAssetNumber;
@@ -603,7 +605,7 @@ default
                 TIMER_BADWORDS = - TIMER_BADWORDS;
             } else if (TIMER_BADWORDS < 0) {
                 sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-                displayBattery((integer)batteryCharge);
+                displayBattery((integer)batteryCharge); // reset the red light
                 llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
                 TIMER_BADWORDS = -TIMER_BADWORDS - 1;
                 if (TIMER_BADWORDS == 0) {
