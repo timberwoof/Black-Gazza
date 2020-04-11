@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-10";
+string version = "2020-04-11";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -46,10 +46,16 @@ integer renamerActive = 0;
 integer gagActive = 0;
 integer DisplayTokActive = 0;
 
+integer speechPenaltyDisplay = 0;
+integer speechPenaltyGarbleWord = 0;
+integer speechPenaltyGarbleTime = 0;
+integer speechPenaltyBuzz = 0;
+integer speechPenaltyZap = 0;
+
 string prisonerCrime = "Unknown";
 string assetNumber = "P-00000";
 string prisonerThreat = "Moderate";
-string batteryLevel = "100";
+integer batteryCharge = 100;
 integer badWordsActive = 0;
 
 key approveAvatar;
@@ -71,6 +77,7 @@ string buttonSettings = "Settings";
 string buttonPunish = "Punish";
 string buttonLeash = "Leash";
 string buttonSpeech = "Speech";
+string buttonPenalties = "Penalties";
 string buttonForceSit = "ForceSit";
 string buttonSafeword = "Safeword";
 string buttonRelease = "Release";
@@ -87,29 +94,37 @@ sayDebug(string message)
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
+}
+    
+sendJSONCheckbox(string jsonKey, string value, key avatarKey, integer ON) {
+    if (ON) {
+        sendJSON(jsonKey, value+"ON", avatarKey);
+    } else {
+        sendJSON(jsonKey, value+"OFF", avatarKey);
     }
+}
     
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
-    }
+}
     
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
     
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
@@ -242,13 +257,13 @@ mainMenu(key avatarKey) {
     if (prisonerLockLevel == "Hardcore" && !llSameGroup(avatarKey)) {
         doRelease = 1;
     } else {
-        message = message + "\nWhile prisoner is in RLV Hardcore mode, Release command is only available to a Guard.";
+        message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
     }
     
     if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != lockLevelOff) {
         doSafeword = 1;
     } else {
-        message = message + "\nSafeword is only availavle to the Prisoner in RLV levels Medium and Heavy.";
+        message = message + "\nSafeword is availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
     
     list buttons = [buttonInfo, buttonSettings]; //, "Hack"];
@@ -312,8 +327,9 @@ string class2Description(string class) {
         llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
 }
 
-string batteryGraph(string batteryLevel) {
-    integer iBattery = (integer)batteryLevel / 10;
+string batteryGraph(integer batteryCharge) {
+    // batteryCharge 0-100
+    integer iBattery = batteryCharge / 10;
     integer i;
     string graph = "";
     for (i=0; i<iBattery; i++) {
@@ -348,7 +364,7 @@ infoGive(key avatarKey){
         "Threat: " + restricted + "\n" +
         "Punishment: " + restricted + "\n"; 
     }
-    message = message + "Battery Level: " + batteryGraph(batteryLevel)+"\n";
+    message = message + "Battery Level: " + batteryGraph(batteryCharge)+"\n";
     message = message + "\nOOC Information:\n";
     message = message + "Version: " + version + "\n";
     message = message + "Mood: " + prisonerMood + "\n";
@@ -409,15 +425,23 @@ speechMenu(key avatarKey)
     integer doBadWords = 0;
     integer doWordList = 0;
     integer doDisplayTok = 0;
+    integer doPenalties = 0;
     
     // work out what menu items are available
     if (locked) {
         if (itsMe) {
             doRenamer = 1;
-            doBadWords = renamerActive;
-            doDisplayTok = renamerActive;
+            if (renamerActive) {
+                doGag = 1;
+                doBadWords = 1;
+                doDisplayTok = 1;
+                doPenalties = 1;
+            } else {
+                message = message + "\Gag, BadWords, and Display only work when Renamer is active.";
+            }
+        } else {
+            message = message + "\Only the prisoner may access some functions.";
         }
-        doGag = renamerActive;
     } else {
         message = message + "\nRenamer, Gag, BadWords, and Display only work when the collar is locked.";
     }
@@ -432,6 +456,14 @@ speechMenu(key avatarKey)
             message = message + "\nOnly Guards can change the word list";
         } else {
             doWordList = 1;
+            if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
+                doGag = 1;
+                doBadWords = 1;
+                doDisplayTok = 1;
+                doPenalties = 1;
+            } else {
+                message = message + "\nGuards can set Speech only in Heavy or Hardcore mode.";
+            }
         }
     }
     
@@ -440,6 +472,7 @@ speechMenu(key avatarKey)
     buttons = buttons + menuButtonActive(menuCheckbox("BadWords", badWordsActive), doBadWords);
     buttons = buttons + menuButtonActive(menuCheckbox("DisplayTok", DisplayTokActive), doDisplayTok);
     buttons = buttons + menuButtonActive("WordList", doWordList);
+    buttons = buttons + menuButtonActive("Penalties", doPenalties);
     
     setUpMenu(buttonSpeech, avatarKey, message, buttons);
 }
@@ -448,43 +481,63 @@ doSpeechMenu(key avatarKey, string message, string messageButtonsTrimmed)
 {
     if (messageButtonsTrimmed == "Renamer") {
         renamerActive = !renamerActive;
-        if (renamerActive) {
-            sendJSON(buttonSpeech, "RenamerON", avatarKey);
-        } else {
-            sendJSON(buttonSpeech, "RenamerOFF", avatarKey);
-        }
-        sayDebug("doSpeechMenu renamerActive:"+(string)renamerActive);
+        sendJSONCheckbox(buttonSpeech, "Renamer", avatarKey, renamerActive);
         speechMenu(avatarKey);
     } else if (message == "WordList") {
         sendJSON(buttonSpeech,"WordList", avatarKey);
     } else if (messageButtonsTrimmed == "BadWords") {
         badWordsActive = !badWordsActive;
-        if (badWordsActive) {
-            sendJSON(buttonSpeech, "BadWordsON", avatarKey);
-        } else {
-            sendJSON(buttonSpeech, "BadWordsOFF", avatarKey);
-        }
-        sayDebug("doSpeechMenu badWordsActive:"+(string)badWordsActive);
+        sendJSONCheckbox(buttonSpeech, "BadWords", avatarKey, badWordsActive);
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "Gag") {
         gagActive = !gagActive;
-        if (gagActive) {
-            sendJSON(buttonSpeech, "GagON", avatarKey);
-        } else {
-            sendJSON(buttonSpeech, "GagOFF", avatarKey);
-        }
-        sayDebug("doSpeechMenu gagActive:"+(string)gagActive);
+        sendJSONCheckbox(buttonSpeech, "Gag", avatarKey, gagActive);
         speechMenu(avatarKey);
     } else if (messageButtonsTrimmed == "DisplayTok") {
         DisplayTokActive = !DisplayTokActive;
-        if (DisplayTokActive) {
-            sendJSON(buttonSpeech, "DisplayTokON", avatarKey);
-        } else {
-            sendJSON(buttonSpeech, "DisplayTokOFF", avatarKey);
-        }
-        sayDebug("doSpeechMenu DisplayTokActive:"+(string)DisplayTokActive);
+        sendJSONCheckbox(buttonSpeech, "DisplayTok", avatarKey, DisplayTokActive);
         speechMenu(avatarKey);
+    } else if (message == "Penalties") {
+        PenaltyMenu(avatarKey);
     } else {
+        speechMenu(avatarKey);
+    }
+}
+
+PenaltyMenu(key avatarKey) {
+    string message = "Set the penalties for speaking bad words:";
+    list buttons = [];
+    buttons = buttons + menuCheckbox("Display", speechPenaltyDisplay);
+    buttons = buttons + menuCheckbox("GarbleWord", speechPenaltyGarbleWord);
+    buttons = buttons + menuCheckbox("GarbleTime", speechPenaltyGarbleTime);
+    buttons = buttons + menuCheckbox("Buzz", speechPenaltyBuzz);
+    buttons = buttons + menuCheckbox("Zap", speechPenaltyZap);
+    buttons = buttons + "Speech";
+    setUpMenu(buttonPenalties, avatarKey, message, buttons);
+}
+    
+doPenaltyMenu(key avatarKey, string message, string messageButtonsTrimmed) {
+    if (messageButtonsTrimmed == "Display") {
+        speechPenaltyDisplay = !speechPenaltyDisplay;
+        sendJSONCheckbox(buttonPenalties, "Display", avatarKey, speechPenaltyDisplay);
+        PenaltyMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "GarbleWord") {
+        speechPenaltyGarbleWord = !speechPenaltyGarbleWord;
+        sendJSONCheckbox(buttonPenalties, "GarbleWord", avatarKey, speechPenaltyGarbleWord);
+        PenaltyMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "GarbleTime") {
+        speechPenaltyGarbleTime = !speechPenaltyGarbleTime; 
+        sendJSONCheckbox(buttonPenalties, "GarbleTime", avatarKey, speechPenaltyGarbleTime);
+        PenaltyMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "Buzz") {
+        speechPenaltyBuzz = !speechPenaltyBuzz;
+        sendJSONCheckbox(buttonPenalties, "Buzz", avatarKey, speechPenaltyBuzz);
+        PenaltyMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "Zap") {
+        speechPenaltyZap = !speechPenaltyZap;
+        sendJSONCheckbox(buttonPenalties, "Zap", avatarKey, speechPenaltyZap);
+        PenaltyMenu(avatarKey);
+    } else if (messageButtonsTrimmed == "Speech") {
         speechMenu(avatarKey);
     }
 }
@@ -800,6 +853,7 @@ default
     {
         sayDebug("state_entry");
         menuAgentKey = "";
+        prisonerMood = moodOOC;
         prisonerLockLevel = lockLevelOff; 
         renamerActive = 0;       
         LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
@@ -807,7 +861,6 @@ default
 
         // Initialize Unworn
         if (llGetAttached() == 0) {
-            llSetObjectName("Black Gazza LOC-4 "+version);
             sendJSON("assetNumber", "P-00000", "");
             sendJSON("prisonerClass", "white", "");
             sendJSON("prisonerCrime", "unknown", "");
@@ -843,9 +896,9 @@ default
             else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, assetNumber+" Lock Level: "+prisonerLockLevel);}
             else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, assetNumber+" Class: "+class2Description(prisonerClass));}
             else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, assetNumber+" Threat: "+prisonerThreat);}
-            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+batteryLevel+"%");
+            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+(string)batteryCharge+"%");
         } else if (touchedLink == batteryCoverLink) {
-            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+batteryLevel+"%");
+            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+(string)batteryCharge+"%");
             mainMenu(avatarKey);
         } else {
             mainMenu(avatarKey);
@@ -907,6 +960,12 @@ default
         else if (menuIdentifier == buttonSpeech){
             sayDebug("listen: Speech:"+message);
             doSpeechMenu(avatarKey, message, messageButtonsTrimmed);
+        }
+
+        //Speech Penalties
+        else if (menuIdentifier == "Penalties"){
+            sayDebug("listen: Speech Penalties:"+message);
+            doPenaltyMenu(avatarKey, message, messageButtonsTrimmed);
         }
 
         // Asset
@@ -1005,7 +1064,7 @@ default
         badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
         gagActive = getJSONinteger(json, "gagActive", gagActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
-        batteryLevel = getJSONstring(json, "batteryLevel", batteryLevel);
+        batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge);
         if (prisonerLockLevel == lockLevelOff) {
             renamerActive = 0;
             badWordsActive = 0;
