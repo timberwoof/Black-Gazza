@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-11";
+string version = "2020-04-12";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -476,7 +476,7 @@ default
         }
         
         // Zap Level sets blinky 1
-        value = llJsonGetValue(json, ["zapLevels"]);
+        value = llJsonGetValue(json, ["ZapLevels"]);
         if (value != JSON_INVALID) {
             zapLevelsJSON = value;
             list zapLevels = llJson2List(zapLevelsJSON);
@@ -578,7 +578,7 @@ default
                 "prisonerMood", prisonerMood, 
                 "batteryCharge", batteryCharge, 
                 "prisonerLockLevel", prisonerLockLevel, 
-                "zapLevels", zapLevelsJSON]);
+                "ZapLevels", zapLevelsJSON]);
             sayDebug("listen("+name+","+message+") responds with " + statusJsonList);
             llSay(responderChannel, statusJsonList);
         }
