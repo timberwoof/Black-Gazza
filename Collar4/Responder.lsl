@@ -7,7 +7,7 @@ integer responderChannel;
 integer responderListen;
 string lockLevel;
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 sayDebug(string message)
 {
@@ -70,15 +70,17 @@ integer uuidToInteger(key uuid)
     return sum;
 }
 
+string Role = "Inmate";
 string assetNumber;
 string prisonerMood;
 string prisonerClass;
 string prisonerCrime;
 string prisonerThreat;
 string prisonerLockLevel;
+string prisonerZapLevels;
 integer batteryCharge;
 
-list symbols = ["assetNumber","Mood","Class","Crime","Threat","LockLevel","BatteryCharge"];
+list symbols = ["Role", "assetNumber", "Mood", "Class", "Crime", "Threat", "LockLevel", "BatteryCharge", "ZapLevels"];
 list values;
 
 
@@ -101,7 +103,8 @@ default
         prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
         prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
         batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge);
-        values = [assetNumber,prisonerMood,prisonerClass,prisonerCrime,prisonerThreat,prisonerLockLevel,batteryCharge];
+        prisonerZapLevels = getJSONstring(json, "ZapLevels", prisonerZapLevels);
+        values = [Role, assetNumber, prisonerMood, prisonerClass, prisonerCrime, prisonerThreat, prisonerLockLevel, batteryCharge, prisonerZapLevels];
     } 
 
     listen(integer channel, string name, key id, string json)
