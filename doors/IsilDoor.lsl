@@ -151,6 +151,15 @@ debug(string message)
     }
 }
 
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+    }
+    return result;
+}
+
 getParameters()
 {
     string optionstring = llGetObjectDesc();
@@ -272,8 +281,12 @@ pingResponder(key whoclicked) {
     responderKey = whoclicked;
     responderChannel = uuidToInteger(whoclicked);
     responderListen = llListen(responderChannel, "", "", "");
-    debug("Request Authorization on channel "+(string)responderChannel);    
-    llWhisper(responderChannel, "Request Status");
+    debug("pingResponder got Request Data on channel "+(string)responderChannel); 
+    string requestList = llList2Json(JSON_ARRAY, ["Role", "Mood", "Class", "LockLevel", "Threat", "ZapLevels"]);
+    debug("pingResponder requestList: "+requestList);
+    string json =  llList2Json(JSON_OBJECT, ["request", requestList]);
+    debug("pingResponder json: "+json);
+    llWhisper(responderChannel, json);
     gResponderTimer = setTimerEvent(TIMER_INTERVAL);
 }
 
@@ -299,7 +312,7 @@ integer checkAuthorization(key whoclicked, string responderCode)
             debug("checkAuthorization failed responder check");
             if (responderCode == "Zap") {
                 debug("checkAuthorization got zap code");
-                llSay(-106969,(string)whoclicked);
+                llSay(-106969,(string)whoclicked); // we also need variable zap command
             }
             authorized = 0;
         } 
@@ -641,9 +654,10 @@ default
     }
 
     listen(integer channel, string name, key id, string message) {
+        debug("listen channel:"+(string)channel+" name:'"+name+"' message: '"+message+"'");
+        debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
         if ((channel == POWER_CHANNEL) & (gPowerState != POWER_FAILING) & (gPowerState != POWER_OFF)) 
         {
-            debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
             debug("listen gPowerState = POWER_FAILING");
             list xyz = llParseString2List( message, [","], ["<",">"]);
             vector distantloc;
@@ -658,7 +672,6 @@ default
         
         else if (channel == LOCKDOWN_CHANNEL) 
         {
-            debug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
             debug("listen "+message);
             if (message == "LOCKDOWN") 
             {
@@ -695,40 +708,68 @@ default
                 }
             }
             
-        } else if (OPTION_RESPONDER && (channel == responderChannel)) {
-            debug("responder: "+message);
+        } else if (channel == responderChannel) {
+            //debug("responder: "+message); // {"response":[{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]}
             llListenRemove(responderListen);
             responderListen = 0;
             responderChannel = 0;
             
-            // response looks like {"assetNumber":"P-60361","prisonerCrime":"Piracy; Illegal Transport of Biogenics",
-            // "prisonerClass":"red","prisonerThreat":"None","prisonerMood":"Dominant","batteryLevel":"40",
-            // "prisonerLockLevel":"NoRLV","zapLevels":[1,1,1]}
-            // {"assetNumber":"P-60361","prisonerCrime":"Piracy; Illegal Transport of Biogenics",
-            // "prisonerClass":"blue","prisonerThreat":"Moderate","prisonerMood":"DnD","batteryLevel":"90",
-            // "prisonerLockLevel":"Off","zapLevels":[1,1,1]}
-            string assetNumber = llJsonGetValue(message, ["assetNumber"]);
-            string prisonerClass = llJsonGetValue(message, ["prisonerClass"]);
-            string prisonerMood = llJsonGetValue(message, ["prisonerMood"]);
-            string prisonerLockLevel = llJsonGetValue(message, ["prisonerLockLevel"]);
-            string zapLevels = llJsonGetValue(message, ["zapLevels"]);
-            debug("responder assetNumber:"+assetNumber);
-            debug("responder prisonerClass:"+prisonerClass); 
-            // red can leave; orange/white, green blue/black, violet - maybe, depending on other factors
-            // Four classes can only leave/enter through their color door
-            debug("responder prisonerMood:"+prisonerMood); 
-            // DnD or OOC can leave; all IC moods cannot leave
-            debug("responder prisonerLockLevel:"+prisonerLockLevel); 
-            // locklevel NoRLV Light can leave; 
-            // locklevel Medium can only use correct color door
-            // locklevel Heavy or Hardcore cannot leave
-            debug("responder zapLevels:"+zapLevels);
-            // heavy or hardcore zap at highest allowed level
-            // medium zap at lowest level
+            string personRole = "";
+            string personMood = "";
+            string prisonerClass = "";
+            string prisonerLock = "";
+            string prisonerThreat = "";
             
-            // now we set the responderMessage
-            responderMessage = "Yes"; 
-            //if (prisonerMood = 
+            string jsonlist = llJsonGetValue(message, ["response"]);
+            if (jsonlist != JSON_INVALID) {
+                list responses = llJson2List(jsonlist);
+                list symbols = ["assetNumber","Mood","Class","Crime","Threat","LockLevel","BatteryCharge"];
+                // we asked for Mood, Class, LockLevel
+                integer i;
+                for (i = 0; i < llGetListLength(responses); i++) {
+                     string keyValueJson = llList2String(responses, i); 
+                     //debug("keyValueJson:"+keyValueJson);
+                     personRole = getJSONstring(keyValueJson,"Role", personRole);
+                     personRole = getJSONstring(keyValueJson,"Mood", personMood);
+                     prisonerClass = getJSONstring(keyValueJson,"Class", prisonerClass);
+                     prisonerLock = getJSONstring(keyValueJson,"LockLevel", prisonerLock);
+                     prisonerThreat = getJSONstring(keyValueJson,"Threat", prisonerThreat);
+                }
+                debug("Mood:"+personMood+" Class:"+prisonerClass+" LockLevel:"+prisonerLock+" Threat:"+prisonerThreat);
+            }
+            
+            responderMessage = "No";
+            if (personMood == "OOC") {
+                debug("personMood:"+personMood+" Yes");
+                responderMessage = "Yes";
+            } else if (personRole == "Inmate") {
+                if (prisonerClass == "blue") {
+                    debug("prisonerClass:"+prisonerClass+" Zap");
+                    responderMessage = "Zap";
+                }
+                if (prisonerClass == "orange") {
+                    if (prisonerThreat == "Dangerous" | prisonerThreat == "Extreme") {
+                        debug("prisonerClass:"+prisonerClass+" prisonerThreat:"+prisonerThreat+" Zap");
+                        responderMessage = "Zap";
+                    } else {
+                        debug("prisonerClass:"+prisonerClass+" prisonerThreat:"+prisonerThreat+" No");
+                        responderMessage = "No";
+                    }                    
+                }
+                if (prisonerLock == "Medium") {
+                    responderMessage = "No";
+                }
+                if (prisonerLock == "Heavy" | prisonerLock == "Hardcore") {
+                    responderMessage = "Zap";
+                }
+                if (prisonerClass == "red") {
+                    debug("prisonerClass:"+prisonerClass+" Yes");
+                    responderMessage = "Yes";
+                }
+            } else if (personRole = "Guard") {
+                responderMessage="Yes";
+            }
+            debug("responderMessage:"+responderMessage);            
         }
     }
     
