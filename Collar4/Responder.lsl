@@ -1,7 +1,7 @@
 // Responder.lsl
 // Script for Black Gazza Collar 4
 // Timberwoof Lupindo, February 2020
-// version: 2020-02-22
+// version: 2020-04-11
 
 integer responderChannel;
 integer responderListen;
@@ -13,8 +13,26 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llWhisper(0,"Responder:"+message);
+        llOwnerSay("Responder:"+message);
     }
+}
+    
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+    }
+    return result;
+}
+    
+integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
+    integer result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = (integer)value;
+    }
+    return result;
 }
 
 integer uuidToInteger(key uuid)
@@ -52,6 +70,18 @@ integer uuidToInteger(key uuid)
     return sum;
 }
 
+string assetNumber;
+string prisonerMood;
+string prisonerClass;
+string prisonerCrime;
+string prisonerThreat;
+string prisonerLockLevel;
+integer batteryCharge;
+
+list symbols = ["assetNumber","Mood","Class","Crime","Threat","LockLevel","BatteryCharge"];
+list values;
+
+
 default
 {
     state_entry()
@@ -60,26 +90,44 @@ default
         responderListen = llListen(responderChannel,"", "", "");
     }
     
-    link_message( integer sender_num, integer num, string message, key id )
+    link_message( integer sender_num, integer num, string json, key id )
     {
-        if (num == 1400) {
-            lockLevel = message;
-        }
+    // We listen in on link status messages and pick the ones we're interested in
+        sayDebug("link_message json "+json);
+        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
+        prisonerCrime = getJSONstring(json, "prisonerCrime", prisonerCrime);
+        prisonerClass = getJSONstring(json, "prisonerClass", prisonerClass);
+        prisonerThreat = getJSONstring(json, "prisonerThreat", prisonerThreat);
+        prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
+        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge);
+        values = [assetNumber,prisonerMood,prisonerClass,prisonerCrime,prisonerThreat,prisonerLockLevel,batteryCharge];
     } 
 
-    listen(integer channel, string name, key id, string message)
+    listen(integer channel, string name, key id, string json)
     {
-        sayDebug("Responder listen("+name+","+message+")");
-        list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
-        integer locki = llListFindList(lockLevels, [lockLevel]);
-        if (message == "Request Authorization") {
-            if (0 < locki && locki <= 2) {
-                llSay(responderChannel,"Yes");
-            } else if (locki == 3) {
-                llSay(responderChannel,"No");
-            } else if (locki >= 4) {
-                llSay(responderChannel,"Zap");
+        // {"request":["Mood","Class","LockLevel"]}
+        sayDebug("Responder listen("+name+","+json+")");  
+        string value = getJSONstring(json, "request", "");  // ["Mood","Class","LockLevel"]
+        sayDebug("listen value: "+value);
+        list requests = llJson2List(value);
+        integer i;
+        list responses;
+        for (i = 0; i < llGetListLength(requests); i++) {
+            string symbolkey = llList2String(requests, i);
+            integer index = llListFindList(symbols, [symbolkey]);
+            string value = "Error";
+            if (index >= 0) {
+                value = llList2String(values, index);
             }
-        }
+            sayDebug(symbolkey+" -> "+value);
+            string onejson = llList2Json(JSON_OBJECT, [symbolkey, value]); // {"Mood":"OOC"}
+            responses = responses + [onejson];
+        }        
+        string jsonlist = llList2Json(JSON_ARRAY, responses); // [{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]
+        sayDebug("jsonlist:"+jsonlist);
+        string jsonresponse = llList2Json(JSON_OBJECT, ["response", jsonlist]); // {"response":[{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]}
+        sayDebug("jsonresponse:"+jsonresponse);
+        llWhisper(responderChannel, jsonresponse);
     }
 }
