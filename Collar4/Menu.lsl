@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-11";
+string version = "2020-04-12";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -716,7 +716,7 @@ doSetPunishmentLevels(key avatarKey, string message)
             allowZapHigh = 1;
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
-        sendJSON("zapLevels", zapJsonList, avatarKey);
+        sendJSON("ZapLevels", zapJsonList, avatarKey);
         sendJSONinteger("allowVision", allowVision, avatarKey);
     }
 }
