@@ -41,6 +41,108 @@ string stringWordsSpoken;
 integer numTimesToZap = 0;
 integer numTimesToBuzz = 0;
 
+// Basic drug-induced Muffling
+list SimpleIn = [];
+list SimpleOut = [];
+list BlendIn = [];
+list BlendOut = [];
+
+// slurd
+list slurdSimpleIn  = ["f","k","p","s","t","x"];
+list slurdSimpleOut = ["v","g","p","z","d","gs"]; 
+//
+list slurdBlendIn =  ["ca","ce","ci","co","cu","cy","ch","qu","sh","th","ph"];
+list slurdBlendOut = ["ga","ze","zi","go","gu","zy","j", "gw","j", "dh", "v"];
+
+// hairlift
+list hairliftSimpleIn  = ["B","b","P","p","M","m"];
+list hairliftSimpleOut = ["V","v","F","f","V","v"]; 
+
+// thfeech imfedivent (hairlift + cathtillian + more evil
+list imfediventSimpleIn  = ["B","b","P","p","M","m","S","s","Z","z"];
+list imfediventSimpleOut = ["V","v","F","f","V","v","Th","th","Th","th"]; 
+
+list imfediventBlendIn =  ["ch","sh","Ch","Sh"];
+list imfediventBlendOut = ["sl","sl","Sl","Sl"];
+
+// lips
+list LipsSimpleIn  = ["p","b","f","v","m"];
+list LipsSimpleOut = ["h","h","h","h","ng"]; 
+//
+list LipsBlendIn =  ["ph"];
+list LipsBlendOut = ["h"];
+
+// tongue
+list TongueSimpleIn  = ["t","d","s","z","n"];
+list TongueSimpleOut = ["ch","g","ch","j","ng"]; 
+//
+list TongueBlendIn =  ["th","sh","ch"];
+list TongueBlendOut = ["ga","ze","zi"];
+
+// throat
+list ThroatSimpleIn  = ["k","g"];
+list ThroatSimpleOut = ["h","h"]; 
+//
+list ThroatBlendIn =  ["ca","ce","ci","co","cu","cy","ch","qu","sh","th","ph"];
+list ThroatBlendOut = ["ga","ze","zi","go","gu","zy","j", "gw","j", "dh", "v"];
+
+list BlendIndex = [];
+
+makeindex() {
+    // make an index of the ist of two-letter substitutions
+    BlendIndex = [];
+    integer inputLength = llGetListLength(BlendIn);
+    integer index;
+    for (index == 0; index < inputLength; index++) {
+         BlendIndex += [llGetSubString(llList2String(BlendIn, index),0,0)];
+    }    
+}
+
+string replace (string input)
+{
+    integer inputLength;
+    integer inputIndex = 0;
+    integer listIndex; 
+    string output = ""; //"mumbles, \"";
+
+    inputLength = llStringLength(input);
+    while (inputIndex < inputLength){
+        // get the character and eat it
+        string inchar = llGetSubString(input, inputIndex, inputIndex++);
+        
+        // default is this character
+        string outchar = inchar;
+        
+        // is it the first letter of a pair? 
+        listIndex = llListFindList( BlendIndex, [inchar]);
+        if (listIndex >= 0) {   // yes
+            string twochar = inchar + llGetSubString(input, inputIndex, inputIndex);    // get the next letter
+            listIndex = llListFindList(BlendIn, [twochar]);    // look up the pair in the BlendIn list
+            if (listIndex >= 0) {
+                outchar = llList2String(BlendOut, listIndex);    // add the resulting letter form the BlendOut list
+                //llWhisper(0,"pair " + twochar + "->" + outchar);    // debug
+                inputIndex ++; // eat the character
+            } 
+        }
+
+        if (outchar == inchar) {
+            // no, it is not a pair
+            // find it in the single-letter subtitution list
+            listIndex = llListFindList(SimpleIn, [inchar]);       // look the letter up in the single list
+            if (listIndex >= 0) {
+                // found it
+                outchar = llList2String(SimpleOut, listIndex);  // add the resulting letter form the BlendOut list
+                //llWhisper(0,"single " + inchar + "->" + outchar);    // debug
+            }
+        }
+        // add the character(s) to the string
+        output += outchar;   
+    }     
+    //output += "\"";
+    //return input + " => " + output; //  
+    return output; //  
+}
+
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
@@ -79,7 +181,7 @@ processSpeech(string speech, key avatarKey){
     if (badWordsActive | DisplayTokActive) {
         sayDebug("processSpeech listWordsSpoken");
         listWordsSpoken = llParseString2List(llToLower(speech), 
-            [" ", ",", ".", ";", ":", "!", "?", "'", "\""], []);
+            [" "], [",", ".", ";", ":", "!", "?", "'", "\""]);
         numWordsSpoken = llGetListLength(listWordsSpoken);
     }
         
@@ -94,6 +196,9 @@ processSpeech(string speech, key avatarKey){
             if (where >= 0) {
                 countBadWords++;
                 // *** replace words for displaytok here
+                
+                if (speechPenaltyGarbleWord) {
+                }
             }
         }
         sayDebug("detected "+(string)countBadWords+" bad words");
@@ -114,17 +219,17 @@ processSpeech(string speech, key avatarKey){
     }
     
     if(DisplayTokActive) {
-        if (batteryLevel > 0) {
+        //if (batteryLevel > 0) {
             sayDebug("processSpeech DisplayTokActive");
             string firstWord = llList2String(listWordsSpoken, 0);
             sendJSON("DisplayTemp", firstWord, "");
             numWordsDisplayed = 1;
             stringWordsSpoken = firstWord;
             llSetTimerEvent(1); // start the display cycle
-        } else {
-            sayDebug("processSpeech DisplayTokActive batterylevel:"+(string)batteryLevel);
-            sendJSON("DisplayTemp", "---", "");
-        }
+        //} else {
+        //    sayDebug("processSpeech DisplayTokActive batterylevel:"+(string)batteryLevel);
+        //    sendJSON("DisplayTemp", "---", "");
+        //}
     } else {
         llSay(0,speech);
     }
@@ -164,6 +269,7 @@ default
         }
         badWords = llParseString2List(ownerName, [" "], [""]);
         badWords = badWords + ["pink","fluffy","unicorns","dancing","rainbows"];
+        makeindex();
     }
 
      attach(key id) // log in
