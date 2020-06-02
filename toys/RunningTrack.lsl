@@ -32,9 +32,11 @@ place_agent(integer link, key agent)
     llOwnerSay("theslot:"+(string)theslot);
     float angle = PI_BY_TWO / theslot;
     pos += <0.0, 0.0, 19.0> * llEuler2Rot(<angle, 0.0, 0.0>);
+    rotation rot = llEuler2Rot(<-PI_BY_TWO, 0.0, angle + PI_BY_TWO>); //angle
     
     llRequestPermissions(agent, PERMISSION_TRIGGER_ANIMATION);
     llSetLinkPrimitiveParams(link, [PRIM_POSITION, pos]);
+    llSetLinkPrimitiveParams(link, [PRIM_ROTATION, rot]);
     llOwnerSay("place_agent done");
 }
 
@@ -73,6 +75,8 @@ default
             gAgentSlots += [NULL_KEY];
         }
         llListen(-999,"Running Track","","");
+        llTargetOmega(<1.0,0.0,0.0>,0.25,0.5);
+        llSetTimerEvent(1);
         llOwnerSay("state_entry done");
     }
 
@@ -136,6 +140,10 @@ default
         }
         llOwnerSay("changed done");
     }
+    
+    timer()
+    {
+       llMoveToTarget(<128.0, 128.0,1225.34753>, 1.0);
+    }
 
 }
-
