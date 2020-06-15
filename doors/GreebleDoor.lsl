@@ -8,7 +8,6 @@
 // debug: whispers operational details
 // lockdown: responds to station lockdown messages
 // delay: waits s120 econds before closing when lockdown is called
-//      lockdown checks samegroup; don't turn on lockdown option and group option
 // power: responds to power failures
 // group: makes it respond only to member of same group as door
 // admin: makes admin show up only for members of same group
@@ -280,7 +279,6 @@ saveOptions()
     options = options + getOption("bump", OPTION_BUMP);
     options = options + getOption("debug", OPTION_DEBUG);
     options = options + getOption("power", OPTION_POWER);
-    //options = options + getOptionString("outline",(string)OUTLINE_COLOR);
     options = options + getOptionString("frame",(string)FRAME_COLOR);
     if (OPTION_OWNERS)
     {
@@ -328,7 +326,6 @@ integer checkAuthorization(string calledby, key whoclicked)
     // lockdown checks group
     if ((gLockdownState == LOCKDOWN_ON | gLockdownState == LOCKDOWN_TEMP) & (!llSameGroup(llDetectedKey(0))))
     {
-        // had (OPTION_LOCKDOWN) & 
         debug("checkAuthorization failed lockdown group check");
         authorized = 0;
     }
@@ -633,7 +630,6 @@ default
             close();
         }
         
-        
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         debug("initialized");
@@ -867,13 +863,10 @@ default
         }
         
         if ( (gPowerTimer <= 0 & gLockdownTimer <= 0 & gMenuTimer <= 0) )
-        // this had (gPowerState == POWER_ON & gLockdownState == LOCKDOWN_OFF) |
         {
             debug("timer"+
                 " gPowerTimer:"+(string)gPowerTimer+
                 " gLockdownTimer:"+(string)gLockdownTimer+
-                //" gPowerState:"+(string)gPowerState+
-                //" gLockdownState:"+(string)gLockdownState+
                 " gMenuTimer:"+(string)gMenuTimer
                 );
             llSetTimerEvent(0);
