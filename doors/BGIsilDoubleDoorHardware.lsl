@@ -274,7 +274,11 @@ setColorsAndIcons()
 }
 
 
-setPanelColor(vector Color) {}
+setPanelColor(vector Color) 
+{
+    llSetLinkColor(primPanel, Color, FACE_PANEL_1);
+    llSetLinkColor(primPanel, Color, FACE_PANEL_2);
+}
 
 
 default

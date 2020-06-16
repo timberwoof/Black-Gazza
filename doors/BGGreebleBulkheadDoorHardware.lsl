@@ -412,7 +412,5 @@ default
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
         }
-        
     }
-    
 }

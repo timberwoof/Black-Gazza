@@ -471,6 +471,7 @@ default
             vector here = llGetPos();
             float distance = llVecDist(here, distantloc)/10.0;
             gPowerState = POWER_FAILING;
+            sendJSONinteger("powerState", gPowerState, "");
             gPowerTimer = setTimerEvent((integer)distance);
         }
         
@@ -619,6 +620,7 @@ default
                     setColorsAndIcons();
                 }
             }
+            sendJSONinteger("powerState", gPowerState, "");
         }
         
         if (gLockdownTimer > 0)
