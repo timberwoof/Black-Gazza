@@ -66,7 +66,7 @@ integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
 // options
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 integer OPTION_LOCKDOWN = 0;
 integer OPTION_DELAY = 0;
 integer OPTION_POWER = 0;

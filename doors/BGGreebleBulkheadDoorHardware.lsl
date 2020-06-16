@@ -144,13 +144,12 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     return result;
 }
 
-
 // ========================================
-// custom for Greeble
+// custom
 open()
 {
     sayDebug("open()");
-    if ( (CLOSED == doorState) & (gPowerState == POWER_ON) ) 
+    if ((CLOSED == doorState) & (gPowerState == POWER_ON))
     {
         llSetLinkPrimitiveParamsFast(PRIM_FRAME, [PRIM_FULLBRIGHT, FACE_FRAME0, TRUE ]);
         llSetLinkColor(PRIM_PANEL_1, GREEN, FACE_PANEL_1);
@@ -175,7 +174,7 @@ open()
     setColorsAndIcons();
 }
 
-close() 
+close()
 {
     sayDebug("close");
     if (OPEN == doorState) 
@@ -323,9 +322,9 @@ default
         llSetLinkPrimitiveParams(PRIM_PANEL_2, [PRIM_GLOW, FACE_PANEL_2, 0.1]);
         
         setColorsAndIcons();
-        
+
         // calculate the leaf movements
-        // get  the size of the door frame and calculate the sizes of the leaves
+        // get the size of the door frame and calculate the sizes of the leaves
         vector frameSize = llGetScale( );
         vector leafsize = <frameSize.x * LEAF_SCALE.x, frameSize.y * LEAF_SCALE.y, frameSize.z * LEAF_SCALE.z>; 
         fwidth = frameSize.y;
@@ -333,7 +332,6 @@ default
         fopen = fwidth * OPEN_FACTOR;
         fZoffset = frameSize.z * ZOFFSET_FACTOR;
         fdelta = llFabs(fopen - fclose) * 0.003;
-        sayDebug("fdelta:"+(string)fdelta);
         
         // set the initial leaf sizes and positions
         llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_SIZE,leafsize]);
@@ -355,7 +353,6 @@ default
         llPlaySound(sound_granted,1);
         sayDebug("initialized");
     }
-
 
     touch_start(integer total_number)
     {
@@ -393,9 +390,6 @@ default
     }
     
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
-        // We listen in on link status messages and pick the ones we're interested in
-        //sayDebug("link_message json "+json);
-        
         OPTION_DEBUG = getJSONinteger(json, "OPTION_DEBUG", OPTION_DEBUG);
         OPTION_GROUP = getJSONinteger(json, "OPTION_GROUP", OPTION_GROUP);
         OPTION_NORMALLY_OPEN = getJSONinteger(json, "OPTION_NORMALLY_OPEN", OPTION_NORMALLY_OPEN);
