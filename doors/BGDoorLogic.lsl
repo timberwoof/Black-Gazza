@@ -66,7 +66,7 @@ integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
 // options
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 integer OPTION_LOCKDOWN = 0;
 integer OPTION_DELAY = 0;
 integer OPTION_POWER = 0;
@@ -350,12 +350,36 @@ open(integer auth, integer override)
 {
     sayDebug("open("+(string)auth+", "+(string)override+")");
     sendJSON("command", "open", "");
+
+    // if normally closed or we're in lockdown,
+    // start a sensor that will close the door when it's clear. 
+    if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
+    {
+        sayDebug("open setting sensor radius "+(string)gSensorRadius);
+        llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
+    } 
+    if (gLockdownState == LOCKDOWN_TEMP)
+    {
+        sayDebug("open gLockdownState LOCKDOWN_TEMP -> gLockdownState = LOCKDOWN_OFF");
+        gLockdownState = LOCKDOWN_OFF;
+        gLockdownTimer = setTimerEvent(LOCKDOWN_OFF); 
+    }
+
 }
 
 close() 
 {
     sayDebug("close");
     sendJSON("command", "close", "");
+    
+    // if normally open and we're in lockdown,
+    // start the fair-game automatic release timer
+    if (OPTION_NORMALLY_OPEN & gLockdownState != LOCKDOWN_ON & gPowerState != POWER_OFF)
+    {
+        sayDebug("close setting fair-game release");
+        gLockdownState = LOCKDOWN_TEMP;
+        gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);
+    }
 }
 
 toggleDoor(integer auth, integer override)
