@@ -18,28 +18,20 @@ integer FACE_PUSH_TO_OPEN = 4;
 integer FACE_FRAME = 5;
 
 // prims - custom for luna
-integer primDoor1 = 5;
-integer primDoor2 = 4;
-integer primJet1 = 2;
-integer primJet2 = 3;
+integer PRIM_PANEL_1 = 1;
+integer PRIM_DOOR_1 = 5;
+integer PRIM_DOOR_2 = 4;
+integer PRIM_JET_1 = 2;
+integer PRIM_JET_2 = 3;
 
+// Physical Sizes
+vector LEAF_SCALE = <0.94, 0.9, 0.015>;
 
-// Physical Sizes - custom luna
-float leafHscale = 0.94;
-float leafVscale = 0.9;
-float leafZscale = .015;
-
+// Extra for Nozzles
 float nozzleXoffset = -0.4610;
 float nozzleZoffset = 0.1601;
 float nozzle2Yoffset = 0.2888;
 float nozzle3Yoffset = -0.3050;
-
-float fwidth = 5.0;
-float fwidth2 = 2.5;
-float fopen = 3.50;
-float fclose = 1.25;
-float fdelta = .05;
-float gSensorRadius = 2.0;
 
 // luna has a numeric keypad
 string sound_beep0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
@@ -111,6 +103,12 @@ string sound_warning = "fb0a28c3-4e7a-7554-0403-d8c3f56d1ccc";
 string sound_door = "ccab0df8-8819-9840-9327-ae2791a9d2e2";
 string sound_slam = "fc85aee3-2358-55aa-ba3d-d2d40f58e2bc";
 string sound_latch = "e96de4ba-b21c-03e4-03f9-31b5da9b6f99";
+
+float fwidth;
+float fopen;
+float fclose;
+float fdelta;
+float fZoffset;
 
 // Door States
 integer doorState; // 1 = door is open
@@ -191,16 +189,18 @@ open()
     sayDebug("open()");
     if ( (CLOSED == doorState)  &  (gPowerState == POWER_ON)) 
     {
+        llSetLinkColor(PRIM_PANEL_1, GREEN, FACE_PUSH_TO_OPEN);
+        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PUSH_TO_OPEN);
         particles(1); // luna door has steam puffs
         llPlaySound(sound_slide,1.0);
         float f;
         for (f = fclose; f < fopen; f = f + fdelta) 
         {
-            llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0> ]);//
-            llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0> ]);//
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
         }
-        llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_POS_LOCAL, <-fopen, 0.0, 0.0> ]);//
-        llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);//f
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-fopen, 0.0, 0.0> ]);//
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);//f
         doorState = OPEN;
         sendJSONinteger("doorState", doorState, "");
     }
@@ -212,16 +212,18 @@ close()
     sayDebug("close");
     if (OPEN == doorState) 
     {
+        llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PUSH_TO_OPEN);
+        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PUSH_TO_OPEN);
         particles(1); // luna door has steam puffs
         llPlaySound(sound_slide,1.0);
         float f;
         for (f = fopen; f >= fclose; f = f - fdelta) 
         {
-            llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0>]);//-f
-            llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0>]);//-f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
         }
-        llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_POS_LOCAL, <-fclose, 0.0, 0.0> ]);//
-        llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);//f
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-fclose, 0.0, 0.0> ]);//
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);//f
         doorState = CLOSED;
         sendJSONinteger("doorState", doorState, "");
     }
@@ -256,13 +258,13 @@ particles(integer on)
 
     if (on)
     {
-        llLinkParticleSystem(primJet1, puff);
-        llLinkParticleSystem(primJet2, puff);
+        llLinkParticleSystem(PRIM_JET_1, puff);
+        llLinkParticleSystem(PRIM_JET_2, puff);
     }
     else
     {
-        llLinkParticleSystem(primJet1, []);
-        llLinkParticleSystem(primJet2, []);
+        llLinkParticleSystem(PRIM_JET_1, []);
+        llLinkParticleSystem(PRIM_JET_2, []);
     }
 }
 
@@ -401,7 +403,14 @@ default
         sayDebug("state_entry");
         gPowerState = POWER_OFF;
         
-        // get  the size of the door frame and calculate the sizes of the leaves
+        // panel texture scale and offset
+        llSetLinkColor(PRIM_PANEL_1, BLACK, FACE_ACCESS_GRANTED);
+        llSetLinkColor(PRIM_PANEL_1, BLACK, FACE_ACCESS_GRANTED);
+
+        setColorsAndIcons();
+
+        // calculate the leaf movements
+        // get the size of the door frame and calculate the sizes of the leaves
         vector myscale = llGetScale( );
         vector leafsize;
         
@@ -409,7 +418,7 @@ default
         if (llGetNumberOfPrims() == 5) 
         {
             // two sliding leaves
-            leafsize = <myscale.y*leafVscale, myscale.x*leafHscale/2.0, myscale.x*leafZscale>; 
+            leafsize = <myscale.y*LEAF_SCALE.y, myscale.x*LEAF_SCALE.x/2.0, myscale.x*LEAF_SCALE.z>; 
             // special case for double door
             fwidth = leafsize.y;
             fclose = fwidth / 2.0;
@@ -419,7 +428,7 @@ default
         else
         {
             // one sliding leaf
-            leafsize = <myscale.y*leafVscale, myscale.x*leafHscale, myscale.x*leafZscale>; 
+            leafsize = <myscale.y*LEAF_SCALE.y, myscale.x*LEAF_SCALE.x, myscale.x*LEAF_SCALE.z>; 
             // x and y are reversed in the leaves
             fwidth = leafsize.y;
             fclose = 0;
@@ -428,26 +437,24 @@ default
         }
         
         // set the initial leaf sizes and positions
-        llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_SIZE,leafsize]);
-        llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_SIZE,leafsize]);
-        llSetLinkPrimitiveParamsFast(primDoor1,[PRIM_POS_LOCAL, <-fopen, 0.0, 0.0>]);//
-        llSetLinkPrimitiveParamsFast(primDoor2,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);//f
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_SIZE,leafsize]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_SIZE,leafsize]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-fopen, 0.0, 0.0>]);//
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_2,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);//f
 
         // calculate and set the nozzle locations - luna only
-        llSetLinkPrimitiveParamsFast(primJet1,[PRIM_POS_LOCAL, 
+        llSetLinkPrimitiveParamsFast(PRIM_JET_1,[PRIM_POS_LOCAL, 
         <myscale.x*nozzleXoffset, myscale.y*nozzle2Yoffset, myscale.z*nozzleZoffset>]);
-        llSetLinkPrimitiveParamsFast(primJet2,[PRIM_POS_LOCAL, 
+        llSetLinkPrimitiveParamsFast(PRIM_JET_2,[PRIM_POS_LOCAL, 
         <myscale.x*nozzleXoffset, myscale.y*nozzle3Yoffset, myscale.z*nozzleZoffset>]);
 
         gPowerState = POWER_ON;
         
         if (OPTION_NORMALLY_OPEN) {
-            doorState = CLOSED;
             open();
         }
         else
         {
-            doorState = OPEN;
             close();
         }
                 
@@ -492,9 +499,6 @@ default
     }
     
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
-        // We listen in on link status messages and pick the ones we're interested in
-        sayDebug("link_message json "+json);
-        
         OPTION_DEBUG = getJSONinteger(json, "OPTION_DEBUG", OPTION_DEBUG);
         OPTION_GROUP = getJSONinteger(json, "OPTION_GROUP", OPTION_GROUP);
         OPTION_NORMALLY_OPEN = getJSONinteger(json, "OPTION_NORMALLY_OPEN", OPTION_NORMALLY_OPEN);
@@ -511,7 +515,5 @@ default
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
         }
-        
     }
-    
 }
