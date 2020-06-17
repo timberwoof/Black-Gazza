@@ -399,7 +399,9 @@ default
         
         string command = "";
         command = getJSONstring(json, "command", command);
-        if (command == "close") {
+        if (command == "reset") {
+            llResetScript();
+        } else if (command == "close") {
             close();
         } else if (command == "open") {
             open();

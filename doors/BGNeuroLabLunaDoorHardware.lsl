@@ -131,7 +131,7 @@ integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
 // options
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 vector OUTLINE_COLOR = <0,0,0>;
 vector FRAME_COLOR = <1,1,1>;
 integer OPTION_NORMALLY_OPEN;
@@ -508,7 +508,9 @@ default
         
         string command = "";
         command = getJSONstring(json, "command", command);
-        if (command == "close") {
+        if (command == "reset") {
+            llResetScript();
+        } else if (command == "close") {
             close();
         } else if (command == "open") {
             open();

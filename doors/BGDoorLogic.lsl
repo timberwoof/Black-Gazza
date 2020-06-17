@@ -24,7 +24,7 @@
 // will stay closed for half an hour, implementing the fair-game rule. 
 
 
-float gSensorRadius = 2.0;
+float gSensorRadius;
 
 integer ZAP_CHANNEL = -106969;
 
@@ -356,7 +356,7 @@ open(integer auth, integer override)
     if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
     {
         sayDebug("open setting sensor radius "+(string)gSensorRadius);
-        llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
+        llSensorRepeat("", "", AGENT, gSensorRadius, PI, 1.0);
     } 
     if (gLockdownState == LOCKDOWN_TEMP)
     {
@@ -437,7 +437,7 @@ default
         }
         
         vector frameSize = llGetScale( );
-        gSensorRadius = (frameSize.x + frameSize.y) / 3.0;
+        gSensorRadius = (frameSize.x + frameSize.y + frameSize.z) / 4.0;
         
         if (OPTION_NORMALLY_OPEN) {
             open(1,1);
@@ -538,6 +538,7 @@ default
             
             if (message == "Reset")
             {
+                sendJSON("command", "reset", "");
                 llResetScript();
             }
             
