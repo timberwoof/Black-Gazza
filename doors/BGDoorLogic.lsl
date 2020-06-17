@@ -8,7 +8,7 @@
 // these parameters can be optionally set in the description:
 // debug: whispers operational details
 // lockdown: responds to station lockdown messages
-// delay: waits 120 econds before closing when lockdown is called
+// delay: waits s120 econds before closing when lockdown is called
 // power: responds to power failures
 // group: makes it respond only to member of same group as door
 // admin: makes admin show up only for members of same group
@@ -64,6 +64,7 @@ integer LOCKDOWN_OFF = 0;
 integer LOCKDOWN_IMMINENT = 1;
 integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
+string sound_lockdown = "2d9b82b0-84be-d6b2-22af-15d30c92ad21";
 
 // options
 integer OPTION_DEBUG = 0;
@@ -227,6 +228,7 @@ string menuCheckbox(string title, integer onOff)
 maintenanceMenu(key whoClicked)
 {
     list menu = [];
+    menu = menu + [menuCheckbox("Power", OPTION_POWER)];
     menu = menu + [menuCheckbox("Lockdown", OPTION_LOCKDOWN)];
     menu = menu + [menuCheckbox("Group", OPTION_GROUP)];
     menu = menu + [menuCheckbox("Admin", OPTION_ADMIN)];
@@ -452,11 +454,6 @@ default
         sayDebug("initialized");
     }
 
-    // need to receive events
-    // touch
-    // admin
-    // collision
-
     listen(integer channel, string name, key id, string message) {
         sayDebug("listen channel:"+(string)channel+" name:'"+name+"' message: '"+message+"'");
         sayDebug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
@@ -470,19 +467,20 @@ default
             distantloc.z = llList2Float(xyz,3);
             vector here = llGetPos();
             float distance = llVecDist(here, distantloc)/10.0;
+            gPowerTimer = setTimerEvent((integer)distance);
             gPowerState = POWER_FAILING;
             sendJSONinteger("powerState", gPowerState, "");
-            gPowerTimer = setTimerEvent((integer)distance);
         }
         
         else if (channel == LOCKDOWN_CHANNEL) 
         {
-            sayDebug("listen "+message);
+            sayDebug("listen LOCKDOWN_CHANNEL message:"+message);
             if (message == "LOCKDOWN") 
             {
                 if (OPTION_DELAY == 0)
                 {
                     sayDebug("listen OPTION_DELAY == 0 -> gLockdownState = LOCKDOWN_ON");
+                    llPlaySound(sound_lockdown,1);
                     gLockdownState = LOCKDOWN_ON;
                     gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);
                     close(); // don't put a sensor here. It's lockdown. Get out of the way!
@@ -492,7 +490,6 @@ default
                     sayDebug("listen LOCKDOWN_DELAY != 0 -> gLockdownState = LOCKDOWN_IMMINENT");
                     gLockdownState = LOCKDOWN_IMMINENT;
                     gLockdownTimer = setTimerEvent(LOCKDOWN_DELAY);   
-                    setColorsAndIcons();
                 }
             }
             if (message == "RELEASE") 
@@ -506,12 +503,9 @@ default
                 {
                     open(1, 0);
                 }
-                else
-                {
-                    setColorsAndIcons();
-                }
             }
             sendJSONinteger("lockdownState", gLockdownState, "");
+            setColorsAndIcons();
         }
          
         else if (channel == menuChannel)
@@ -523,6 +517,7 @@ default
             menuChannel = 0;
             
             integer stateNew = llGetSubString(message,0,0) == "☐";
+            OPTION_POWER = setOptionLogical(message, "Power", OPTION_POWER, stateNew);
             OPTION_LOCKDOWN = setOptionLogical(message, "Lockdown", OPTION_LOCKDOWN, stateNew);
             OPTION_DELAY = setOptionLogical(message, "Delay", OPTION_DELAY, stateNew);
             OPTION_GROUP = setOptionLogical(message, "Group", OPTION_GROUP, stateNew);
