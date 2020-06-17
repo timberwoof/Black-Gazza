@@ -24,9 +24,9 @@ vector PANEL_TEXTURE_SCALE = <30.0, 23.0, 0>;
 vector PANEL_TEXTURE_OFFSET = <0.34, 0.23, 0>;
 
 // Physical Sizes
-vector LEAF_SCALE = <0.5, 0.5, 1.0>;
+vector LEAF_SCALE = <0.5, 0.5, 1.0>; // thickness width height
 float CLOSE_FACTOR = 0.2;
-float OPEN_FACTOR = 0.6;
+float OPEN_FACTOR = 0.575;
 float ZOFFSET_FACTOR = 0.0;
 
 
@@ -93,7 +93,7 @@ integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
 
 // options
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 vector OUTLINE_COLOR = <0,0,0>;
 vector FRAME_COLOR = <1,1,1>;
 integer OPTION_NORMALLY_OPEN;
