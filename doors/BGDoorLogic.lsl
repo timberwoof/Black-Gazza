@@ -99,6 +99,7 @@ getOptions()
     string optionstring = llGetObjectDesc();
     sayDebug("getOptions("+ optionstring +")");
     if (llSubStringIndex(optionstring,"debug") > -1) OPTION_DEBUG = 1;
+    sendJSONinteger("OPTION_DEBUG",OPTION_DEBUG, "");
     if (llSubStringIndex(optionstring,"lockdown") > -1) OPTION_LOCKDOWN = 1;
     if (llSubStringIndex(optionstring,"power") > -1) OPTION_POWER = 1;
     if (llSubStringIndex(optionstring,"group") > -1) OPTION_GROUP = 1;
@@ -147,16 +148,19 @@ getOptions()
 
 sendOptions()
 {
+    sayDebug("sendOptions()");
     sendJSONinteger("OPTION_DEBUG",OPTION_DEBUG, "");
     sendJSONinteger("OPTION_GROUP",OPTION_GROUP, "");
     sendJSONinteger("OPTION_NORMALLY_OPEN",OPTION_NORMALLY_OPEN, "");
     sendJSONinteger("OPTION_BUTTON", OPTION_BUTTON, "");
     sendJSONinteger("OPTION_BUMP",OPTION_BUMP, "");
     sendJSON("FRAME_COLOR", (string)FRAME_COLOR, "");
+    setColorsAndIcons();
 }
 
 saveOptions()
 {
+    sayDebug("saveOptions()");
     string options = "";
     options = options + getOption("lockdown", OPTION_LOCKDOWN);
     options = options + getOption("delay", OPTION_DELAY);
@@ -175,6 +179,21 @@ saveOptions()
     }
     sayDebug("saveOptions: \""+options+"\"");
     llSetObjectDesc(options);
+}
+
+reportStatus()
+{
+    llWhisper(0,"Door Logic Status:");
+    llWhisper(0,"lockdown: "+(string)OPTION_LOCKDOWN);
+    llWhisper(0,"delay: "+(string)OPTION_DELAY);
+    llWhisper(0,"group: "+(string)OPTION_GROUP);
+    llWhisper(0,"admin: "+(string)OPTION_ADMIN);
+    llWhisper(0,"zap: "+(string)OPTION_ZAP);
+    llWhisper(0,"normally-open: "+(string)OPTION_NORMALLY_OPEN);
+    llWhisper(0,"button: "+(string)OPTION_BUTTON);
+    llWhisper(0,"bump: "+(string)OPTION_BUMP);
+    llWhisper(0,"debug: "+(string)OPTION_DEBUG);
+    llWhisper(0,"power: "+(string)OPTION_POWER);
 }
 
 sendJSON(string jsonKey, string value, key avatarKey){
@@ -228,16 +247,20 @@ string menuCheckbox(string title, integer onOff)
 maintenanceMenu(key whoClicked)
 {
     list menu = [];
-    menu = menu + [menuCheckbox("Power", OPTION_POWER)];
-    menu = menu + [menuCheckbox("Lockdown", OPTION_LOCKDOWN)];
-    menu = menu + [menuCheckbox("Group", OPTION_GROUP)];
-    menu = menu + [menuCheckbox("Admin", OPTION_ADMIN)];
-    menu = menu + [menuCheckbox("Zap", OPTION_ZAP)];
     menu = menu + [menuCheckbox("Open", OPTION_NORMALLY_OPEN)];
     menu = menu + [menuCheckbox("Button", OPTION_BUTTON)];
     menu = menu + [menuCheckbox("Bump", OPTION_BUMP)];
-    menu = menu + [menuCheckbox("Debug", OPTION_DEBUG)];
+    
+    menu = menu + [menuCheckbox("Power", OPTION_POWER)];
+    menu = menu + [menuCheckbox("Lockdown", OPTION_LOCKDOWN)];
     menu = menu + [menuCheckbox("Delay", OPTION_DELAY)];
+
+    menu = menu + [menuCheckbox("Group", OPTION_GROUP)];
+    menu = menu + [menuCheckbox("Zap", OPTION_ZAP)];
+    menu = menu + [menuCheckbox("Admin", OPTION_ADMIN)];
+
+    menu = menu + [menuCheckbox("Debug", OPTION_DEBUG)];
+    menu = menu + ["Status"];
     menu = menu + ["Reset"];
     menuChannel = (integer)llFloor(llFrand(1000+1000));
     llListenRemove(menuListen);
@@ -413,6 +436,7 @@ integer setTimerEvent(integer duration)
 
 setColorsAndIcons()
 {
+    sayDebug("setColorsAndIcons()");
     sendJSON("command", "setColorsAndIcons", "");
 }
 
@@ -442,14 +466,17 @@ default
         gSensorRadius = (frameSize.x + frameSize.y + frameSize.z) / 4.0;
         
         if (OPTION_NORMALLY_OPEN) {
+            doorState = CLOSED;
             open(1,1);
         }
         else
         {
+            doorState = OPEN;
             close();
         }
         
         sendOptions();
+        llSleep(1);
         setColorsAndIcons();
         sayDebug("initialized");
     }
@@ -536,6 +563,11 @@ default
                 sendJSON("command", "reset", "");
                 llResetScript();
             }
+            else if (message == "Status")
+            {
+                reportStatus();
+                sendJSON("command", "reportStatus", "");
+            }
             
             if (OPTION_NORMALLY_OPEN && !doorState)
             {
@@ -564,6 +596,8 @@ default
             open(checkAuthorization("bump", avatarKey), 0);
         } else if (command == "admin") {
             maintenanceMenu(avatarKey);
+        } else if (command == "getStatus") {
+            sendOptions();
         }
     }
     

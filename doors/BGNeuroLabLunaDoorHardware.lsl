@@ -69,7 +69,6 @@ string texture_luna_push_to_open = "19e1426e-8ebf-100a-c70d-a3b77c7117ee";
 string texture_luna_access_granted = "6f635c48-e120-90db-d97c-2773992acda3";
 string texture_luna_access_denied = "f58e636f-ea98-35a9-18c8-dc226b753fb5";
 
-
 // ========================================
 // Common
 
@@ -180,6 +179,20 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
         result = (integer)value;
     }
     return result;
+}
+
+reportStatus()
+{
+    llWhisper(0,"Door Hardware Status:");
+    llWhisper(0,"doorState: "+(string)doorState);
+    llWhisper(0,"gLockdownState: "+(string)gLockdownState);
+    llWhisper(0,"gPowerState: "+(string)gPowerState);
+    llWhisper(0,"group: "+(string)OPTION_GROUP);
+    llWhisper(0,"normally-open: "+(string)OPTION_NORMALLY_OPEN);
+    llWhisper(0,"button: "+(string)OPTION_BUTTON);
+    llWhisper(0,"bump: "+(string)OPTION_BUMP);
+    llWhisper(0,"debug: "+(string)OPTION_DEBUG);
+    llWhisper(0,"power: "+(string)OPTION_POWER);
 }
 
 // ========================================
@@ -452,12 +465,17 @@ default
         
         if (OPTION_NORMALLY_OPEN) {
             open();
+            close();
+            open();
         }
         else
         {
             close();
+            open();
+            close();
         }
                 
+        sendJSON("command", "getStatus", llDetectedKey(0));
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         sayDebug("initialized");
@@ -516,6 +534,8 @@ default
             open();
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
+        } else if (command == "reportStatus") {
+            reportStatus();
         }
     }
 }

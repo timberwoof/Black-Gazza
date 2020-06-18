@@ -144,6 +144,20 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     return result;
 }
 
+reportStatus()
+{
+    llWhisper(0,"Door Hardware Status:");
+    llWhisper(0,"doorState: "+(string)doorState);
+    llWhisper(0,"gLockdownState: "+(string)gLockdownState);
+    llWhisper(0,"gPowerState: "+(string)gPowerState);
+    llWhisper(0,"group: "+(string)OPTION_GROUP);
+    llWhisper(0,"normally-open: "+(string)OPTION_NORMALLY_OPEN);
+    llWhisper(0,"button: "+(string)OPTION_BUTTON);
+    llWhisper(0,"bump: "+(string)OPTION_BUMP);
+    llWhisper(0,"debug: "+(string)OPTION_DEBUG);
+    llWhisper(0,"power: "+(string)OPTION_POWER);
+}
+
 // ========================================
 // custom
 open()
@@ -343,12 +357,17 @@ default
         
         if (OPTION_NORMALLY_OPEN) {
             open();
+            close();
+            open();
         }
         else
         {
             close();
+            open();
+            close();
         }
         
+        sendJSON("command", "getStatus", llDetectedKey(0));
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         sayDebug("initialized");
@@ -407,6 +426,8 @@ default
             open();
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
+        } else if (command == "reportStatus") {
+            reportStatus();
         }
     }
 }

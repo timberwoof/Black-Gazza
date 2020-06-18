@@ -2,44 +2,31 @@
 // Replacement script for "~isil~ Secure Door" at Black Gazza
 // Timberwoof Lupindo
 // May 20, 2018 - May 29, 2018; December 7, 2019
+// June 15, 2020
+// 3.0 Separates Hardware and Logic Layers
 
-// these parameters can be optionally set in the description:
-// debug: whispers operational details
-// lockdown: responds to station lockdown messages
-// lockdown-delay[seconds]: waits seconds before closing when lockdown is called
-//      lockdown checks samegroup; don't turn on lockdown option and group option
-// power: responds to power failures
-// group: makes it respond only to member of same group as door
-// owner[ownername]: gives people listed the ability to open the door despite all settings
-// zap: zaps nonmember who tries to operate door
-// normally-open: door will open on reset, after power is restored, and lockdown is lifted
-// otherwise door will close on reset and after power is restored. 
-// frame:<r,g,b>: sets frame to this color
-// button: makes the "open" button work
-// bump: makes the door open when someone bumps into it. 
-// door[color] sets door to any of blue gray green orange red
 
-// A normally-open door set to group, when closed by a member of the group,
-// will stay closed for half an hour, implementing the fair-game rule. 
+// ========================================
+// custom
 
-// custom for Isil
+// faces - custom for Isil
 integer FACE_FRAME1 = 0;
-
-integer PRIM_PANEL_1 = 2;
 integer FACE_PANEL_1 = 1;
-
-integer PRIM_DOOR_1 = 2;
 integer FACE_DOOR_1 = 0;
 
-vector PANEL_TEXTURE_SCALE = <1.0, 1.0, 0>;
-vector PANEL_TEXTURE_OFFSET = <0.0, 0.0, 0>;
-float PANEL_TEXTURE_ROTATION = 0.0;//-1.0*PI_BY_TWO;
+// prims - custom for Isil
+integer PRIM_PANEL_1 = 2;
+integer PRIM_DOOR_1 = 2;
 
 // Physical Sizes
 vector LEAF_SCALE = <0.83, 0.46, 0.933>;
 float CLOSE_FACTOR = 0.0;
 float OPEN_FACTOR = 0.80; // plus or minus
 float ZOFFSET_FACTOR = -0.024;
+
+vector PANEL_TEXTURE_SCALE = <1.0, 1.0, 0>;
+vector PANEL_TEXTURE_OFFSET = <0.0, 0.0, 0>;
+float PANEL_TEXTURE_ROTATION = 0.0;//-1.0*PI_BY_TWO;
 
 // colors
 vector BLACK = <0,0,0>;
@@ -152,6 +139,20 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
         result = (integer)value;
     }
     return result;
+}
+
+reportStatus()
+{
+    llWhisper(0,"Door Hardware Status:");
+    llWhisper(0,"doorState: "+(string)doorState);
+    llWhisper(0,"gLockdownState: "+(string)gLockdownState);
+    llWhisper(0,"gPowerState: "+(string)gPowerState);
+    llWhisper(0,"group: "+(string)OPTION_GROUP);
+    llWhisper(0,"normally-open: "+(string)OPTION_NORMALLY_OPEN);
+    llWhisper(0,"button: "+(string)OPTION_BUTTON);
+    llWhisper(0,"bump: "+(string)OPTION_BUMP);
+    llWhisper(0,"debug: "+(string)OPTION_DEBUG);
+    llWhisper(0,"power: "+(string)OPTION_POWER);
 }
 
 // ========================================
@@ -296,8 +297,6 @@ default
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_padlock, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, PANEL_TEXTURE_ROTATION]);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_1, 0.1]);
 
-        setColorsAndIcons();
-        
         // calculate the leaf movements
         // get the size of the door frame and calculate the sizes of the leaves
         vector frameSize = llGetScale( );
@@ -316,12 +315,17 @@ default
         
         if (OPTION_NORMALLY_OPEN) {
             open();
+            close();
+            open();
         }
         else
         {
             close();
+            open();
+            close();
         }
         
+        sendJSON("command", "getStatus", llDetectedKey(0));
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         sayDebug("initialized");
@@ -380,6 +384,8 @@ default
             open();
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
+        } else if (command == "reportStatus") {
+            reportStatus();
         }
     }
 }

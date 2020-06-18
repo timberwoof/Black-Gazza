@@ -141,6 +141,20 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     return result;
 }
 
+reportStatus()
+{
+    llWhisper(0,"Door Hardware Status:");
+    llWhisper(0,"doorState: "+(string)doorState);
+    llWhisper(0,"gLockdownState: "+(string)gLockdownState);
+    llWhisper(0,"gPowerState: "+(string)gPowerState);
+    llWhisper(0,"group: "+(string)OPTION_GROUP);
+    llWhisper(0,"normally-open: "+(string)OPTION_NORMALLY_OPEN);
+    llWhisper(0,"button: "+(string)OPTION_BUTTON);
+    llWhisper(0,"bump: "+(string)OPTION_BUMP);
+    llWhisper(0,"debug: "+(string)OPTION_DEBUG);
+    llWhisper(0,"power: "+(string)OPTION_POWER);
+}
+
 // ========================================
 // custom
 open()
@@ -201,7 +215,7 @@ setColorsAndIcons()
     sayDebug("setColorsAndIcons gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState+" doorState:"+(string)doorState);
     if (gPowerState == POWER_OFF)
     {
-        sayDebug("setColorsAndIcons gPowerState POWER_OFF");
+        sayDebug("setColorsAndIcons gPowerState POWER_OFF black");
         llSetLinkColor(PRIM_PANEL_1, BLACK, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_1, BLACK, FACE_PANEL_2);
         return;
@@ -209,7 +223,7 @@ setColorsAndIcons()
 
     if (gPowerState == POWER_FAILING)
     {
-        sayDebug("setColorsAndIcons gPowerState POWER_FAILING");
+        sayDebug("setColorsAndIcons gPowerState POWER_FAILING blue");
         llSetLinkColor(PRIM_PANEL_1, BLUE, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_1, BLUE, FACE_PANEL_2);
         return;
@@ -217,7 +231,7 @@ setColorsAndIcons()
 
     if (gLockdownState == LOCKDOWN_IMMINENT)
     {
-        sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_IMMINENT");
+        sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_IMMINENT redorange");
         llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PANEL_2);
         return;
@@ -225,7 +239,7 @@ setColorsAndIcons()
 
     if (gLockdownState == LOCKDOWN_ON)
     {
-        sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_ON");
+        sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_ON red padlock");
         llSetLinkColor(PRIM_PANEL_1, RED, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_1, RED, FACE_PANEL_2);
         llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
@@ -235,7 +249,7 @@ setColorsAndIcons()
     
     if (OPEN == doorState) 
     {
-        sayDebug("setColorsAndIcons doorState OPEN");
+        sayDebug("setColorsAndIcons doorState OPEN white stripes");
         llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
         llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_2);
         llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PANEL_1);
@@ -245,7 +259,7 @@ setColorsAndIcons()
     {
         if (OPTION_NORMALLY_OPEN) // temporarily closed
         {
-            sayDebug("setColorsAndIcons CLOSED OPTION_NORMALLY_OPEN");
+            sayDebug("setColorsAndIcons CLOSED OPTION_NORMALLY_OPEN white padlock");
             llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
             llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_2);
             llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
@@ -253,39 +267,44 @@ setColorsAndIcons()
         }
         else // (!OPTION_NORMALLY_OPEN)
         {
-            sayDebug("setColorsAndIcons CLOSED !OPTION_NORMALLY_OPEN");
             if(OPTION_GROUP) 
             {
+                sayDebug("setColorsAndIcons CLOSED !OPTION_NORMALLY_OPEN OPTION_GROUP orange");
                 llSetLinkColor(PRIM_PANEL_1, ORANGE, FACE_PANEL_1);
                 llSetLinkColor(PRIM_PANEL_1, ORANGE, FACE_PANEL_2);
             }
             else
             {
+                sayDebug("setColorsAndIcons CLOSED !OPTION_NORMALLY_OPEN !OPTION_GROUP white");
                 llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
                 llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_2);
             }
             if(OPTION_BUTTON)
             {
-                if (OPTION_BUMP)
+                if (OPTION_BUMP) // -> bump
                 {
+                    sayDebug("setColorsAndIcons CLOSED OPTION_BUTTON OPTION_BUMP bump");
                     llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_1);
                     llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_2);
                 }
-                else
+                else // OPTION_BUTTON & OPTION_BUMP -> button
                 {
+                    sayDebug("setColorsAndIcons CLOSED OPTION_BUTTON !OPTION_BUMP button");
                     llSetLinkTexture(PRIM_PANEL_1, texture_press_to_open, FACE_PANEL_1);
                     llSetLinkTexture(PRIM_PANEL_1, texture_press_to_open, FACE_PANEL_2);
                 }
             }
             else
             {
-                if (OPTION_BUMP)
+                if (OPTION_BUMP) // -> bump
                 {
+                    sayDebug("setColorsAndIcons CLOSED !OPTION_BUTTON OPTION_BUMP bump");
                     llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_1);
                     llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_2);
                 }
-                else
+                else // !OPTION_BUTTON & !OPTION_BUMP -> padlock
                 {
+                    sayDebug("setColorsAndIcons CLOSED !OPTION_BUTTON !OPTION_BUMP padlock");
                     llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
                     llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_2);
                 }
@@ -315,8 +334,6 @@ default
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_1, 0.1]);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_2, 0.1]);
         
-        setColorsAndIcons();
-
         // calculate the leaf movements
         // get  the size of the door frame and calculate the sizes of the leaves
         vector frameSize = llGetScale( );
@@ -341,7 +358,6 @@ default
         llSetLinkPrimitiveParamsFast(PRIM_PANEL_1,[PRIM_SIZE,panelSize]);
         llSetLinkPrimitiveParamsFast(PRIM_PANEL_1,[PRIM_POS_LOCAL, panelPos]);
         
-
         gPowerState = POWER_ON;
         
         if (OPTION_NORMALLY_OPEN) {
@@ -356,6 +372,7 @@ default
             close();
         }
         
+        sendJSON("command", "getStatus", llDetectedKey(0));
         setColorsAndIcons();
         llPlaySound(sound_granted,1);
         sayDebug("initialized");
@@ -397,6 +414,7 @@ default
     }
     
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
+        sayDebug("link_message "+json);
         OPTION_DEBUG = getJSONinteger(json, "OPTION_DEBUG", OPTION_DEBUG);
         OPTION_GROUP = getJSONinteger(json, "OPTION_GROUP", OPTION_GROUP);
         OPTION_NORMALLY_OPEN = getJSONinteger(json, "OPTION_NORMALLY_OPEN", OPTION_NORMALLY_OPEN);
@@ -414,6 +432,8 @@ default
             open();
         } else if (command == "setColorsAndIcons") {
             setColorsAndIcons();
+        } else if (command == "reportStatus") {
+            reportStatus();
         }
     }
 }
