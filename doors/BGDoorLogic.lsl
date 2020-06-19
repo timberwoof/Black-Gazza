@@ -326,7 +326,7 @@ integer checkAuthorization(string calledby, key whoclicked)
         authorized = 0;
     }
 
-    // power off prohibits
+    // power off prohibits, but don't zap
     if ((OPTION_POWER) & (gPowerState == POWER_OFF))
     {
         sayDebug("checkAuthorization failed power check");
@@ -335,9 +335,9 @@ integer checkAuthorization(string calledby, key whoclicked)
     }
     
     // lockdown checks group
-    if ((gLockdownState == LOCKDOWN_ON | gLockdownState == LOCKDOWN_TEMP) & (!llSameGroup(llDetectedKey(0))))
+    if ((gLockdownState == LOCKDOWN_ON | gLockdownState == LOCKDOWN_TEMP) && (!llSameGroup(whoclicked)))
     {
-        sayDebug("checkAuthorization failed lockdown group check");
+        sayDebug("checkAuthorization gLockdownState:"+(string)gLockdownState+" failed lockdown group check");
         authorized = 0;
     }
 
@@ -359,10 +359,14 @@ integer checkAuthorization(string calledby, key whoclicked)
     }
     else
     {
-        sayDebug("checkAuthorization failed checks");
         if (OPTION_ZAP) 
         {
-            llSay(-106969,(string)whoclicked);
+            sayDebug("checkAuthorization failed checks; zapping");
+            llSay(ZAP_CHANNEL,(string)whoclicked);
+        } 
+        else 
+        {
+            sayDebug("checkAuthorization failed checks");
         }
     }
     sendJSONinteger("authorized", authorized, "");
@@ -371,25 +375,28 @@ integer checkAuthorization(string calledby, key whoclicked)
     return authorized;
 }
 
-open(integer auth, integer override)
+open()
 {
-    sayDebug("open("+(string)auth+", "+(string)override+")");
+    sayDebug("open()");
     sendJSON("command", "open", "");
 
     // if normally closed or we're in lockdown,
     // start a sensor that will close the door when it's clear. 
-    if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
+    if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON | gLockdownState == LOCKDOWN_IMMINENT) 
     {
         sayDebug("open setting sensor radius "+(string)gSensorRadius);
         llSensorRepeat("", "", AGENT, gSensorRadius, PI, 1.0);
     } 
+    
+    // if we were in temporary door-lock, then open the door and reset locdown state
+    // This needs to be done no matter what called open().
     if (gLockdownState == LOCKDOWN_TEMP)
     {
         sayDebug("open gLockdownState LOCKDOWN_TEMP -> gLockdownState = LOCKDOWN_OFF");
         gLockdownState = LOCKDOWN_OFF;
         gLockdownTimer = setTimerEvent(LOCKDOWN_OFF); 
+        sendJSONinteger("lockdownState", gLockdownState, "");
     }
-
 }
 
 close() 
@@ -404,20 +411,21 @@ close()
         sayDebug("close setting fair-game release");
         gLockdownState = LOCKDOWN_TEMP;
         gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);
+        sendJSONinteger("lockdownState", gLockdownState, "");
     }
 }
 
-toggleDoor(integer auth, integer override)
+toggleDoor()
 {
-    sayDebug("toggleDoor("+(string)auth+", "+(string)override+")");
+    sayDebug("toggleDoor()");
     if (doorState == CLOSED)
     {
-        sayDebug("toggleDoor CLOSED");
-        open(auth, override);
+        sayDebug("toggleDoor CLOSED -> open");
+        open();
     }
     else 
     {
-        sayDebug("toggleDoor OPEN");
+        sayDebug("toggleDoor OPEN -> close");
         close();
     }
     sayDebug("toggleDoor ends");
@@ -446,7 +454,6 @@ default
     {
         getOptions();
         sayDebug("state_entry got options");
-        gPowerState = POWER_OFF;
         
        // set up power failure listen
         gPowerState = POWER_ON;
@@ -467,7 +474,7 @@ default
         
         if (OPTION_NORMALLY_OPEN) {
             doorState = CLOSED;
-            open(1,1);
+            open();
         }
         else
         {
@@ -483,10 +490,9 @@ default
 
     listen(integer channel, string name, key id, string message) {
         sayDebug("listen channel:"+(string)channel+" name:'"+name+"' message: '"+message+"'");
-        sayDebug("listen gPowerState:"+(string)gPowerState+" gLockdownState:"+(string)gLockdownState);
         if ((channel == POWER_CHANNEL) & (gPowerState != POWER_FAILING) & (gPowerState != POWER_OFF)) 
         {
-            sayDebug("listen gPowerState = POWER_FAILING");
+            sayDebug("listen POWER_CHANNEL gPowerState:"+(string)gPowerState);
             list xyz = llParseString2List( message, [","], ["<",">"]);
             vector distantloc;
             distantloc.x = llList2Float(xyz,1);
@@ -497,10 +503,12 @@ default
             gPowerTimer = setTimerEvent((integer)distance);
             gPowerState = POWER_FAILING;
             sendJSONinteger("powerState", gPowerState, "");
+            setColorsAndIcons();
         }
         
         else if (channel == LOCKDOWN_CHANNEL) 
         {
+            sayDebug("listen LOCKDOWN_CHANNEL gLockdownState:"+(string)gLockdownState);
             sayDebug("listen LOCKDOWN_CHANNEL message:"+message);
             if (message == "LOCKDOWN") 
             {
@@ -525,10 +533,9 @@ default
                 sayDebug("listen RELEASE -> gLockdownState = LOCKDOWN_OFF");
                 gLockdownState = LOCKDOWN_OFF;
                 gLockdownTimer = setTimerEvent(LOCKDOWN_OFF); 
-                string optionstring = llGetObjectDesc();
                 if (OPTION_NORMALLY_OPEN)
                 {
-                    open(1, 0);
+                    open();
                 }
             }
             sendJSONinteger("lockdownState", gLockdownState, "");
@@ -571,11 +578,11 @@ default
             
             if (OPTION_NORMALLY_OPEN && !doorState)
             {
-                open(1, 0);
+                open(); // does setColorsAndIcons();
             } 
             else if (!OPTION_NORMALLY_OPEN && doorState)
             {
-                close();
+                close(); // does setColorsAndIcons();
             } 
             else
             {
@@ -591,9 +598,9 @@ default
         string command = "";
         command = getJSONstring(json, "command", command);
         if (command == "button") {
-            toggleDoor(checkAuthorization("button", avatarKey), 0);
+            if (checkAuthorization("button", avatarKey)) {toggleDoor();}
         } else if (command == "bump") {
-            open(checkAuthorization("bump", avatarKey), 0);
+            if (checkAuthorization("bump", avatarKey)) {toggleDoor();}
         } else if (command == "admin") {
             maintenanceMenu(avatarKey);
         } else if (command == "getStatus") {
@@ -629,6 +636,7 @@ default
             {
                 sayDebug("timer POWER_FAILING");
                 gPowerState = POWER_OFF;
+                sendJSONinteger("powerState", gPowerState, "");
                 gPowerTimer = setTimerEvent(POWER_RESET_TIME);
                 close();
             }
@@ -640,17 +648,17 @@ default
                 sayDebug("timer POWER_OFF");
                 //llPlaySound(sound_granted,1.0); ***
                 gPowerState = POWER_ON;
+                sendJSONinteger("powerState", gPowerState, "");
                 gPowerTimer = 0;
                 if (OPTION_NORMALLY_OPEN)
                 {
-                    open(1, 0);
+                    open(); // does setColorsAndIcons();
                 }
                 else
                 {
                     setColorsAndIcons();
                 }
             }
-            sendJSONinteger("powerState", gPowerState, "");
         }
         
         if (gLockdownTimer > 0)
@@ -668,6 +676,7 @@ default
             {
                 sayDebug("timer LOCKDOWN_IMMINENT");
                 gLockdownState = LOCKDOWN_ON;
+                sendJSONinteger("lockdownState", gLockdownState, "");
                 gLockdownTimer = setTimerEvent(LOCKDOWN_RESET_TIME);   // fair-game half-hour automatic release
                 close(); // don't put a sensor here. It's lockdown. Get out of the way!
             }
@@ -677,11 +686,12 @@ default
             {
                 sayDebug("timer LOCKDOWN_ON or LOCKDOWN_TEMP");
                 gLockdownState = OFF;
+                sendJSONinteger("lockdownState", gLockdownState, "");
                 gLockdownTimer = 0;
                 string optionstring = llGetObjectDesc();
                 if (OPTION_NORMALLY_OPEN)
                 {
-                    open(1, 0);
+                    open(); // does setColorsAndIcons();
                 }
                 else
                 {

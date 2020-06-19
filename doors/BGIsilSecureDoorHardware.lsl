@@ -67,7 +67,6 @@ float fopen;
 float fclose;
 float fdelta;
 float fZoffset;
-float gSensorRadius = 2.0;
 
 // Door States
 integer doorState; // 1 = door is open
@@ -162,8 +161,8 @@ open()
     sayDebug("open()");
     if ((CLOSED == doorState) & (gPowerState == POWER_ON))
     {
-        llSetLinkColor(PRIM_PANEL_1, GREEN, FACE_PANEL_1);
-        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PANEL_1);
+        setPanelColor(GREEN);
+        setPanelTexture(texture_edgeStripes);
         llPlaySound(sound_slide, 1.0);
         float f;
         for (f = fclose; f < fopen; f = f + fdelta) 
@@ -182,8 +181,8 @@ close()
     sayDebug("close");
     if (OPEN == doorState) 
     {
-        llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PANEL_1);
-        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PANEL_1);
+        setPanelColor(REDORANGE);
+        setPanelTexture(texture_edgeStripes);
         llPlaySound(sound_slide,1.0);
         float f;
         for (f = fopen; f >= fclose; f = f - fdelta) 
@@ -203,77 +202,78 @@ setColorsAndIcons()
     if (gPowerState == POWER_OFF)
     {
         sayDebug("setColorsAndIcons gPowerState POWER_OFF");
-        llSetLinkColor(PRIM_PANEL_1, BLACK, FACE_PANEL_1);
+        setPanelColor(BLACK);
         return;
     }
 
     if (gPowerState == POWER_FAILING)
     {
         sayDebug("setColorsAndIcons gPowerState POWER_FAILING");
-        llSetLinkColor(PRIM_PANEL_1, BLUE, FACE_PANEL_1);
+        setPanelColor(BLUE);
         return;
     }
 
     if (gLockdownState == LOCKDOWN_IMMINENT)
     {
         sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_IMMINENT");
-        llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PANEL_1);
+        setPanelColor(REDORANGE);
+        setPanelTexture(texture_edgeStripes);
         return;
     }
 
     if (gLockdownState == LOCKDOWN_ON)
     {
         sayDebug("setColorsAndIcons gLockdownState LOCKDOWN_ON");
-        llSetLinkColor(PRIM_PANEL_1, RED, FACE_PANEL_1);
-        llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
+        setPanelColor(RED);
+        setPanelTexture(texture_padlock);
         return;
     }
     
     if (OPEN == doorState) 
     {
         sayDebug("setColorsAndIcons doorState OPEN");
-        llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
-        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PANEL_1);
+        setPanelColor(WHITE);
+        setPanelTexture(texture_edgeStripes);
     }
     else // (CLOSED == doorState)
     {
         if (OPTION_NORMALLY_OPEN) // temporarily closed
         {
             sayDebug("setColorsAndIcons CLOSED OPTION_NORMALLY_OPEN");
-            llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
-            llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
+            setPanelColor(WHITE);
+            setPanelTexture(texture_padlock);
         }
         else // (!OPTION_NORMALLY_OPEN)
         {
             sayDebug("setColorsAndIcons CLOSED !OPTION_NORMALLY_OPEN");
             if(OPTION_GROUP) 
             {
-                llSetLinkColor(PRIM_PANEL_1, ORANGE, FACE_PANEL_1);
+                setPanelColor(ORANGE);
             }
             else
             {
-                llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
+                setPanelColor(WHITE);
             }
             if(OPTION_BUTTON)
             {
                 if (OPTION_BUMP)
                 {
-                    llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_1);
+                    setPanelTexture(texture_bump_to_open);
                 }
                 else
                 {
-                    llSetLinkTexture(PRIM_PANEL_1, texture_press_to_open, FACE_PANEL_1);
+                    setPanelTexture(texture_press_to_open);
                 }
             }
             else
             {
                 if (OPTION_BUMP)
                 {
-                    llSetLinkTexture(PRIM_PANEL_1, texture_bump_to_open, FACE_PANEL_1);
+                    setPanelTexture(texture_bump_to_open);
                 }
                 else
                 {
-                    llSetLinkTexture(PRIM_PANEL_1, texture_padlock, FACE_PANEL_1);
+                    setPanelTexture(texture_padlock);
                 }
             }
         } 
@@ -285,6 +285,11 @@ setPanelColor(vector Color)
     llSetLinkColor(PRIM_PANEL_1, Color, FACE_PANEL_1);
 }
 
+setPanelTexture(string Texture) 
+{
+    llSetLinkTexture(PRIM_PANEL_1, Texture, FACE_PANEL_1);
+}
+
 default
 {
     state_entry()
@@ -293,7 +298,7 @@ default
         gPowerState = POWER_OFF;
         
         // panel texture scale and offset
-        llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
+        setPanelColor(WHITE);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_padlock, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, PANEL_TEXTURE_ROTATION]);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_1, 0.1]);
 
@@ -341,7 +346,7 @@ default
     touch_end(integer num_detected)
     {
         sayDebug("touch_end num_detected "+(string)num_detected);
-        if (llDetectedTouchFace(0) == FACE_PANEL_1 | llDetectedTouchFace(0) == FACE_PANEL_1)
+        if (llDetectedTouchFace(0) == FACE_PANEL_1)
         {
             if (llGetTime() >= 2.0)
             {
@@ -366,14 +371,17 @@ default
         }
     }
     
-    link_message(integer sender_num, integer num, string json, key avatarKey){ 
+    link_message(integer sender_num, integer num, string json, key avatarKey){
+        sayDebug("link_message "+json);
         OPTION_DEBUG = getJSONinteger(json, "OPTION_DEBUG", OPTION_DEBUG);
         OPTION_GROUP = getJSONinteger(json, "OPTION_GROUP", OPTION_GROUP);
         OPTION_NORMALLY_OPEN = getJSONinteger(json, "OPTION_NORMALLY_OPEN", OPTION_NORMALLY_OPEN);
         OPTION_BUMP = getJSONinteger(json, "OPTION_BUMP", OPTION_BUMP);
         OPTION_BUTTON = getJSONinteger(json, "OPTION_BUTTON", OPTION_BUTTON);
         FRAME_COLOR = (vector)getJSONstring(json, "FRAME_COLOR", (string)FRAME_COLOR);
-        
+        gLockdownState = getJSONinteger(json, "lockdownState", gLockdownState);
+        gPowerState = getJSONinteger(json, "powerState", gPowerState);
+
         string command = "";
         command = getJSONstring(json, "command", command);
         if (command == "reset") {

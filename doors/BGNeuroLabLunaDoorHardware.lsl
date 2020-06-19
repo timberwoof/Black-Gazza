@@ -10,11 +10,11 @@
 
 // custom for Isil
 // faces - custom for luna
-integer FACE_KEYPAD = 0;
-integer FACE_OVERHEAD = 1;
-integer FACE_ACCESS_GRANTED = 2;
-integer FACE_OUTLINE = 3;
-integer FACE_PUSH_TO_OPEN = 4;
+integer FACE_OVERHEAD = 1; // rectangle at the top of the door
+integer FACE_ACCESS_GRANTED = 2; // top square icon
+integer FACE_KEYPAD = 0; // numeric keypad, middl esquare icon
+integer FACE_PUSH_TO_OPEN = 4; // bottom square icon
+integer FACE_OUTLINE = 3; // frame around bottom icon
 integer FACE_FRAME = 5;
 
 // prims - custom for luna
@@ -202,8 +202,8 @@ open()
     sayDebug("open()");
     if ( (CLOSED == doorState)  &  (gPowerState == POWER_ON)) 
     {
-        llSetLinkColor(PRIM_PANEL_1, GREEN, FACE_PUSH_TO_OPEN);
-        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PUSH_TO_OPEN);
+        setPanelColor(GREEN);
+        setPanelTexture(texture_edgeStripes);
         particles(1); // luna door has steam puffs
         llPlaySound(sound_slide,1.0);
         float f;
@@ -225,8 +225,8 @@ close()
     sayDebug("close");
     if (OPEN == doorState) 
     {
-        llSetLinkColor(PRIM_PANEL_1, REDORANGE, FACE_PUSH_TO_OPEN);
-        llSetLinkTexture(PRIM_PANEL_1, texture_edgeStripes, FACE_PUSH_TO_OPEN);
+        setPanelColor(REDORANGE);
+        setPanelTexture(texture_edgeStripes);
         particles(1); // luna door has steam puffs
         llPlaySound(sound_slide,1.0);
         float f;
@@ -292,7 +292,7 @@ setColorsAndIcons()
         llSetColor(BLACK, FACE_OVERHEAD);
         llSetColor(BLACK, FACE_ACCESS_GRANTED);
         llSetColor(BLACK, FACE_KEYPAD);
-        llSetColor(BLACK, FACE_PUSH_TO_OPEN);
+        setPanelColor(BLACK);
         llSetColor(BLACK, FACE_OUTLINE);
         return;
     }
@@ -303,7 +303,7 @@ setColorsAndIcons()
         llSetColor(DARK_BLUE, FACE_OVERHEAD);
         llSetColor(DARK_BLUE, FACE_ACCESS_GRANTED);
         llSetColor(DARK_BLUE, FACE_KEYPAD);
-        llSetColor(DARK_BLUE, FACE_PUSH_TO_OPEN);
+        setPanelColor(BLUE);
         llSetColor(DARK_BLUE, FACE_OUTLINE);
         return;
     }
@@ -314,7 +314,7 @@ setColorsAndIcons()
         llSetColor(REDORANGE, FACE_OVERHEAD);
         llSetColor(REDORANGE, FACE_ACCESS_GRANTED);
         llSetColor(REDORANGE, FACE_KEYPAD);
-        llSetColor(WHITE, FACE_PUSH_TO_OPEN);
+        setPanelColor(REDORANGE);
         llSetColor(REDORANGE, FACE_OUTLINE);
         llSetTexture(texture_edgeStripes,FACE_PUSH_TO_OPEN);
         llSetTexture(texture_luna_access_denied, FACE_ACCESS_GRANTED);
@@ -327,7 +327,7 @@ setColorsAndIcons()
         llSetColor(RED, FACE_OVERHEAD);
         llSetColor(RED, FACE_ACCESS_GRANTED);
         llSetColor(RED, FACE_KEYPAD);
-        llSetColor(WHITE, FACE_PUSH_TO_OPEN);
+        setPanelColor(RED);
         llSetColor(RED, FACE_OUTLINE);
         llSetTexture(texture_padlock,FACE_PUSH_TO_OPEN);
         llSetTexture(texture_luna_access_denied, FACE_ACCESS_GRANTED);
@@ -336,10 +336,11 @@ setColorsAndIcons()
 
     // Luna door has a big light at the top
     //llSetColor(LABEL_COLOR, FACE_OVERHEAD);
-    llSetColor(WHITE, FACE_PUSH_TO_OPEN);
+    setPanelColor(WHITE);
     if (OPTION_GROUP)
     {
         sayDebug("setColorsAndIcons OPTION_GROUP");
+        llSetColor(ORANGE, FACE_OVERHEAD);
         llSetColor(ORANGE, FACE_ACCESS_GRANTED);
         llSetColor(ORANGE, FACE_KEYPAD);
         llSetColor(ORANGE, FACE_OUTLINE);
@@ -347,6 +348,7 @@ setColorsAndIcons()
     else
     {
         sayDebug("setColorsAndIcons !OPTION_GROUP");
+        llSetColor(CYAN, FACE_OVERHEAD);
         llSetColor(CYAN, FACE_ACCESS_GRANTED);
         llSetColor(CYAN, FACE_KEYPAD);
         llSetColor(CYAN, FACE_OUTLINE);
@@ -354,17 +356,17 @@ setColorsAndIcons()
     
     if (OPEN == doorState) 
     {
-        sayDebug("setColorsAndIcons OPEN");
-        llSetTexture(texture_luna_access_granted,FACE_ACCESS_GRANTED);
-        llSetTexture(texture_edgeStripes, FACE_PUSH_TO_OPEN);
+        sayDebug("setColorsAndIcons doorState OPEN");
+        setPanelColor(WHITE);
+        setPanelTexture(texture_edgeStripes);
     }
     else // (CLOSED == doorState)
     {
         if (OPTION_NORMALLY_OPEN) // temporarily closed
         {
             sayDebug("setColorsAndIcons CLOSED OPTION_NORMALLY_OPEN");
-            llSetTexture(texture_luna_access_denied,FACE_ACCESS_GRANTED);
-            llSetTexture(texture_padlock, FACE_PUSH_TO_OPEN);
+            setPanelColor(WHITE);
+            setPanelTexture(texture_padlock);
         }
         else // (!OPTION_NORMALLY_OPEN)
         {
@@ -377,12 +379,12 @@ setColorsAndIcons()
                 if (OPTION_BUMP)
                 {
                     llSetTexture(texture_luna_push_to_open,FACE_ACCESS_GRANTED);
-                    llSetTexture(texture_bump_to_open, FACE_PUSH_TO_OPEN);
+                    setPanelTexture(texture_bump_to_open);
                 }
                 else
                 {
                     llSetTexture(texture_luna_push_to_open,FACE_ACCESS_GRANTED);
-                    llSetTexture(texture_press_to_open, FACE_PUSH_TO_OPEN);
+                    setPanelTexture(texture_press_to_open);
                 }
             }
             else
@@ -390,24 +392,27 @@ setColorsAndIcons()
                 if (OPTION_BUMP)
                 {
                     llSetTexture(texture_luna_access_granted,FACE_ACCESS_GRANTED);
-                    llSetTexture(texture_bump_to_open, FACE_PUSH_TO_OPEN);
+                    setPanelTexture(texture_bump_to_open);
                 }
                 else
                 {
                     llSetTexture(texture_luna_access_denied,FACE_ACCESS_GRANTED);
-                    llSetTexture(texture_padlock, FACE_PUSH_TO_OPEN);
+                    setPanelTexture(texture_padlock);
                 }
             }
-        }        
+        }
     }
 }
 
-
-
-setPanelColor(vector Color) {
+setPanelColor(vector Color) 
+{
     llSetColor(Color, FACE_PUSH_TO_OPEN);
 }
 
+setPanelTexture(string Texture) 
+{
+    llSetTexture(Texture, FACE_PUSH_TO_OPEN);
+}
 
 default
 {
@@ -484,8 +489,11 @@ default
     touch_start(integer total_number)
     {
         sayDebug("touch_start face "+(string)llDetectedTouchFace(0));
-        setPanelColor(BLUE);
-        llResetTime();
+        if (llDetectedTouchFace(0) == FACE_PUSH_TO_OPEN)
+        {
+            setPanelColor(BLUE);
+            llResetTime();
+        }
     }
     
     touch_end(integer num_detected)
@@ -517,12 +525,15 @@ default
     }
     
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
+        sayDebug("link_message "+json);
         OPTION_DEBUG = getJSONinteger(json, "OPTION_DEBUG", OPTION_DEBUG);
         OPTION_GROUP = getJSONinteger(json, "OPTION_GROUP", OPTION_GROUP);
         OPTION_NORMALLY_OPEN = getJSONinteger(json, "OPTION_NORMALLY_OPEN", OPTION_NORMALLY_OPEN);
         OPTION_BUMP = getJSONinteger(json, "OPTION_BUMP", OPTION_BUMP);
         OPTION_BUTTON = getJSONinteger(json, "OPTION_BUTTON", OPTION_BUTTON);
         FRAME_COLOR = (vector)getJSONstring(json, "FRAME_COLOR", (string)FRAME_COLOR);
+        gLockdownState = getJSONinteger(json, "lockdownState", gLockdownState);
+        gPowerState = getJSONinteger(json, "powerState", gPowerState);
         
         string command = "";
         command = getJSONstring(json, "command", command);
