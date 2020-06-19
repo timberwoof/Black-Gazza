@@ -155,7 +155,7 @@ sendOptions()
     sendJSONinteger("OPTION_BUTTON", OPTION_BUTTON, "");
     sendJSONinteger("OPTION_BUMP",OPTION_BUMP, "");
     sendJSON("FRAME_COLOR", (string)FRAME_COLOR, "");
-    setColorsAndIcons();
+    // can't setColorsAndIcons here because the door hasn't got them yet. 
 }
 
 saveOptions()
@@ -375,6 +375,10 @@ integer checkAuthorization(string calledby, key whoclicked)
     return authorized;
 }
 
+// sends open command to hardware
+// starts sensor
+// handles temporary lockdown
+// hardware calls setColorsAndIcons
 open()
 {
     sayDebug("open()");
@@ -399,6 +403,9 @@ open()
     }
 }
 
+// sends open command to hardware
+// handles temporary lockdown
+// hardware calls setColorsAndIcons
 close() 
 {
     sayDebug("close");
@@ -452,6 +459,7 @@ default
 {
     state_entry()
     {
+        sayDebug("state_entry");
         getOptions();
         sayDebug("state_entry got options");
         
@@ -472,6 +480,9 @@ default
         vector frameSize = llGetScale( );
         gSensorRadius = (frameSize.x + frameSize.y + frameSize.z) / 4.0;
         
+        sendOptions();
+        llSleep(1);
+
         if (OPTION_NORMALLY_OPEN) {
             doorState = CLOSED;
             open();
@@ -482,10 +493,7 @@ default
             close();
         }
         
-        sendOptions();
-        llSleep(1);
-        setColorsAndIcons();
-        sayDebug("initialized");
+        sayDebug("state_entry end");
     }
 
     listen(integer channel, string name, key id, string message) {
@@ -546,10 +554,12 @@ default
         {
             sayDebug("listen menu "+message);
             
-            gMenuTimer = 0;
             llListenRemove(menuListen);
+            menuListen = 0;
             menuChannel = 0;
+            gMenuTimer = 0;
             
+            // update any statuses from the menu
             integer stateNew = llGetSubString(message,0,0) == "☐";
             OPTION_POWER = setOptionLogical(message, "Power", OPTION_POWER, stateNew);
             OPTION_LOCKDOWN = setOptionLogical(message, "Lockdown", OPTION_LOCKDOWN, stateNew);
@@ -562,8 +572,7 @@ default
             OPTION_BUMP = setOptionLogical(message, "Bump", OPTION_BUMP, stateNew);
             OPTION_DEBUG = setOptionLogical(message, "Debug", OPTION_DEBUG, stateNew);
             
-            sendOptions();
-            saveOptions();
+            saveOptions(); // must save options now in case of reset
             
             if (message == "Reset")
             {
@@ -574,6 +583,11 @@ default
             {
                 reportStatus();
                 sendJSON("command", "reportStatus", "");
+            }
+            else 
+            {
+                sendOptions();
+                llSleep(0.1); // give the hardware a moment to chew on this
             }
             
             if (OPTION_NORMALLY_OPEN && !doorState)
@@ -597,14 +611,26 @@ default
         
         string command = "";
         command = getJSONstring(json, "command", command);
+        if (command == "") {
+            return;
+        }
+        sayDebug("link_message command:"+command);
         if (command == "button") {
-            if (checkAuthorization("button", avatarKey)) {toggleDoor();}
+            if (checkAuthorization("button", avatarKey)) {
+                toggleDoor();
+                }
         } else if (command == "bump") {
-            if (checkAuthorization("bump", avatarKey)) {toggleDoor();}
+            if (!OPTION_NORMALLY_OPEN) {
+                if (checkAuthorization("bump", avatarKey)) {
+                    toggleDoor();
+                }
+            }
         } else if (command == "admin") {
             maintenanceMenu(avatarKey);
         } else if (command == "getStatus") {
             sendOptions();
+        } else {
+            sayDebug("link_message ignored command:"+command);
         }
     }
     
