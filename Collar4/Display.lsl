@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-12";
+string version = "2020-04-23";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -360,6 +360,9 @@ setPrisonerClass(string prisonerClass) {
     // set the blinky color
     llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor, 1.0]);
             
+    // set the padding color
+    llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, prisonerClassColor, 1.0]);
+
     // set the collar frame texture, reflectivity, and bumpiness
     llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
     llSetPrimitiveParams([PRIM_SPECULAR, FaceFrame, llList2Key(classSpeculars, classi), <1,1,0>, <0,0,0>, 0, <1,1,1>,255, 75]);
