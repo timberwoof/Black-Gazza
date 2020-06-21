@@ -367,7 +367,7 @@ default
     {
         integer face = llDetectedTouchFace(0);
         integer link = llDetectedLinkNumber(0);
-        sayDebug("touch_end link:"+(string)link+" face:"+(string)llDetectedTouchFace(0));
+        sayDebug("touch_end link:"+(string)link+" face:"+(string)face);
         
         if (llGetTime() >= 2.0 && isDoorButton(link, face))
         {
@@ -389,8 +389,9 @@ default
     
     collision_start(integer total_number)
     {
-        sayDebug("collision_start");
-        if (OPTION_BUMP) 
+        integer link = llDetectedLinkNumber(0);
+        sayDebug("collision_start link:"+(string)link);
+        if (OPTION_BUMP && link == PRIM_DOOR) 
         {
              sendJSON("command", "bump", llDetectedKey(0));
         }
