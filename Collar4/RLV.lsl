@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-04-10
+// version: 2020-06-23
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
@@ -34,6 +34,7 @@ integer RLVStatusChannel = 0;      // listen to itself for RLV responses; genera
 integer RLVStatusListen = 0;
 
 integer visionTimeout = 0;
+integer zapTimeout = 0;
 
 key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
 key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
@@ -46,7 +47,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("RLV:"+message);
+        llOwnerSay("RLV:"+(string)llGetTime()+" "+message);
     }
 }
 
@@ -69,10 +70,10 @@ generateChannels() {
         sayDebug("remove RLVStatusChannel " + (string)RLVStatusChannel);
         llListenRemove(RLVStatusChannel);
     }
-    RLVStatusChannel = (integer)llFrand(8999)+1000; // generate a sessin RLV status channel
+    RLVStatusChannel = (integer)llFrand(8999)+1000; // generate a session RLV status channel
     sayDebug("created new RLVStatusChannel " + (string)RLVStatusChannel);
-    RLVStatusListen = llListen(RLVStatusChannel, "", llGetOwner(), "" );
-        // listen on the newly generated rlv status channel
+    RLVStatusListen = llListen(RLVStatusChannel, "", llGetOwner(), "");
+    // listen on the newly generated rlv status channel
 }
 
 // =================================
@@ -170,7 +171,8 @@ sendRLVRestrictCommand(string level, key id) {
             // chatwhisper=y,
             llOwnerSay("You have been locked into Hardcore mode. There is no safeword. For release, you must ask a Guard to release you.");
         }
-        llPlaySound(theSound, 1);
+        sayDebug("sendRLVRestrictCommand llPlaySound("+theSound+", 1.0);");
+        llPlaySound(theSound, 1.0);
         if (rlvcommand != "") {
             sayDebug("sendRLVRestrictCommand: "+rlvcommand);
             llOwnerSay(rlvcommand);
@@ -219,42 +221,59 @@ SafewordSucceeded(key id) {
     SafewordListen = 0;
     sendRLVRestrictCommand("Off", id);
 }
+
+string firstname(key who) {
+    string zapName = llGetDisplayName(who);
+    list namesList = llParseString2List(zapName, [" "], [""]);
+    return llList2String(namesList, 0);
+}
  
 // =====================
 // Zap
+integer zapTimerInterval = 5; // 5 seconds ;for all timers
+integer zapTimeremaining = 1800; // seconds remaining on timer: half an hour by default
+integer zapTimerunning = 0; // 0 = stopped; 1 = running
+
 
 // got menu command: play charge sound and ask for zap permission
 startZap(string zapLevel, key who) {
-    if (llSubStringIndex("LowMedHig", zapLevel) >= 0) {
+    if ( (llSubStringIndex("LowMedHig", zapLevel) >= 0) & (zapTimerunning > 0))
+    {
         
         // announce in chat what's happening
         string name;
-        string description = llList2String(llGetObjectDetails(who, [OBJECT_DESC]),0);
-        if (description == "") {
-            // if it's an avatar, get its first name
-            string zapName = llGetDisplayName(who);
-            list namesList = llParseString2List(zapName, [" "], [""]);
-            name = llList2String(namesList, 0);
-        } else {
+        string objectDescription = llList2String(llGetObjectDetails(who, [OBJECT_DESC]),0);
+        if (objectDescription != "") {
             // if it's an object, get its name
             name = llList2String(llGetObjectDetails(who, [OBJECT_NAME]),0);
-        }       
-        llWhisper(0, name+" zaps the inmate.");
+        } else if (who != llGetOwner()) {
+            // if it's an avatar, get its first name
+            name = firstname(who);
+        } else {
+            name = assetNumber + "'s collar";
+        }
+        llWhisper(0, name + " zaps the inmate.");
         
+        sayDebug("startZap llPlaySound(soundCharging, 1.0);");
         llPlaySound(soundCharging, 1.0);
         llSleep(1.5);
+        sayDebug("startZap llPlaySound(soundZapLoop, 1.0);");
         llLoopSound(soundZapLoop, 1.0);
         if (haveAnimatePermissions) {
             stop_anims();
             llStartAnimation("Zap");
         }
         if (zapLevel == "Low") {
+            zapTimeremaining = 120;
             llSleep(1);
         } else if (zapLevel == "Med") {
+            zapTimeremaining = 240;
             llSleep(2);
         } else if (zapLevel == "Hig") {
+            zapTimeremaining = 960;
             llSleep(4);
         }
+        sayDebug("startZap llStopSound();");
         llStopSound();
         
         if (haveAnimatePermissions) {
@@ -264,6 +283,21 @@ startZap(string zapLevel, key who) {
     }
     llSleep(1);
     llStopSound();
+    zapTimerunning = 1;
+    llSetTimerEvent(zapTimerInterval);
+}
+
+zapTimer() {
+    if (zapTimerunning == 1 && zapTimeremaining <= zapTimerInterval) {
+        zapTimerunning = 0;
+    }
+}
+
+
+restrictZap(integer zapLockout) {
+    zapTimeout = 1;
+    // needs to set up time when this timer runs out
+    // it must coexist with the lock timer
 }
 
 stop_anims()
@@ -532,9 +566,9 @@ default
             sayDebug("status:" + message);   
             RLVpresent = 1;
             llListenRemove(RLVStatusListen);
+            RLVStatusListen = 0;
             sendJSON("rlvPresent", "1", "");
             sendRLVRestrictCommand(prisonerLockLevel, id);
-            RLVStatusListen = 0;
             lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
         }
@@ -564,8 +598,8 @@ default
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
             RLVpresent = 0;
-            llListenRemove(RLVStatusListen);
-            RLVStatusListen = 0;
+            //llListenRemove(RLVStatusListen); *** debug
+            //RLVStatusListen = 0; *** debug
             lockTimerRestart();
             sendJSON("rlvPresent", "0", "");
             sendJSON("prisonerLockLevel", "Off", "");
@@ -573,6 +607,10 @@ default
             restrictVision(0);
         }
         lockTimer();
+        zapTimer();
+        if ( (lockTimerunning == 0) && (zapTimerunning == 0) ) {
+            llSetTimerEvent(0);
+        }
     }
 
 }
