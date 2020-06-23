@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-04-23
+// version: 2020-06-23
 
 integer OPTION_DEBUG = 0;
 key databaseQuery;
