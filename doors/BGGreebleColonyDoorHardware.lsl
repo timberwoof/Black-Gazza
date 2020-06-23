@@ -81,8 +81,8 @@ integer NOISILY = 1;
 
 // power states
 integer gPowerState = 0;
-integer POWER_ON = 0;
-integer POWER_OFF = 1;
+integer POWER_OFF = 0;
+integer POWER_ON = 1;
 integer POWER_FAILING = 2;
 
 // lockdown
@@ -367,7 +367,7 @@ default
     {
         integer face = llDetectedTouchFace(0);
         integer link = llDetectedLinkNumber(0);
-        sayDebug("touch_end link:"+(string)link+" face:"+(string)face);
+        sayDebug("touch_end link:"+(string)link+" face:"+(string)llDetectedTouchFace(0));
         
         if (llGetTime() >= 2.0 && isDoorButton(link, face))
         {
@@ -389,9 +389,8 @@ default
     
     collision_start(integer total_number)
     {
-        integer link = llDetectedLinkNumber(0);
-        sayDebug("collision_start link:"+(string)link);
-        if (OPTION_BUMP && link == PRIM_DOOR) 
+        sayDebug("collision_start");
+        if (OPTION_BUMP) 
         {
              sendJSON("command", "bump", llDetectedKey(0));
         }

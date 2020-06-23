@@ -118,8 +118,8 @@ integer NOISILY = 1;
 
 // power states
 integer gPowerState = 0;
-integer POWER_ON = 0;
-integer POWER_OFF = 1;
+integer POWER_OFF = 0;
+integer POWER_ON = 1;
 integer POWER_FAILING = 2;
 
 // lockdown
