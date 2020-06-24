@@ -13,6 +13,8 @@
 //
 // See http://www.gnu.org/licenses/gpl.html for terms of this license.
  
+integer OPTION_DEBUG = 0;
+ 
 integer relayChannel = -1812221819;
 string version = "1030";
 string implversion = "Dominatech Relay 2.0";
@@ -40,14 +42,23 @@ integer permChannel;
 integer permListener;
 integer permClose;
  
-updateStatus(integer r)
+sayDebug(string message)
 {
+    if (OPTION_DEBUG)
+    {
+        llOwnerSay("Relay:"+message);
+    }
+}
+
+updateStatus(string whocalled, integer r)
+{
+    sayDebug("updateStatus whocalled:"+whocalled+" r:"+(string)r);
     if ( r )
     {
         if ( ! lit )
         {
             llMessageLinked(LINK_SET, TRUE, "relay-lock", NULL_KEY);
-            llSetColor(<1.0, 0.0, 0.0>, ALL_SIDES);
+            //llSetColor(<1.0, 0.0, 0.0>, ALL_SIDES); *** relay must not do this
             lit = TRUE;
         }
     }
@@ -56,7 +67,7 @@ updateStatus(integer r)
         if ( lit )
         {
             llMessageLinked(LINK_SET, FALSE, "relay-lock", NULL_KEY);
-            llSetColor(<0.0, 1.0, 0.0>, ALL_SIDES);
+            //llSetColor(<0.0, 1.0, 0.0>, ALL_SIDES); *** relay must not do this
             lit = FALSE;
         }
     }
@@ -79,7 +90,7 @@ clear(key obj)
     if ( llGetListLength(restrictions) == 0 )
     {
         objects = [];
-        updateStatus(FALSE);
+        updateStatus("Clear", FALSE);
     }
 }
  
@@ -109,7 +120,7 @@ clearSome(key obj, string param)
     if ( llGetListLength(restrictions) == 0 )
     {
         objects = [];
-        updateStatus(FALSE);
+        updateStatus("ClearSome",FALSE);
     }
 }
  
@@ -135,7 +146,7 @@ rlvCommand(key id, string cmd)
             if ( i < 0 )
             {
                 restrictions += [o, restr];
-                updateStatus(TRUE);
+                updateStatus("rlvCommand e>0",TRUE);
             }
             if ( restr == "unsit" )
                 llOwnerSay("@getsitid=" + (string)backChannel);
@@ -152,7 +163,7 @@ rlvCommand(key id, string cmd)
                     if ( llGetListLength(restrictions) == 0 )
                     {
                         objects = [];
-                        updateStatus(FALSE);
+                        updateStatus("rlvCommand Clear y||rem", FALSE);
                     }
                 }
             }
@@ -205,7 +216,7 @@ default
         //llSetObjectName(implversion);
  
         lit = TRUE;
-        updateStatus(FALSE);
+        updateStatus("state_entry", FALSE);
  
         llListen(relayChannel, "", NULL_KEY, "");
         llListen(backChannel = 16777216 + (integer)llFrand(16777216.0), "", llGetOwner(), "");
@@ -317,7 +328,7 @@ default
                             }
                             if ( cmd )
                                 llOwnerSay(cmd);
-                            updateStatus(TRUE);
+                            updateStatus("listen", TRUE);
                             if ( llGetListLength(pingRestrictions) == 0 )
                                 pingObjects = [];
                         }
@@ -393,7 +404,7 @@ default
         objects = [];
         restrictions = [];
         sitting = NULL_KEY;
-        updateStatus(FALSE);
+        updateStatus("on_rez", FALSE);
  
         allowedObjects = [];
         rejectedObjects = [];
@@ -432,6 +443,7 @@ default
  
     link_message(integer src, integer num, string msg, key id)
     {
+        sayDebug("link_message num:"+(string)num+" msg:"+msg);
         if ( msg == "relay-ask" )
         {
             askMode = num;
@@ -441,21 +453,27 @@ default
                 rejectedObjects = [];
                 pendingObjects = [];
                 pendingCommands = [];
+                sayDebug("link_message askMode");
+
             }
-            else if ( permListener )
-            {
-                allowedObjects = [];
-                rejectedObjects = [];
-                pendingObjects = [];
-                pendingCommands = [];
-                llListenRemove(permListener);
-                permListener = 0;
+            else {
+                sayDebug("link_message permListener:"+(string)permListener);
+                if ( permListener )
+                {
+                    allowedObjects = [];
+                    rejectedObjects = [];
+                    pendingObjects = [];
+                    pendingCommands = [];
+                    llListenRemove(permListener);
+                    permListener = 0;
+                }
             }
             return;
         }
  
         if ( msg == "relay-status" )
         {
+            sayDebug("link_message relay-status");
             integer len = llGetListLength(objects);
             if ( len )
             {
@@ -463,13 +481,16 @@ default
                 for ( i = 0 ; i < len ; ++i )
                     llMessageLinked(LINK_SET, num, getStatus(i), llList2Key(objects, i));
             }
-            else
+            else {
+                sayDebug("link_message else");
                 llMessageLinked(LINK_SET, num, "", NULL_KEY);
+                }
             return;
         }
  
         if ( msg == "relay-reset" )
         {
+            sayDebug("link_message relay-reset");
             integer len = llGetListLength(objects);
             integer i;
             for ( i = 0 ; i < len ; ++i )

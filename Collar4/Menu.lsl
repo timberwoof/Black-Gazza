@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-04-12";
+string version = "2020-06-23";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -45,6 +45,10 @@ integer rlvPresent = 0;
 integer renamerActive = 0;
 integer gagActive = 0;
 integer DisplayTokActive = 0;
+string RelayLockState = "Relay Off";
+string RelayOFF = "Relay Off";
+string RelayASK = "Relay Ask";
+string RelayON = "Relay On";
 
 integer speechPenaltyDisplay = 0;
 integer speechPenaltyGarbleWord = 0;
@@ -74,6 +78,7 @@ string menuMain = "Main";
 string moodOOC = "OOC";
 string buttonInfo = "Info";
 string buttonSettings = "Settings";
+string buttonHack = "Hack";
 string buttonPunish = "Punish";
 string buttonLeash = "Leash";
 string buttonSpeech = "Speech";
@@ -128,6 +133,15 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
 
 setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
+// - adds required buttons such as Close or Main
+// - displays the menu command on the alphanumeric display
+// - sets up the menu channel, listen, and timer event 
+// - calls llDialog
+// parameters:
+// identifier - sets menuIdentifier, the later context for the command
+// avatarKey - uuid of who clicked
+// message - text for top of blue menu dialog
+// buttons - list of button texts
 {
     sayDebug("setUpMenu "+identifier);
     
@@ -266,7 +280,7 @@ mainMenu(key avatarKey) {
         message = message + "\nSafeword is availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
     
-    list buttons = [buttonInfo, buttonSettings]; //, "Hack"];
+    list buttons = [buttonInfo, buttonSettings, buttonHack]; 
     buttons = buttons + menuButtonActive(buttonPunish, doPunish);
     buttons = buttons + menuButtonActive(buttonForceSit, doForceSit);
     buttons = buttons + menuButtonActive(buttonLeash, doLeash);
@@ -283,9 +297,9 @@ doMainMenu(key avatarKey, string message) {
         else if (message == buttonSettings){
             settingsMenu(avatarKey);
         }
-        //else if (message == "Hack"){
-        //    hackMenu(avatarKey);
-        //}
+        else if (message == buttonHack){
+            hackMenu(avatarKey);
+        }
         else if (message == buttonPunish){
             punishMenu(avatarKey);
         }
@@ -394,22 +408,21 @@ infoGive(key avatarKey){
     }
     message = llGetSubString(message, 0, 511);
     setUpMenu(buttonInfo, avatarKey, message, buttons);
-    
 }
 
-//hackMenu(key avatarKey)
-//{
-//    if (avatarKey == llGetOwner())
-//    {
-//        string message = "Hack";
-//        list buttons = ["hack", "Maintenance", "Fix"];
-//        setUpMenu("Hack", avatarKey, message, buttons);
-//    }
-//    else
-//    {
-//        ;
-//    }
-//}
+hackMenu(key avatarKey)
+{
+    string message = "Hack";
+    list buttons = ["Maintenance", "Fix", "hack"];
+    setUpMenu("Hack", avatarKey, message, buttons);
+}
+
+doHackMenu(key avatarKey, string message, string messageButtonsTrimmed) {
+    if (messageButtonsTrimmed == "Maintenance") {
+    } else if (messageButtonsTrimmed == "Fix") {
+    } else if (messageButtonsTrimmed == "hack") {
+    }
+}
 
 speechMenu(key avatarKey)
 {
@@ -791,6 +804,9 @@ lockMenu(key avatarKey)
                 allTheButtons = allTheButtons + lockButton;
             }
         }
+        buttons = buttons + menuRadioButton(RelayOFF, RelayLockState);
+        buttons = buttons + menuRadioButton(RelayASK, RelayLockState);
+        buttons = buttons + menuRadioButton(RelayON, RelayLockState);
         
         // based on what buttons are available, build the message.
         if (llSubStringIndex(allTheButtons, lockLevelOff) >= 0) {
@@ -879,7 +895,7 @@ default
 
     touch_start(integer total_number)
     {
-        key avatarKey  = llDetectedKey(0);
+        key whoClicked  = llDetectedKey(0);
         integer touchedLink = llDetectedLinkNumber(0);
         integer touchedFace = llDetectedTouchFace(0);
         vector touchedUV = llDetectedTouchUV(0);
@@ -891,26 +907,29 @@ default
                 ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
                 menuCheckbox("Medium", allowZapMed) +  "  " +
                 menuCheckbox("High", allowZapHigh);
-                llInstantMessage(avatarKey, assetNumber+" Zap: "+ZapLevels);
+                llInstantMessage(whoClicked, assetNumber+" Zap: "+ZapLevels);
                 }
-            else if (touchedFace == FaceBlinky2) {llInstantMessage(avatarKey, assetNumber+" Lock Level: "+prisonerLockLevel);}
-            else if (touchedFace == FaceBlinky3) {llInstantMessage(avatarKey, assetNumber+" Class: "+class2Description(prisonerClass));}
-            else if (touchedFace == FaceBlinky4) {llInstantMessage(avatarKey, assetNumber+" Threat: "+prisonerThreat);}
-            else if (touchedFace == batteryIconFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+(string)batteryCharge+"%");
+            else if (touchedFace == FaceBlinky2) {llInstantMessage(whoClicked, assetNumber+" Lock Level: "+prisonerLockLevel);}
+            else if (touchedFace == FaceBlinky3) {llInstantMessage(whoClicked, assetNumber+" Class: "+class2Description(prisonerClass));}
+            else if (touchedFace == FaceBlinky4) {llInstantMessage(whoClicked, assetNumber+" Threat: "+prisonerThreat);}
+            else if (touchedFace == batteryIconFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryCharge+"%");
         } else if (touchedLink == batteryCoverLink) {
-            if (touchedFace == batteryCoverFace) llInstantMessage(avatarKey, assetNumber+" Battery level: "+(string)batteryCharge+"%");
-            mainMenu(avatarKey);
+            if (touchedFace == batteryCoverFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryCharge+"%");
+            mainMenu(whoClicked);
         } else {
-            mainMenu(avatarKey);
+            mainMenu(whoClicked);
         }
     }
     
     listen(integer channel, string name, key avatarKey, string message){
+        sayDebug("listen name:"+name+" message:"+message);
         
         // listen for the /1flmenu command
         if (channel == wearerChannel & message == menuPhrase) {
-            if (menuAgentKey != "") {
+            sayDebug("listen menuAgentKey:'"+(string)menuAgentKey+"'");
+            if (menuAgentKey != avatarKey) {
                 mainMenu(avatarKey);
+                menuAgentKey = "";
             } else {
                 llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
             }
@@ -918,8 +937,7 @@ default
         }
         
         string messageButtonsTrimmed = llStringTrim(llGetSubString(message,2,11), STRING_TRIM);
-        sayDebug("listen message:"+message+" messageButtonsTrimmed:"+messageButtonsTrimmed);
-        sayDebug("listen menuIdentifier: "+menuIdentifier);
+        sayDebug("listen messageButtonsTrimmed:"+messageButtonsTrimmed+" menuIdentifier: "+menuIdentifier);
         
         // display the menu item
         if (llGetSubString(message,1,1) == " ") {
@@ -995,6 +1013,12 @@ default
             settingsMenu(avatarKey);
         }
         
+        // Hack
+        else if (menuIdentifier == buttonHack) {
+            sayDebug("listen: Hack:"+messageButtonsTrimmed);
+            doHackMenu(avatarKey, message, messageButtonsTrimmed);
+        }
+        
         // Zap the inmate
         else if (menuIdentifier == buttonPunish) {
             sayDebug("listen: Zap:"+message);
@@ -1020,6 +1044,15 @@ default
             } else if (message == "⨷ Hardcore") {
                 sayDebug("listen set prisonerLockLevel:\""+prisonerLockLevel+"\"");
                 sendJSON("RLV", "Hardcore", avatarKey);
+            } else if (llSubStringIndex(message, RelayOFF) >= 0) {
+                llMessageLinked(LINK_THIS, 0, "relay-reset", avatarKey);
+                RelayLockState = RelayOFF;
+            } else if (llSubStringIndex(message, RelayASK) >= 0) {
+                llMessageLinked(LINK_THIS, 1, "relay-ask", avatarKey);
+                RelayLockState = RelayASK;
+            } else if (llSubStringIndex(message, RelayON) >= 0) {
+                llMessageLinked(LINK_THIS, 0, "relay-ask", avatarKey);
+                RelayLockState = RelayON;
             } else {
                 sayDebug("listen set prisonerLockLevel:\""+prisonerLockLevel+"\"");
                 sendJSON("RLV", messageButtonsTrimmed, avatarKey);
