@@ -202,7 +202,7 @@ default
 {
     state_entry()
     {
-        llSetObjectName(implversion);
+        //llSetObjectName(implversion);
  
         lit = TRUE;
         updateStatus(FALSE);
