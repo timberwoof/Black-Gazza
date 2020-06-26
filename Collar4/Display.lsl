@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-06-23";
+string version = "2020-06-24";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -126,7 +126,7 @@ string prisonerThreat;
 integer responderChannel;
 integer responderListen;
 
-string assetNumber = "P-00000";
+string assetNumber = "";
 string zapLevelsJSON;
 
 integer TIMER_BADWORDS = 0;
@@ -372,8 +372,9 @@ setPrisonerClass(string prisonerClass) {
 
 
 // try to recover some settings based on colors of faces
-attachStartup() {
+attachStartup(key theAvatar) {
     sayDebug("attachStartup");
+    avatar = theAvatar;
     prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
     prisonerClass = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "prisonerClass");
     prisonerThreat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "prisonerThreat");
@@ -429,11 +430,11 @@ default
 
         // Initialize the world
         batteryCharge = "0"; 
-        prisonerCrime = "Unknown";
+        prisonerCrime = "";
         if (llGetAttached() != 0) {
-            attachStartup();
+            attachStartup(llGetOwner());
         } else {
-            assetNumber = "P-00000";
+            assetNumber = "";
             prisonerMood = "OOC";
             prisonerClass = "white";
             prisonerClassColor = WHITE;
@@ -444,16 +445,13 @@ default
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);            
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, LIGHT_GRAY, 1.0]);
+            displayTitler();
         }
-        displayTitler();
-        displayCentered(assetNumber);
-        sendJSON("database", "getupdate", llGetOwner());
     }
     
     attach(key theAvatar) {
-        avatar = theAvatar;
-        attachStartup();
-        displayTitler();
+        sayDebug("attach("+(string)theAvatar+")");
+        attachStartup(theAvatar);
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
@@ -536,11 +534,14 @@ default
         string newAssetNumber = getJSONstring(json, "assetNumber", assetNumber);
         if (newAssetNumber != assetNumber) {
             assetNumber = newAssetNumber;
+            string firstName = "Unassigned";
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
-            string ownerName = llGetDisplayName(llGetOwner());
-            list namesList = llParseString2List(ownerName, [" "], [""]);
-            string firstName = llList2String(namesList, 0);
-            llSetObjectName(assetNumber+" ("+firstName+")");
+            if (assetNumber != "P-00000") {
+                string ownerName = llGetDisplayName(llGetOwner());
+                list namesList = llParseString2List(ownerName, [" "], [""]);
+                firstName = llList2String(namesList, 0);
+                llSetObjectName(assetNumber+" ("+firstName+")");
+                }
             displayCentered(assetNumber);
             displayTitler();
             }

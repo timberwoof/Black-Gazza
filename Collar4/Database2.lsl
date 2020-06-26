@@ -6,7 +6,7 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-06-23
+// version: 2020-06-24
 
 integer OPTION_DEBUG = 0;
 key databaseQuery;
@@ -30,10 +30,18 @@ sayDebug(string message)
 
 // fire off a request to the crime database for this wearer. 
 sendDatabaseQuery() {
-    displayCentered("Accessing DB");
-    string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
-    sayDebug("sendDatabaseQuery:"+URL);
-    databaseQuery = llHTTPRequest(URL,[],"");
+    if (llGetAttached() != 0) {
+        displayCentered("Accessing DB");
+        string URL = "http://sl.blackgazza.com/read_inmate.cgi?key=" + (string)llGetOwner();
+        sayDebug("sendDatabaseQuery:"+URL);
+        databaseQuery = llHTTPRequest(URL,[],"");
+    } else {
+        sayDebug("sendDatabaseQuery unattached");
+        string statusJsonList = llList2Json(JSON_OBJECT, [
+            "assetNumber", assetNumber, 
+            "prisonerCrime", prisonerCrime]);
+        llMessageLinked(LINK_THIS, 0, statusJsonList, "");
+    }
 }
 
 displayCentered(string message) {
@@ -52,13 +60,8 @@ default
         sayDebug("state_entry");
         assetNumber = "P-00000";
         prisonerCrime = "Unknown";
-        string statusJsonList = llList2Json(JSON_OBJECT, [
-            "assetNumber", assetNumber, 
-            "prisonerCrime", prisonerCrime]);
-        llMessageLinked(LINK_THIS, 0, statusJsonList, "");
-        if (llGetAttached() != 0) {
-            sendDatabaseQuery();
-        }
+        sendDatabaseQuery();
+        sayDebug("state_entry done");
     }
     
     attach(key avatar) 

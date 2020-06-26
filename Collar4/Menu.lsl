@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-06-23";
+string version = "2020-06-24";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -716,7 +716,13 @@ doSetPunishmentLevels(key avatarKey, string message)
     if (avatarKey == llGetOwner()) 
     {
         sayDebug("wearer sets allowable zap level: "+message);
-        if (message == "Zap Low") {
+        if (message == "") {
+            allowZapLow = 1;
+            allowZapMed = 1;
+            allowZapHigh = 1;
+            allowVision = 1;
+        }
+        else if (message == "Zap Low") {
             allowZapLow = !allowZapLow;
         } else if (message == "Zap Med") {
             allowZapMed = !allowZapMed;
@@ -852,6 +858,7 @@ threatMenu(key avatarKey) {
 }
 
 attachStartup() {
+    sayDebug("attachStartup");
     // set up chanel 1 menu command
     string canonicalName = llToLower(llKey2Name(llGetOwner()));
     list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
@@ -884,12 +891,13 @@ default
             sendJSON("prisonerMood", moodOOC, "");            
             doSetPunishmentLevels(llGetOwner(),""); // initialize
         } else {
-             attachStartup();
+            attachStartup();
         }
 
     }
     
     attach(key avatar) {
+        sayDebug("attach");
         attachStartup();
     }
 
