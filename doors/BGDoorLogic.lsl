@@ -507,7 +507,7 @@ default
             distantloc.y = llList2Float(xyz,2);
             distantloc.z = llList2Float(xyz,3);
             vector here = llGetPos();
-            float distance = llVecDist(here, distantloc)/10.0;
+            float distance = llVecDist(here, distantloc)/10.0 + 1.0;
             gPowerTimer = setTimerEvent((integer)distance);
             gPowerState = POWER_FAILING;
             sendJSONinteger("powerState", gPowerState, "");
