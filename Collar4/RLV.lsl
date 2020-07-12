@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-06-23
+// version: 2020-07-11
 
 // Sends locklevel status on link number 1400
 // Receives menu commands on link number 1401
@@ -468,8 +468,6 @@ default
             llListen(ZapChannel, "", "", "");
         }
         
-        llListen(42, "", "", "");
-        
         sayDebug("state_entry done");
     }
 
@@ -580,10 +578,6 @@ default
                 startZap("Low", id);
             }
         }
-        
-        if (channel==42){
-            llOwnerSay(message);
-            }
     }
 
     timer()
