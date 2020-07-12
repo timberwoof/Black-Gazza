@@ -2,7 +2,7 @@
 // Replacement script for these doors at Black Gazza
 // Timberwoof Lupindo
 // May 20, 2018 - May 29, 2018
-// July 10, 2020
+// July 11, 2020
 // 3.0 Separates Hardware and Logic Layers
 
 // Installation Notes
@@ -29,13 +29,14 @@ integer PRIM_DOOR2 = 5;
 integer PRIM_PANEL_1 = 3;
 
 // Physical Sizes - custom grebe
-vector leafScale = <0.3, 0.225, 0.6>; // height of leaf compared to main prim
-float CLOSE_FACTOR = 0.11;
-float OPEN_FACTOR = 0.315;
+vector leafScale = <0.29, 0.9, 0.15>; // height of leaf compared to main prim
+float CLOSE_FACTOR = 0.127;
+float OPEN_FACTOR = 0.4145;
 float ZOFFSET_FACTOR = -0.08; // Orbital leaves are lower than the door frame
+// Door moves along main prim X axis
 
-vector panelScale = <0.72, 0.0617, 0.077>;
-vector panelLoc = <0.0, 0.27, -0.04>;
+vector panelScale = <0.0727, 0.1193, 0.8>;
+vector panelLoc = <0.25, 0.33, 0.0>;
 
 // ========================================
 // Common
@@ -75,14 +76,11 @@ float fwidth;
 float fopen;
 float fclose;
 float fdelta;
-float fZoffset;
 
 // Door States
 integer doorState; // 1 = door is open
 integer OPEN = 1;
 integer CLOSED = 0;
-integer QUIETLY = 0;
-integer NOOrbitalY = 1;
 
 // power states
 integer gPowerState = 0;
@@ -177,11 +175,11 @@ open()
         float f;
         for (f = fclose; f < fopen; f = f + fdelta) 
         {
-            //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <0.0, -f, fZoffset> ]);
-            //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <0.0, f, fZoffset>]);
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0> ]);
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);
         }
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <0.0, -fopen, fZoffset> ]);
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <0.0, fopen, fZoffset>]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <-fopen, 0.0, 0.0> ]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);
         doorState = OPEN;
         sendJSONinteger("doorState", doorState, "");
     }
@@ -200,11 +198,11 @@ close()
         float f;
         for (f = fopen; f >= fclose; f = f - fdelta) 
         {
-            //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <0.0, -f, fZoffset>]);//-f
-            //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <0.0, f, fZoffset>]);//f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <-f, 0.0, 0.0>]);//-f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
         }
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <0.0, -fclose, fZoffset> ]);//
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <0.0, fclose, fZoffset>]);//f
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <-fclose, 0.0, 0.0> ]);//
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);//f
         doorState = CLOSED;
         sendJSONinteger("doorState", doorState, "");
     }
@@ -327,20 +325,19 @@ default
         // calculate the leaf movements
         // get the size of the door frame and calculate the sizes of the leaves
         vector frameSize = llGetScale( );
-        vector leafsize = <frameSize.x*leafScale.x, frameSize.y*leafScale.y, frameSize.z*leafScale.z>; 
+        vector leafsize = <frameSize.z*leafScale.z, frameSize.x*leafScale.x, frameSize.y*leafScale.y>; 
         // special case for double door
-        fwidth = frameSize.y;
+        fwidth = frameSize.x;
         fclose = fwidth * CLOSE_FACTOR;
         fopen = fwidth * OPEN_FACTOR;
-        fZoffset = frameSize.z * ZOFFSET_FACTOR; //fheight * something;
         fdelta = .10;
         
         // set the initial leaf sizes
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_SIZE,leafsize]);
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_SIZE,leafsize]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_SIZE,leafsize]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_SIZE,leafsize]);
         // set the initial leaf positions
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <0.0, -fclose, fZoffset>]);
-        //llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <0.0,  fclose, fZoffset>]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR1,[PRIM_POS_LOCAL, <-fclose, 0.0, 0.0>]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR2,[PRIM_POS_LOCAL, <fclose, 0.0,  0.0>]);
         
         // calculate panel size
         vector panelSize = <frameSize.y*panelScale.y, frameSize.z*panelScale.z, frameSize.x*panelScale.x>;
