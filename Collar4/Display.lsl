@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-06-24";
+string version = "2020-11-23";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -16,17 +16,22 @@ vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
 vector GRAY = <0.5, 0.5, 0.5>;
 vector LIGHT_GRAY = <0.7, 0.7, 0.7>;
-vector DARK_BLUE = <0.0, 0.0, 0.2>;
-vector BLUE = <0.0, 0.0, 1.0>;
-vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
-vector MAGENTA = <1.0, 0.0, 1.0>;
-vector CYAN = <0.0, 1.0, 1.0>;
 vector WHITE = <1.0, 1.0, 1.0>;
+vector DARK_RED = <0.5, 0.0, 0.0>;
 vector RED = <1.0, 0.0, 0.0>;
 vector REDORANGE = <1.0, 0.25, 0.0>;
+vector DARK_ORANGE = <0.5, 0.25, 0.0>;
 vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
+vector DARK_GREEN = <0.0, 0.5, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
+vector DARK_BLUE = <0.0, 0.0, 0.5>;
+vector BLUE = <0.0, 0.0, 1.0>;
+vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
+vector DARK_MAGENTA = <0.5, 0.0, 0.5>;
+vector MAGENTA = <1.0, 0.0, 1.0>;
+vector DARK_CYAN = <0.0, 0.5, 0.5>;
+vector CYAN = <0.0, 1.0, 1.0>;
 vector PURPLE = <0.7, 0.1, 1.0>;
 
 list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
@@ -85,6 +90,8 @@ integer FaceAlphanum = 1;
 list LinksAlphanum = [];
 
 integer linkTitler = 0;
+float titlerActive = 1.0;
+string buttonTitler = "Titler";
 
 // BG_CollarV4_PowerDisplay_PNG
 string batteryCharge;
@@ -114,6 +121,7 @@ string prisonerClassLong;
 list classNames;
 list classNamesLong;
 list classColors;
+list classPaddingColors; 
 list classTextures;
 list classSpeculars;
 list classBumpmaps;
@@ -126,7 +134,8 @@ string prisonerThreat;
 integer responderChannel;
 integer responderListen;
 
-string assetNumber = "";
+string assetNumber = "P-00000";
+string unassignedAsset = "P-00000";
 string zapLevelsJSON;
 
 integer TIMER_BADWORDS = 0;
@@ -139,21 +148,12 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("Display:"+message);
+        llOwnerSay("Display: "+message);
     }
 }
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
-    }
-    
-string getJSONstring(string jsonValue, string jsonKey, string valueNow){
-    string result = valueNow;
-    string value = llJsonGetValue(jsonValue, [jsonKey]);
-    if (value != JSON_INVALID) {
-        result = value;
-        }
-    return result;
     }
     
 integer getLinkWithName(string name) {
@@ -196,14 +196,14 @@ displayTitler() {
     integer classIndex = llListFindList(classNames, [prisonerClass]);
     string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
-    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
 }
 
 displayText(string text){
 // Display a string of 12 characters on the collar display. 
 // If you supply less than 12 characters, the last ones don't get reset. 
 // Anything after 12 characters gets truncated. 
-    sayDebug("displaytext("+text+")");
+    sayDebug("displaytext(\""+text+"\")");
 
     // The text map is in this jumbled order because the bitmap maps weirdly. 
     string textMap = 
@@ -353,6 +353,7 @@ string blinkyFaceColorToMeaning(integer face, list colors, list names, string js
 setPrisonerClass(string prisonerClass) {
     integer classi = llListFindList(classNames, [prisonerClass]);
     prisonerClassColor = llList2Vector(classColors, classi);
+    vector prisonerClassPaddingColor =  llList2Vector(classPaddingColors, classi);
     prisonerClassLong = llList2String(classNamesLong, classi);
 
     setTextColor(prisonerClassColor);
@@ -361,7 +362,7 @@ setPrisonerClass(string prisonerClass) {
     llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor, 1.0]);
             
     // set the padding color
-    llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, prisonerClassColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, prisonerClassPaddingColor, 1.0]);
 
     // set the collar frame texture, reflectivity, and bumpiness
     llSetPrimitiveParams([PRIM_TEXTURE, FaceFrame, llList2Key(classTextures, classi), <1,1,0>, <0,0,0>, 0]);
@@ -391,8 +392,8 @@ default
         sayDebug("state_entry");
         
         // set up lists and shit
-        moodNames = ["OOC","Submissive","Versatile","Dominant","Nonsexual","Story", "DnD"];
-        moodColors = [LIGHT_GRAY, GREEN, YELLOW, ORANGE, CYAN, PURPLE, GRAY];
+        moodNames = ["OOC", "Lockup", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
+        moodColors = [LIGHT_GRAY, LIGHT_GRAY, GREEN, YELLOW, ORANGE, CYAN, PURPLE, LIGHT_GRAY];
         prisonerMood = "OOC";
         
         touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
@@ -401,6 +402,7 @@ default
         classNames = ["white","pink","red","orange","green","blue","black"];
         classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
         classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, CYAN, GRAY];
+        classPaddingColors = [GRAY, DARK_MAGENTA, DARK_RED, DARK_ORANGE, DARK_GREEN, DARK_BLUE, DARK_GRAY];
         classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
             BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
         classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
@@ -434,7 +436,7 @@ default
         if (llGetAttached() != 0) {
             attachStartup(llGetOwner());
         } else {
-            assetNumber = "";
+            assetNumber = unassignedAsset;
             prisonerMood = "OOC";
             prisonerClass = "white";
             prisonerClassColor = WHITE;
@@ -447,11 +449,13 @@ default
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, LIGHT_GRAY, 1.0]);
             displayTitler();
         }
+        sayDebug("state_entry done");
     }
     
     attach(key theAvatar) {
-        sayDebug("attach("+(string)theAvatar+")");
+        sayDebug("attach("+(string)theAvatar+") assetNumber:'"+assetNumber+"'");
         attachStartup(theAvatar);
+        sayDebug("attach done");
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
@@ -485,7 +489,7 @@ default
             sayDebug("link_message "+(string)num+" "+(string)zapLevels+"->message");
             sayDebug("zapLevels list:"+(string)zapLevels);
             vector lightcolor = BLACK;
-            if (assetNumber != "P-00000") {
+            if (assetNumber != unassignedAsset) {
                 // color tells the highest allowed zap level
                 if (llList2Integer(zapLevels,0)) lightcolor = YELLOW;
                 if (llList2Integer(zapLevels,1)) lightcolor = ORANGE;
@@ -519,32 +523,35 @@ default
         value = llJsonGetValue(json, ["batteryCharge"]);
         if (value != JSON_INVALID) {
             batteryCharge = value;
-            sayDebug("batteryCharge "+batteryCharge);
             displayBattery((integer)batteryCharge);
         }
         
         // Prisoner Crime
-        string newPrisonerCrime = getJSONstring(json, "prisonerCrime", prisonerCrime);
-        if (newPrisonerCrime != prisonerCrime) {
-            prisonerCrime = newPrisonerCrime;
+        value = llJsonGetValue(json, ["prisonerCrime"]);
+        if (value != JSON_INVALID) {
+            prisonerCrime = value;
             displayTitler();
-            }
+        }
 
         // Prisoner Asset Number
-        string newAssetNumber = getJSONstring(json, "assetNumber", assetNumber);
-        if (newAssetNumber != assetNumber) {
-            assetNumber = newAssetNumber;
+        value = llJsonGetValue(json, ["assetNumber"]);
+        if (value != JSON_INVALID) {
+            assetNumber = value;
             string firstName = "Unassigned";
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
             if (assetNumber != "P-00000") {
                 string ownerName = llGetDisplayName(llGetOwner());
                 list namesList = llParseString2List(ownerName, [" "], [""]);
                 firstName = llList2String(namesList, 0);
-                llSetObjectName(assetNumber+" ("+firstName+")");
+                string newCollarName = assetNumber+" ("+firstName+")";
+                if (llGetObjectName() != newCollarName && llGetAttached() != 0) {
+                    llOwnerSay("This collar will now rename itself to \""+newCollarName+"\"");
+                    llSetObjectName(newCollarName);
+                    }
                 }
             displayCentered(assetNumber);
             displayTitler();
-            }
+        }
         
         // display a message
         value = llJsonGetValue(json, ["Display"]);
@@ -570,6 +577,17 @@ default
             TIMER_BADWORDS = (integer)value;
             llSetTimerEvent(1);
             }
+            
+        //set titler visible
+        value = llJsonGetValue(json, [buttonTitler]);
+        if (value != JSON_INVALID) {
+            sayDebug(buttonTitler+value);
+            titlerActive = 0.0;
+            if (value == "ON") {
+                titlerActive = 1.0;
+            }
+            displayTitler();
+            }
     }
     
     listen(integer channel, string name, key id, string message)
@@ -592,7 +610,7 @@ default
     timer() {
         sayDebug("timer()");
             if (TIMER_REDISPLAY > 0) {
-                if (assetNumber == "P-00000") {
+                if (assetNumber == unassignedAsset) {
                     sendJSON("database", "getupdate", llGetOwner());
                 }
                 sayDebug("set and display assetNumber \""+assetNumber+"\"");
