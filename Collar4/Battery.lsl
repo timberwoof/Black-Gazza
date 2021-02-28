@@ -1,13 +1,13 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-04-11
+// version: 2021-02-28
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 
 // Sends battery state commands to Display. 
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 float basicCharge; // battery capacity in seconds
 float batteryCharge; // seconds left
@@ -30,8 +30,12 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("Battery:"+message);
+        llOwnerSay("Battery: "+message);
     }
+}
+
+sendJSON(string jsonKey, string value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
 }
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
@@ -69,23 +73,44 @@ float updateValue(string json, string jsonKey, float now, float replace) {
 
 dischargeBattery(string why, float seconds)
 {
+    sayDebug("dischargeBattery("+why+","+(string)seconds+")");
     batteryCharge = batteryCharge - seconds;
+    sayDebug("dischargeBattery initial calculation leaves "+(string)batteryCharge+" charge.");
+    if (batteryCharge > basicCharge) {
+        batteryCharge = basicCharge; // user choice battery "off" state
+        sayDebug("dischargeBattery limited charge to "+(string)basicCharge);
+    }
     if (batteryCharge <= 0) {
         batteryCharge = basicCharge; // user choice battery "off" state
-        sayDebug("dischargeBattery("+why+","+(string)seconds+"): recharged battery");
+        sayDebug("dischargeBattery limited discharge to 0");
     }
-    sayDebug("dischargeBattery("+why+","+(string)seconds+") leaves "+(string)batteryCharge+" charge.");
     integer newDisplayLevel = (integer)llFloor(batteryCharge/basicCharge*100);
     if (newDisplayLevel != displayLevel) {
         displayLevel = newDisplayLevel;
         sendJSONinteger("batteryCharge", displayLevel, "");
+        sendJSON("batteryGraph", batteryGraph(displayLevel), "");
     }
+}
+
+string batteryGraph(integer batteryCharge) {
+    // batteryCharge 0-100
+    integer iBattery = batteryCharge / 10;
+    integer i;
+    string graph = "";
+    for (i=0; i<iBattery; i++) {
+        graph = graph + "◼";
+    }
+    for (; i<10; i++) {
+        graph = graph + "◻";
+    }
+    return graph;
 }
 
 default
 {
     state_entry()
     {
+        sayDebug("state_entry");
         basicCharge = 24 * 60 * 60; // 24 hours worth of seconds
         // discharge rates contains fraction of basic charge that gets used every second
         dischargeRates = [0.0]; // Off
@@ -98,12 +123,16 @@ default
         dischargeRate = 1.0;
         timerInterval = 300.0;
         llSetTimerEvent(timerInterval);
-        sayDebug("initialized");
+        sayDebug("state_entry done");
     }
 
-    link_message( integer sender_num, integer num, string json, key id ){
-        string value = llJsonGetValue(json, ["batteryCharge"]);
+    link_message(integer sender_num, integer num, string json, key id){
+        sayDebug("link_message "+json);
+        string value = llJsonGetValue(json, ["CHARGE"]);
         if (value != JSON_INVALID) {
+            sayDebug("json:"+json+"  batteryCharge now:" + (string)batteryCharge);
+            dischargeBattery("charging", (float)value * basicCharge * -1.0);
+            sayDebug("new batteryCharge:" + (string)batteryCharge);
             return;
         }
         sayDebug("link_message "+json);
@@ -169,8 +198,6 @@ default
             dischargeRate = newDischargeRate;
             if (dischargeRate) dischargeBattery("dischargeRate", dischargeRate);
         }
-        
-
     }
 
     timer() {
