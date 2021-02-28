@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2020-11-23";
+string version = "2021-02-27";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -706,6 +706,7 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (messageButtonsTrimmed = buttonTitler) {
             titlerActive = !titlerActive;
             sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
+            settingsMenu(avatarKey);
         }
             
 }
@@ -781,6 +782,7 @@ moodMenu(key avatarKey)
     {
         string message = "Set your Mood";
         list buttons = [];
+        buttons = buttons + menuRadioButton(moodDND, prisonerMood);
         buttons = buttons + menuRadioButton(moodOOC, prisonerMood);
         buttons = buttons + menuRadioButton(moodLockup, prisonerMood);
         buttons = buttons + menuRadioButton(moodSubmissive, prisonerMood);
@@ -788,7 +790,6 @@ moodMenu(key avatarKey)
         buttons = buttons + menuRadioButton(moodDominant, prisonerMood);
         buttons = buttons + menuRadioButton(moodNonsexual, prisonerMood);
         buttons = buttons + menuRadioButton(moodStory, prisonerMood);
-        buttons = buttons + menuRadioButton(moodDND, prisonerMood);
         buttons = buttons + [buttonBlank, buttonSettings];
         setUpMenu("Mood", avatarKey, message, buttons);
     }
