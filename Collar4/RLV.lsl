@@ -1,21 +1,34 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2020-07-11
+// version: 2021-03-03
 
-// Sends locklevel status on link number 1400
-// Receives menu commands on link number 1401
-// Receives status requests on link number 1402
-// Sends RLVstatus status on link number 1403
+// controls Relay
+// manages Zap
+// manages ACS interference
+// manages OAD/Lovense vibrator toys
+// Sends OAD Lovense commands to channel -20200610
 
 integer OPTION_DEBUG = 0;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
 integer Safeword = 0;
-integer ZapChannel = -106969;
 
-integer hudAttached = 0;    //0 = unattached; 1 = attached
+integer ZapChannel = -106969;
+float ZapTimeCharge = 1.5;
+float ZapTimeLow = 2;
+float ZapTimeMed = 4;
+float ZapTimeHigh = 8;
+
+integer batteryCharge = 0;
+
+integer ACSInterferenceChannel = 360;
+
+integer OADSendChannel = -20200610;
+string OAD_VIBE = "VIBE";
+string OAD_ALL = "ALL";
+
 integer HudFunctionState = 0;
 // -3 = off with remote turn-on
 // 0 = off
@@ -24,11 +37,9 @@ integer HudFunctionState = 0;
 // 3 = on with remote turn-off
 string avatarKeyString;
 string avatarName;
-key primKey;
-string primKeyString;
 string assetNumber = "P-00000";
 
-integer RLVpresent;
+integer rlvPresent;
 string prisonerLockLevel;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
@@ -36,7 +47,7 @@ integer RLVStatusListen = 0;
 integer visionTimeout = 0;
 integer zapTimeout = 0;
 
-key soundCharging = "cfe72dda-9b3f-2c45-c4d6-fd6b39d282d1";
+key soundCharging = "5a10d96a-b51f-5f34-5cc9-affa87308e3e";
 key soundShock = "4546cdc8-8682-6763-7d52-2c1e67e8257d";
 key soundZapLoop = "27a18333-a425-30b1-1ab6-c9a3a3554903";
 key soundLatch = "cd386eb2-037a-e774-04d1-fd8161ffc2ba";
@@ -47,9 +58,18 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("RLV:"+(string)llGetTime()+" "+message);
+        llOwnerSay("RLV: "+message);
     }
 }
+
+integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
+    integer result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = (integer)value;
+        }
+    return result;
+    }
 
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
@@ -59,6 +79,10 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
         }
     return result;
     }
+
+sendJSONinteger(string jsonKey, integer value, key avatarKey){
+    llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
+}
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
@@ -80,53 +104,13 @@ generateChannels() {
 // Communication with database
 key httprequest;
 
-registerWithDB() {
-    sayDebug("registerWithDB");
-    string timestamp = llGetTimestamp( ); // format 
-    string timeStampDate = llGetSubString(timestamp,0,9);
-    string timeStampTime = llGetSubString(timestamp,11,18);
-    string timeStampAll = timeStampDate + " " + timeStampTime;
-    string url;
-    
-    // what  to tell the database
-    integer hudActive = 0;
-    if (HudFunctionState > 0) {
-        hudActive = 1;
-        }
-    if (RLVpresent == 1) {
-        hudActive = hudActive * 10;
-    }
-    
-    if (avatarKeyString == "00000000-0000-0000-0000-000000000000") {
-        // tag is not attatched
-        url = "http://web.infernosoft.com/blackgazza/registerUser.php?"+
-        "avatar=" + avatarKeyString + "&" + 
-        "name=&" + 
-        "prim=" + primKeyString + "&" + 
-        "role=0&" +
-        "timeSent=" + llEscapeURL(timeStampAll) + "&" +
-        "commandChannel=0";
-    } else {
-        url = "http://web.infernosoft.com/blackgazza/registerUser.php?"+
-        "avatar=" + avatarKeyString + "&" + 
-        "name=" + llEscapeURL(avatarName) + "&" + 
-        "prim=" + primKeyString + "&" + 
-        "role=" + (string)hudActive + "&" +
-        "timeSent=" + llEscapeURL(timeStampAll) + "&" +
-        "commandChannel=0";// + (string)CommandChannel;
-    }
-    
-    list parameters = [HTTP_METHOD, "GET",
-        HTTP_MIMETYPE,"text/plain;charset=utf-8"];
-    string body = "";
-    //sayDebug(url); 
-    //httprequest = llHTTPRequest(url, parameters, body );
-}
 
+// =================================
+// RLV communication
 checkRLV(string why) {
     sayDebug("checkRLV("+why+")");
     if (llGetAttached() != 0) {
-        llOwnerSay("Checking RLV version ("+why+").");
+        llOwnerSay("Checking RLV version.");
         haveAnimatePermissions = 0;
         llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
         generateChannels();
@@ -143,14 +127,13 @@ checkRLV(string why) {
 sendRLVRestrictCommand(string level, key id) {
     // level can be Off Light Medium Heavy Hardcore
     string theSound = soundLatch;
-    if (RLVpresent == 1) {
+    if (rlvPresent == 1) {
         prisonerLockLevel = level;
-        sayDebug("sendRLVRestrictCommand("+prisonerLockLevel+")");
-        llOwnerSay("@clear");
+        sayDebug("sendRLVRestrictCommand(\""+prisonerLockLevel+"\")");
+        llOwnerSay("@clear"); // this kills the speech settings
         string rlvcommand = ""; 
         if (prisonerLockLevel == "Off") {
             theSound = soundUnlatch;
-            llInstantMessage(id, assetNumber + " has been unlocked."); 
         }else if (prisonerLockLevel == "Light") {
             rlvcommand = "@tplm=n,tploc=n,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
@@ -163,6 +146,7 @@ sendRLVRestrictCommand(string level, key id) {
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,sittp=n,fartouch=n";
             // chatnormal=y,chatwhisper=y,
+            llOwnerSay("You have been locked into Heavy mode. To Safeword, you must use the collar's Safeword function.");
         } else if (prisonerLockLevel == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
@@ -174,19 +158,66 @@ sendRLVRestrictCommand(string level, key id) {
         sayDebug("sendRLVRestrictCommand llPlaySound("+theSound+", 1.0);");
         llPlaySound(theSound, 1.0);
         if (rlvcommand != "") {
-            sayDebug("sendRLVRestrictCommand: "+rlvcommand);
+            sayDebug("sendRLVRestrictCommand: llOwnerSay(\""+rlvcommand+"\")");
             llOwnerSay(rlvcommand);
         }
         sendJSON("rlvPresent", "1", "");
         sendJSON("prisonerLockLevel", prisonerLockLevel, "");
-        sendJSON("Speech", "resetRenamer", "");
-        llOwnerSay("RLV lock level has been set to "+prisonerLockLevel);
+        llOwnerSay("RLV lock level has been set to "+prisonerLockLevel+".");
     } else {
-        sayDebug("sendRLVRestrictCommand but no RLV present");
+        sayDebug("sendRLVRestrictCommand was called but no RLV present");
         sendJSON("rlvPresent", "0", "");
         sendJSON("prisonerLockLevel", "Off", "");
     }
 }
+
+// ***************************
+// ACS Interference
+processACSInterference(string name, string message) {
+        // interferenceCodes = "PMSNCY";
+        // interferenceNames = ["Power","Motor","Speaker","Sensory","Cognitive","Memory"];
+
+        list commands = llCSV2List(message);
+        string acs = llList2String(commands,0);
+        string interfere = llList2String(commands,1);
+        
+        if ((acs == "ACS") & (interfere == "interfere"))
+        {
+            // parse the ACS interference command
+            //string type = llList2String(commands,2); //  type:"+type+
+            integer time = llList2Integer(commands,3);
+            integer strength = llList2Integer(commands,4);
+            sayDebug("processACSInterference time:"+(string)time+" strength:"+(string)strength);
+
+            // Scale ACS strentgh to OAD strength.
+            // ACS interference strength ranges 0-9
+            // OAS buzz strength ranges 0-20
+            // 20 / 9 = 2.222, so 0:0 1:3 2:5 3:7 4:9 5:12 6:14 7:16 8:18 9:20
+            strength = llCeil(strength * 2.222); 
+            sayDebug("strength:"+(string)strength);
+            
+            // Limit buzz time to 10 seconds.
+            // Adjust strength appropriately.
+            if (time > 10) {
+                strength = llCeil(strength * time / 10.0);
+                sayDebug("strength recalculated by time to:"+(string)strength);
+                time = 10;
+                }
+                
+            // limit strength to max
+            if (strength > 20) {
+                strength = 20;
+                sayDebug("strength capped:"+(string)strength);
+                }
+                
+            // buzz the wearer
+            sendOADCommand(OAD_VIBE, strength, OAD_ALL, time);
+            llSleep(time);
+            sendOADCommand(OAD_VIBE, 0, OAD_ALL, 0);
+        } else {
+            llSay(0,name+" transmitted on ACS Interference Channel.");
+            }
+        }
 
 // ***************************
 // Safeword
@@ -231,15 +262,20 @@ string firstname(key who) {
 // =====================
 // Zap
 integer zapTimerInterval = 5; // 5 seconds ;for all timers
-integer zapTimeremaining = 1800; // seconds remaining on timer: half an hour by default
+integer zapTimeremaining ; // seconds remaining on timer: half an hour by default
 integer zapTimerunning = 0; // 0 = stopped; 1 = running
 
+list zapLevelNames = ["Low", "Med", "Hig"];
+list zapTimes = [2, 4, 8]; // ho wlong zap lasts
+list zapDischarges = [3600, 7200, 14400]; // how much battery time zap requires/discharges
+list zapTimeouts = [120, 240, 960]; // timeout before you can zap again
 
 // got menu command: play charge sound and ask for zap permission
 startZap(string zapLevel, key who) {
-    if ( (llSubStringIndex("LowMedHig", zapLevel) >= 0) & (zapTimerunning > 0))
+    sayDebug("startZap("+zapLevel+")");
+    integer zapindex = llListFindList(zapLevelNames, [zapLevel]);
+    if ( (zapindex >= 0) & (zapTimerunning == 0))
     {
-        
         // announce in chat what's happening
         string name;
         string objectDescription = llList2String(llGetObjectDetails(who, [OBJECT_DESC]),0);
@@ -254,45 +290,34 @@ startZap(string zapLevel, key who) {
         }
         llWhisper(0, name + " zaps the inmate.");
         
-        sayDebug("startZap llPlaySound(soundCharging, 1.0);");
+        sayDebug("startZap charging up");
+        OADStartBuzz();
         llPlaySound(soundCharging, 1.0);
         llSleep(1.5);
-        sayDebug("startZap llPlaySound(soundZapLoop, 1.0);");
+        
+        sayDebug("startZap zapping("+zapLevel+")");
+        OADBuzz(zapLevel);
         llLoopSound(soundZapLoop, 1.0);
         if (haveAnimatePermissions) {
-            stop_anims();
             llStartAnimation("Zap");
         }
-        if (zapLevel == "Low") {
-            zapTimeremaining = 120;
-            llSleep(1);
-        } else if (zapLevel == "Med") {
-            zapTimeremaining = 240;
-            llSleep(2);
-        } else if (zapLevel == "Hig") {
-            zapTimeremaining = 960;
-            llSleep(4);
-        }
+        
+        llSleep(llList2Integer(zapTimes, zapindex));
+        integer zapDischarge = llList2Integer(zapDischarges, zapindex);
+        sendJSONinteger("Discharge", zapDischarge, "");
+        zapTimeremaining = llList2Integer(zapTimeouts, zapindex);
+        
         sayDebug("startZap llStopSound();");
         llStopSound();
-        
         if (haveAnimatePermissions) {
-            stop_anims();
-            llStartAnimation("Stand");
+            llStopAnimation("Zap");
         }
     }
     llSleep(1);
     llStopSound();
-    zapTimerunning = 1;
+    zapTimerunning = 0;
     llSetTimerEvent(zapTimerInterval);
 }
-
-zapTimer() {
-    if (zapTimerunning == 1 && zapTimeremaining <= zapTimerInterval) {
-        zapTimerunning = 0;
-    }
-}
-
 
 restrictZap(integer zapLockout) {
     zapTimeout = 1;
@@ -300,20 +325,36 @@ restrictZap(integer zapLockout) {
     // it must coexist with the lock timer
 }
 
-stop_anims()
-{
-    list animationList = llGetAnimationList(llGetOwner());
-    integer lsize = llGetListLength(animationList);
-    integer i;
-    for ( i = 0; i < lsize; i++ )
-    {
-        llStopAnimation(llList2Key(animationList, i));
-    }
+sendOADCommand(string command, integer level, string toy, integer time){
+    //AVIKEY~VIBE~(LEVEL)~(TOY)~(TIME)
+    // command: VIBE, VIBE1, VIBE2
+    // level: 0-20
+    // toy: ALL, EDGE, HUSH, NORA, etc
+    // time: seconds
+    string command = (string)llGetOwner() + "~VIBE~" + (string)level + "~ALL~" + (string)time;
+    sayDebug("sendOADCommand:"+command);
+    llSay(OADSendChannel,command);
 }
 
+OADStartBuzz() {
+    sayDebug("OADStartBuzz");
+    sendOADCommand(OAD_VIBE, 5, OAD_ALL, (integer)ZapTimeCharge);
+    }
+
+OADBuzz(string level){
+    sayDebug("OADBuzz:"+level);
+    list zaplevels = ["Low","Med","Hig"];
+    list buzzLevels = [10, 15, 20];
+    list buzzTimes = [ZapTimeLow, ZapTimeMed, ZapTimeHigh];
+    integer index = llListFindList(zaplevels,[level]);
+    integer buzzLevel = llList2Integer(buzzLevels, index);
+    integer buzzTime = llList2Integer(buzzTimes, index);
+    sendOADCommand(OAD_VIBE, buzzLevel, OAD_ALL, buzzTime);
+}
 
 restrictVision(integer enabled) {
-    if (RLVpresent == 1) {
+    sayDebug("restrictVision");
+    if (rlvPresent == 1) {
         string rlvcommand;
         string message;
         if (enabled) {
@@ -326,7 +367,7 @@ restrictVision(integer enabled) {
                 //"camdrawmin:5=n,camdrawmax:10=n,camdrawalphamin:1.0=n,camdrawalphamax:0.0=n";
             message = "You are being punished for a transgression. Your collar has injected you with a drug that will restrict your vision for some time.";
             visionTimeout = 1;
-            llSetTimerEvent(15);
+            llSetTimerEvent(60);
         } else {
             rlvcommand = "@shownames_sec=y,showhovertextall=y,setenv_daytime:-1.0=force";//+
                 //"setenv_hazedensity:0.0=force"; // 0-1
@@ -433,61 +474,39 @@ lockTimerIncrement(integer interval) {
     // perhaps ... lockTimerIncrement(lockTimeremaining / 10);
 }
 
-lockTimer() {
-    //llWhisper(0, "lockTimerunning=" + (string)lockTimerunning + " lockTimeremaining=" + (string)lockTimeremaining);
-    if (lockTimerunning == 1 && lockTimeremaining <= lockTimerInterval) {
-        // time has run out...
-        llOwnerSay("Timelock has ended. Releasing.");
-        sendRLVRestrictCommand("Off", llGetOwner());
-        HudFunctionState = 0;
-        registerWithDB(); // prisoner, off
-        lockTimerReset();
-    }   
-
-    if (lockTimerunning == 1) {
-        // timer's on, door's closed, someone's in here
-        lockTimeremaining -= lockTimerInterval;
-    }
-}
-
-
 default
 {
     state_entry() // reset
     {
-        sayDebug("state_entry");
+        sayDebug("state_entry attachPoint:"+(string)llGetAttached());
         llStopSound();
-        RLVpresent = 0;
+        rlvPresent = 0;
         prisonerLockLevel = "Off";
         HudFunctionState = 0;
         SafewordListen = 0;
         llPreloadSound(soundCharging);
         llPreloadSound(soundZapLoop);
-        if (llGetAttached() != 0) {
+        if (llGetAttached() != 0){
             checkRLV("state_entry");
             llListen(ZapChannel, "", "", "");
+            llListen(ACSInterferenceChannel, "", "", "");
         }
-        
         sayDebug("state_entry done");
     }
 
      attach(key id)
      {
         if (id) {
-            sayDebug("attach");
-            hudAttached = 1;
+            sayDebug("attach(id) attachPoint:"+(string)llGetAttached());
             HudFunctionState = 0;
-            checkRLV("attach");
+            checkRLV("state_entry");
             llListen(ZapChannel, "", "", "");
-            registerWithDB();    // inmate, offline  
             sayDebug("attach done");
         } else {
-            sayDebug("detach");
-            hudAttached = 0;
+            sayDebug("attach(NULL_KEY) or detach");
             HudFunctionState = 0;
             sendRLVRestrictCommand("Off", llGetOwner());
-            registerWithDB();    // inmate, offline  
-            sayDebug("detach done");
+            sayDebug("attach or detach done");
         }
     }
 
@@ -506,10 +525,12 @@ default
     // RLV <lockLevel>
 
         assetNumber = getJSONstring(json, "assetNumber", assetNumber);
+        
+        batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge); // Seconds
 
         string RLVCommand = getJSONstring(json, "RLV", "");
         if (RLVCommand != "") {
-            sayDebug("link_message "+RLVCommand);
+            sayDebug("link_message (\""+RLVCommand+"\")");
             
             if (llSubStringIndex("Off Light Medium Heavy Hardcore", RLVCommand) > -1) {
                 sendRLVRestrictCommand(RLVCommand, id);
@@ -521,14 +542,21 @@ default
                 startZap(llGetSubString(RLVCommand, 4,6), id);
             }
             
-            if (RLVCommand == "Vision") {
-                restrictVision(1);
+            if (llSubStringIndex(RLVCommand, "Buzz") > -1) {
+                OADBuzz("Med");
             }
+            
+            //if (RLVCommand == "Vision") {
+            //    restrictVision(1);
+            //}
             
             if (llSubStringIndex(RLVCommand, "Register") > -1) {
                 checkRLV("link request");
             }
             
+            if (llSubStringIndex(RLVCommand, "Status") > -1) {
+                sendJSON("rlvPresent", "1", "");
+            }
 
         // timer sent set or reset
         } else if (num == 3002) {
@@ -546,7 +574,7 @@ default
     // and menu commands on the menuc hannel
     listen( integer channel, string name, key id, string message )
     {
-        sayDebug("listen channel:" + (string)channel + " key:" + (string) id + " message:"+ message);
+        sayDebug("listen: channel=" + (string)channel + " key=" + (string) id + " message='"+ message + "'");
         
         // safeword system
         if (channel == SafewordChannel && id == llGetOwner()) {
@@ -562,7 +590,7 @@ default
         // We just restarted or logged back in. 
         if (channel == RLVStatusChannel) {
             sayDebug("status:" + message);   
-            RLVpresent = 1;
+            rlvPresent = 1;
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             sendJSON("rlvPresent", "1", "");
@@ -573,12 +601,32 @@ default
         
         // request on zapchannel
         if (channel == ZapChannel) {
-            sayDebug("listen ZapChannel");   
             if (message == (string)llGetOwner()) {
+                sayDebug("listen ZapChannel legacy command");   
                 startZap("Low", id);
+            } else {
+                sayDebug("listen ZapChannel JSON command");
+                list zapCommands = llJson2List(message);
+                key zapKey = llList2Key(zapCommands,0);
+                string command = llList2String(zapCommands,1);
+                string intensity = llList2String(zapCommands,2);
+                if (command == "Zap") {
+                    startZap(intensity, id);
+                    }
+                string buzz = getJSONstring(message, "buzz", "");
+                if (command == "Buzz") {
+                    OADBuzz(intensity);
+                    }
+                } 
             }
+        
+        // request on ACSInterferenceChannel
+        if (channel == ACSInterferenceChannel) {
+            sayDebug("listen ACSInterferenceChannel"); 
+            processACSInterference(name, message);
         }
     }
+        
 
     timer()
     {
@@ -591,17 +639,28 @@ default
             sayDebug("timer RLVStatusListen");   
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
-            RLVpresent = 0;
+            rlvPresent = 0;
             //llListenRemove(RLVStatusListen); *** debug
             //RLVStatusListen = 0; *** debug
             lockTimerRestart();
             sendJSON("rlvPresent", "0", "");
             sendJSON("prisonerLockLevel", "Off", "");
-        } else if (visionTimeout > 0) {
-            restrictVision(0);
+        //} else if (visionTimeout > 0) {
+        //    restrictVision(0);
         }
-        lockTimer();
-        zapTimer();
+        if (zapTimerunning == 1 && zapTimeremaining <= zapTimerInterval) {
+            zapTimerunning = 0;
+        }
+        if (lockTimerunning == 1) {
+            lockTimeremaining -= lockTimerInterval;
+            if (lockTimeremaining <= lockTimerInterval) {
+                // time has run out...
+                llOwnerSay("Timelock has ended. Releasing.");
+                sendRLVRestrictCommand("Off", llGetOwner());
+                HudFunctionState = 0;
+                lockTimerReset();
+            }
+        }   
         if ( (lockTimerunning == 0) && (zapTimerunning == 0) ) {
             llSetTimerEvent(0);
         }

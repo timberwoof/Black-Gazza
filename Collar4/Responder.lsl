@@ -1,13 +1,13 @@
 // Responder.lsl
 // Script for Black Gazza Collar 4
 // Timberwoof Lupindo, February 2020
-// version: 2021-02-28
+// version: 2021-03-03
 
 integer responderChannel;
 integer responderListen;
 string lockLevel;
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 sayDebug(string message)
 {
@@ -78,9 +78,9 @@ string prisonerCrime;
 string prisonerThreat;
 string prisonerLockLevel;
 string prisonerZapLevels;
-integer batteryCharge;
+integer batteryPercent;
 
-list symbols = ["Role", "assetNumber", "Mood", "Class", "Crime", "Threat", "LockLevel", "BatteryCharge", "ZapLevels"];
+list symbols = ["Role", "assetNumber", "Mood", "Class", "Crime", "Threat", "LockLevel", "batteryPercent", "ZapLevels"];
 list values;
 
 
@@ -102,9 +102,9 @@ default
         prisonerThreat = getJSONstring(json, "prisonerThreat", prisonerThreat);
         prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
         prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
-        batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge);
+        batteryPercent = getJSONinteger(json, "batteryPercent", batteryPercent);
         prisonerZapLevels = getJSONstring(json, "ZapLevels", prisonerZapLevels);
-        values = [Role, assetNumber, prisonerMood, prisonerClass, prisonerCrime, prisonerThreat, prisonerLockLevel, batteryCharge, prisonerZapLevels];
+        values = [Role, assetNumber, prisonerMood, prisonerClass, prisonerCrime, prisonerThreat, prisonerLockLevel, batteryPercent, prisonerZapLevels];
     } 
 
     listen(integer channel, string name, key id, string json)

@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2021-02-27";
+string version = "2021-03-03";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -58,7 +58,8 @@ integer speechPenaltyZap = 0;
 string prisonerCrime = "Unknown";
 string assetNumber = "P-00000";
 string prisonerThreat = "Moderate";
-integer batteryCharge = 100;
+integer batteryActive = 0;
+integer batteryPercent = 100;
 string batteryGraph = "";
 integer badWordsActive = 0;
 integer titlerActive = TRUE;
@@ -96,6 +97,7 @@ string buttonForceSit = "ForceSit";
 string buttonSafeword = "Safeword";
 string buttonRelease = "Release";
 string buttonTitler = "Titler";
+string buttonBattery = "Battery";
 
 // Utilities *******
 
@@ -324,7 +326,7 @@ mainMenu(key avatarKey) {
 }
 
 doMainMenu(key avatarKey, string message) {
-        sendJSON("RLV", "Status", avatarKey);
+        //sendJSON("RLV", "Status", avatarKey); // this asks for RLV status update all the damn time. 
         if (message == buttonInfo){
             infoGive(avatarKey);
         }
@@ -588,6 +590,7 @@ settingsMenu(key avatarKey) {
     integer setBadWords = 0;
     integer setSpeech = 0;
     integer setTitle = 0;
+    integer setBattery = 0;
     
     // Add some things depending on who you are. 
     // What wearer can change
@@ -599,6 +602,7 @@ settingsMenu(key avatarKey) {
         setSpeech = 1;
         //setTimer = 1;
         setTitle = 1;
+        setBattery = 1;
         
         // Some things you can only change OOC
         if ((prisonerMood == moodOOC) || (prisonerMood == moodDND)) {
@@ -641,6 +645,7 @@ settingsMenu(key avatarKey) {
             setThreat = 0;
             //setTimer = 0;
             setSpeech = 0;
+            setBattery = 0;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         } else {
             if (!llSameGroup(avatarKey))
@@ -667,6 +672,7 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
     buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
+    buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
     
     setUpMenu(buttonSettings, avatarKey, message, buttons);
 }
@@ -703,9 +709,14 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         else if (message == buttonSpeech){
             speechMenu(avatarKey);
         }
-        else if (messageButtonsTrimmed = buttonTitler) {
+        else if (messageButtonsTrimmed == buttonTitler) {
             titlerActive = !titlerActive;
             sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
+            settingsMenu(avatarKey);
+        }
+        else if (messageButtonsTrimmed == buttonBattery) {
+            batteryActive = !batteryActive;
+            sendJSONCheckbox(buttonBattery, "", avatarKey, batteryActive);
             settingsMenu(avatarKey);
         }
             
@@ -967,9 +978,9 @@ default
             else if (touchedFace == FaceBlinky2) {llInstantMessage(whoClicked, assetNumber+" Lock Level: "+prisonerLockLevel);}
             else if (touchedFace == FaceBlinky3) {llInstantMessage(whoClicked, assetNumber+" Class: "+class2Description(prisonerClass));}
             else if (touchedFace == FaceBlinky4) {llInstantMessage(whoClicked, assetNumber+" Threat: "+prisonerThreat);}
-            else if (touchedFace == batteryIconFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryCharge+"%");
+            else if (touchedFace == batteryIconFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryPercent+"%");
         } else if (touchedLink == batteryCoverLink) {
-            if (touchedFace == batteryCoverFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryCharge+"%");
+            if (touchedFace == batteryCoverFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryPercent+"%");
             mainMenu(whoClicked);
         } else {
             mainMenu(whoClicked);
@@ -1132,13 +1143,16 @@ default
         renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
         badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
-        batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge);
+        batteryPercent = getJSONinteger(json, "batteryPercent", batteryPercent);
         batteryGraph = getJSONstring(json, "batteryGraph", batteryGraph);
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
         if (rlvPresent == 0) {
             renamerActive = 0;
             badWordsActive = 0;
             DisplayTokActive = 0;
+        }
+        if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
+            batteryActive = 1;
         }
     }
     

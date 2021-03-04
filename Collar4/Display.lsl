@@ -2,12 +2,12 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2021-02-27";
+string version = "2021-03-03";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
 // • blinky lights
-// • battery displaydi
+// • battery display
 // • floaty text
 
 integer OPTION_DEBUG = 0;
@@ -111,7 +111,8 @@ float titlerActive = 1.0;
 string buttonTitler = "Titler";
 
 // BG_CollarV4_PowerDisplay_PNG
-string batteryCharge;
+integer batteryPercent;
+float brightnessMultiplier = 1.0;
 key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
 integer batteryIconLink = 16;
 integer batteryIconFace = 0;
@@ -204,7 +205,11 @@ displayTitler() {
     integer classIndex = llListFindList(classNames, [prisonerClass]);
     string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
-    llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
+    if (prisonerMood == "DND") {
+        llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);  
+    } else {
+        llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
+    } 
 }
 
 displayText(string text){
@@ -244,7 +249,7 @@ setTextColor(vector textColor){
     integer i;
     for (i = 0; i < 12; i++){
         integer linkNumber = llList2Integer(LinksAlphanum, i); 
-        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, textColor, 0.5]);
+        llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, textColor*brightnessMultiplier, 0.5]);
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
     }
 }
@@ -290,28 +295,32 @@ displayBattery(integer percent)
         batteryIconColor = <0.0, 0.5, 1.0>; // blue-cyan full, 3/4, 1/2, 1/4
         batteryLightColor = <0.0, 1.0, 0.0>;
         batteryLightGlow = 0.1;
+        brightnessMultiplier = 1.0;
     }
     else if (percent > 8) {
         batteryIconColor = <1.0, 0.5, 0>; // orange empty
         batteryLightColor = <1.0, 0.5, 0>;
         batteryLightGlow = 0.2;
+        brightnessMultiplier = 0.75;
     }
     else if (percent > 4) {
         batteryIconColor = <1.0, 0.0, 0.0>; // red empty
         batteryLightColor = <1.0, 0.0, 0.0>;
         batteryLightGlow = 0.4;
+        brightnessMultiplier = 0.50;
     }
     else {
         batteryIconColor = <0.0, 0.0, 0.0>; // black empty
         batteryLightColor = <0.0, 0.0, 0.0>;
         batteryLightGlow = 0.0;
+        brightnessMultiplier = 0.0;
     }
     //llSetLinkColor(LinkBlinky, batteryLightColor, batteryIconFace);
-    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, batteryIconFace, batteryLightColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, batteryIconFace, batteryLightColor*brightnessMultiplier, 1.0]);
     llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, ALL_SIDES, batteryLightGlow]);
     llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 1.5708]);
-    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor*brightnessMultiplier, 1.0]);
 }
 
 integer uuidToInteger(key uuid)
@@ -367,13 +376,13 @@ setPrisonerClass(string prisonerClass) {
     prisonerClassLong = llList2String(classNamesLong, classi);
 
     // set the blinky color
-    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor*brightnessMultiplier, 1.0]);
             
     // set the padding color
     llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, prisonerClassPaddingColor, 1.0]);
 
     // set the light frame around the alphanum text area
-    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_COLOR, FaceAlphanumFrame, prisonerClassColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_COLOR, FaceAlphanumFrame, prisonerClassColor*brightnessMultiplier, 1.0]);
     llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
 
     // set the collar frame texture, reflectivity, and bumpiness
@@ -388,7 +397,7 @@ setPrisonerClass(string prisonerClass) {
 attachStartup(key theAvatar) {
     sayDebug("attachStartup");
     avatar = theAvatar;
-    prisonerMood = blinkyFaceColorToMeaning(FaceAlphanumFrame, moodColors, moodNames, "prisonerMood");
+    prisonerMood = blinkyFaceColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "prisonerMood");
     prisonerClass = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "prisonerClass");
     prisonerThreat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "prisonerThreat");
     // set up the responder
@@ -427,7 +436,7 @@ default
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
         // Initialize the world
-        batteryCharge = "0"; 
+        batteryPercent = 0; 
         prisonerCrime = "";
         if (llGetAttached() != 0) {
             attachStartup(llGetOwner());
@@ -498,10 +507,10 @@ default
         }
         
         // Battery Level Report
-        value = llJsonGetValue(json, ["batteryCharge"]);
+        value = llJsonGetValue(json, ["batteryPercent"]);
         if (value != JSON_INVALID) {
-            batteryCharge = value;
-            displayBattery((integer)batteryCharge);
+            batteryPercent = (integer)value;
+            displayBattery(batteryPercent);
         }
         
         // Prisoner Crime
@@ -577,7 +586,7 @@ default
                 "prisonerClass", prisonerClass, 
                 "prisonerThreat", prisonerThreat,
                 "prisonerMood", prisonerMood, 
-                "batteryCharge", batteryCharge, 
+                "batteryPercent", batteryPercent, 
                 "prisonerLockLevel", prisonerLockLevel, 
                 "ZapLevels", zapLevelsJSON]);
             sayDebug("listen("+name+","+message+") responds with " + statusJsonList);
@@ -601,12 +610,12 @@ default
             // Timer shoud be on one-second interval
             if (TIMER_BADWORDS > 0) {
                 sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-                llSetLinkColor(LinkBlinky, RED, 0);
+                llSetLinkColor(LinkBlinky, RED*brightnessMultiplier, 0);
                 llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, RED, 1.0]);
                 TIMER_BADWORDS = - TIMER_BADWORDS;
             } else if (TIMER_BADWORDS < 0) {
                 sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-                displayBattery((integer)batteryCharge); // reset the red light
+                displayBattery(batteryPercent); // reset the red light
                 llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
                 TIMER_BADWORDS = -TIMER_BADWORDS - 1;
                 if (TIMER_BADWORDS == 0) {
