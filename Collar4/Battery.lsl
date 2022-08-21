@@ -1,13 +1,13 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2021-03-03
+// version: 2021-03-07
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 
 // Sends battery state commands to Display. 
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 integer basicCharge; // battery capacity in seconds
 integer batteryCharge; // seconds left
@@ -18,8 +18,8 @@ integer dischargeRate;
 string theRLVstate;
 integer timerInterval;
 
-string prisonerMood = "OOC";
-string prisonerLockLevel = "Off";
+string mood = "OOC";
+string lockLevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 integer renamerActive = 0;
 integer badWordsActive = 0;
@@ -151,7 +151,7 @@ default
         // message from Menu to update Battery setting
         value = llJsonGetValue(json, ["Battery"]);
         if (value != JSON_INVALID) {
-            batteryActive = value;
+            batteryActive = llToUpper(value);
             sayDebug("link_message new batteryActive:" + batteryActive + "; returning");
             return;
         }
@@ -159,26 +159,29 @@ default
         // One-time discharges for events. 
         // When something gets set, discharge the battery a little.
         integer chargeUsed = 0;
-        chargeUsed = updateValue(json, "prisonerMood", chargeUsed, 600);
+        chargeUsed = updateValue(json, "mood", chargeUsed, 600);
         chargeUsed = updateValue(json, "zapLevels", chargeUsed, 600);
-        chargeUsed = updateValue(json, "prisonerThreat", chargeUsed, 600);
-        chargeUsed = updateValue(json, "prisonerClass", chargeUsed, 1200);
-        chargeUsed = updateValue(json, "prisonerCrime", chargeUsed, 1200);
-        chargeUsed = updateValue(json, "prisonerLockLevel", chargeUsed, 1200);
+        chargeUsed = updateValue(json, "threat", chargeUsed, 600);
+        chargeUsed = updateValue(json, "class", chargeUsed, 1200);
+        chargeUsed = updateValue(json, "crime", chargeUsed, 1200);
+        chargeUsed = updateValue(json, "lockLevel", chargeUsed, 1200);
         chargeUsed = updateValue(json, "Speech", chargeUsed, 600);
         chargeUsed = updateValue(json, "Info", chargeUsed, 600);
         chargeUsed = updateValue(json, "DisplayTemp", chargeUsed, 600);
-        
-        chargeUsed = chargeUsed - getJSONinteger(json, "Discharge", 0);
-        
         if (chargeUsed) {
-            dischargeBattery("chargeUsed", chargeUsed);
+            dischargeBattery("menu", chargeUsed);
+            return;
+        }
+
+        chargeUsed = getJSONinteger(json, "Discharge", 0);
+        if (chargeUsed) {
+            dischargeBattery("discharge", chargeUsed);
             return;
         }
 
         // receive some basic settings that change the rate of battery use
-        prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
-        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        mood = getJSONstring(json, "mood", mood);
+        lockLevel = getJSONstring(json, "lockLevel", lockLevel);
         string speechCommand = getJSONstring(json, "Speech", "");
         if (speechCommand == "RenamerOFF") renamerActive = 0;
         if (speechCommand == "RenamerON")  renamerActive = 1;
@@ -188,7 +191,7 @@ default
         if (speechCommand == "GagON") gagActive = 1;
         if (speechCommand == "DisplayTokOFF") DisplayTokActive = 0;
         if (speechCommand == "DisplayTokON") DisplayTokActive = 1;
-        if (prisonerLockLevel == "Off") {
+        if (lockLevel == "Off") {
             renamerActive = 0;
             badWordsActive = 0;
             gagActive = 0; 
@@ -198,7 +201,7 @@ default
         // Current discharge rate depending on things that are on.
         integer newDischargeRate = 0;
         // theRLVstate results in numbers 0,1,2,3,4
-        newDischargeRate = newDischargeRate + llList2Integer(dischargeRates, llListFindList(LockLevels, [prisonerLockLevel]));
+        newDischargeRate = newDischargeRate + llList2Integer(dischargeRates, llListFindList(LockLevels, [lockLevel]));
         newDischargeRate = newDischargeRate + renamerActive;
         newDischargeRate = newDischargeRate + badWordsActive;
         newDischargeRate = newDischargeRate + gagActive;

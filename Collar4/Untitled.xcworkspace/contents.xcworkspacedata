@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "container:Battery.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Display.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Menu.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Responder.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:RLV.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Database2.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Display-Stocks.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Leash.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:OCRelay.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Relay.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Speech.lsl">
+   </FileRef>
+   <FileRef
+      location = "container:Keypad.lsl">
+   </FileRef>
+</Workspace>

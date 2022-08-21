@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2021-03-03";
+string version = "2021-03-07";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -10,7 +10,7 @@ string version = "2021-03-03";
 // • battery display
 // • floaty text
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = 1;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -34,11 +34,10 @@ vector DARK_CYAN = <0.0, 0.5, 0.5>;
 vector CYAN = <0.0, 1.0, 1.0>;
 vector PURPLE = <0.7, 0.1, 1.0>;
 
+// only lists that are needed in a lot of places are kept here.
+// Other lists are dedined only where they are needed, in an effort to save space.
 list moodNames = ["OOC", "Lockup", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
 list moodColors = [LIGHT_GRAY, WHITE, GREEN, YELLOW, ORANGE, CYAN, PURPLE, BLACK];
-
-list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
-list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
 
 list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
 list threatColors = [GREEN, YELLOW, ORANGE, RED];
@@ -47,50 +46,7 @@ list classNames = ["white","pink","red","orange","green","blue","black"];
 list classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
 list classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, BLUE, GRAY];
 list classPaddingColors = [GRAY, DARK_MAGENTA, DARK_RED, DARK_ORANGE, DARK_GREEN, DARK_BLUE, DARK_GRAY];
-
-// Diffuse = Textures
-key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
-key BG_CollarV4_DiffuseBLU = "512f7f51-69b3-1623-fe79-128f2fc72927";
-key BG_CollarV4_DiffuseCLN = "6cf8859d-e117-6470-b8d2-4a2bc3e69f5e"; // White
-key BG_CollarV4_DiffuseGRN = "fa3369fa-bff9-9df9-3824-45fe2ea25711";
-key BG_CollarV4_DiffuseORNG = "05b8b472-25ee-4d48-9306-b322e1329c82";
-key BG_CollarV4_DiffusePRPL = "85b92d52-bc50-6232-ca40-1fc5d4f5e5f3";
-key BG_CollarV4_DiffuseRED = "6c5e4c59-5a20-abb0-cd10-36a7a314b0d4";
-// alpha blending shoudl be None
-
-// Specular = Shininess
-key BG_CollarV4_SpecularBLK = "c8514866-6d1b-1a14-08c9-6f5f6cf19852";
-key BG_CollarV4_SpecularBLU = "57a81cdf-dd18-e56b-d954-1beb95231680";
-key BG_CollarV4_SpecularCLN = "c8fd2092-eae7-a73c-2603-528c7303d895"; // White
-key BG_CollarV4_SpecularGRN = "45ace4a9-808d-9a80-3024-ffb882968ffd";
-key BG_CollarV4_SpecularORNG = "cc716d0a-0e3b-72b4-4933-6888ce9631a6";
-key BG_CollarV4_SpecularPRPL = "c5ab17c6-a9aa-3b4c-6a51-873a72b3d376";
-key BG_CollarV4_SpecularRED = "706aee2e-f690-b1f7-8a1d-80a15ce2e835";
-
-// Bump = Normals
-key BG_CollarV4_NormalCln = "43bff6ec-96c3-7159-c73e-c50c6bb3944e"; // Clean
-key BG_CollarV4_NormalCol = "4cc3a580-be55-1511-7c0b-4bf1094b1dbf"; // Colors
-
-list classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
-            BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
-list classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
-            BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
-list classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
-            BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
         
-string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
-string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
-string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
-string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
-string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
-string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
-string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
-string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
-string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
-string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
-list touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
-            touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];        
-
 integer LinkFrame = 1;
 integer FaceFrame = 0;
 integer FacePadding = 1;
@@ -129,18 +85,15 @@ integer scrollPos;
 integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 
-string prisonerMood;
+string mood;
 vector moodColor;
 
-string prisonerClass;
-string prisonerClassLong;
-vector prisonerClassColor;
-string prisonerLockLevel;
-string prisonerCrime;
-string prisonerThreat;
-
-integer responderChannel;
-integer responderListen;
+string class;
+string classLong;
+vector classColor;
+string lockLevel;
+string crime;
+string threat;
 
 string assetNumber = "P-00000";
 string unassignedAsset = "P-00000";
@@ -160,6 +113,15 @@ sayDebug(string message)
     }
 }
 
+string getJSONstring(string jsonValue, string jsonKey, string valueNow){
+    string result = valueNow;
+    string value = llJsonGetValue(jsonValue, [jsonKey]);
+    if (value != JSON_INVALID) {
+        result = value;
+    }
+    return result;
+}
+    
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
     }
@@ -174,6 +136,19 @@ integer getLinkWithName(string name) {
 }
 
 tone(string number) {
+string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
+string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
+string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
+string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
+string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
+string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
+string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
+string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
+string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
+string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
+list touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
+            touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];        
+
     integer i;
     for (i = 0; i < llStringLength(number); i++) {
         integer digit = (integer)llGetSubString(number, i, i);
@@ -200,12 +175,12 @@ toneAlpha(string message) {
 
 displayTitler() {
     sayDebug("displayTitler");
-    integer moodIndex = llListFindList(moodNames, [prisonerMood]);
+    integer moodIndex = llListFindList(moodNames, [mood]);
     moodColor = llList2Vector(moodColors, moodIndex);
-    integer classIndex = llListFindList(classNames, [prisonerClass]);
-    string description = "Class " + prisonerClass + ": " + llList2String(classNamesLong, classIndex);
-    string title = assetNumber + "\n" + description + "\nCrime: " + prisonerCrime + "\nThreat: " + prisonerThreat + "\nMood: " + prisonerMood ;
-    if (prisonerMood == "DND") {
+    integer classIndex = llListFindList(classNames, [class]);
+    string description = "Class " + class + ": " + llList2String(classNamesLong, classIndex);
+    string title = assetNumber + "\n" + description + "\nCrime: " + crime + "\nThreat: " + threat + "\nMood: " + mood ;
+    if (mood == "DND") {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);  
     } else {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
@@ -275,7 +250,6 @@ displayScroll(string text){
 displayBattery(integer percent)
 // based on the percentage, display the correct icon and color
 {   
-    sayDebug("displayBattery("+(string)percent+")");
     // The battery icon has 5 states. Horizontal Offsets can be
     // -0.4 full charge 100% - 88%
     // -0.2 3/4 charge   87% - 75% - 62%
@@ -315,12 +289,16 @@ displayBattery(integer percent)
         batteryLightGlow = 0.0;
         brightnessMultiplier = 0.0;
     }
+    sayDebug("displayBattery("+(string)percent+") brightnessMultiplier:" + (string)brightnessMultiplier);
     //llSetLinkColor(LinkBlinky, batteryLightColor, batteryIconFace);
     llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, batteryIconFace, batteryLightColor*brightnessMultiplier, 1.0]);
     llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, ALL_SIDES, batteryLightGlow]);
     llSetLinkPrimitiveParamsFast(LinkBlinky, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_TEXTURE, batteryIconFace, batteryIconID, <0.2, 0.75, 0.0>, <batteryIconHoffset, 0.0, 0.0>, 1.5708]);
     llSetLinkPrimitiveParamsFast(batteryIconLink,[PRIM_COLOR, batteryIconFace, batteryIconColor*brightnessMultiplier, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, moodColor*brightnessMultiplier, 1.0]);
+    setTextColor(moodColor*brightnessMultiplier);
+    setclass(class);
 }
 
 integer uuidToInteger(key uuid)
@@ -361,28 +339,59 @@ integer uuidToInteger(key uuid)
 // get a value from color stored in the blinky and send it to the link
 string blinkyFaceColorToMeaning(integer face, list colors, list names, string jsonTag){
     list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
-    vector prisonerThreatColor = llList2Vector(colorList,0);
-    integer index = llListFindList(colors, [prisonerThreatColor]);
+    vector threatColor = llList2Vector(colorList,0);
+    integer index = llListFindList(colors, [threatColor]);
     string stateName = llList2String(names, index); 
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonTag, stateName]), "");
     return stateName;
 }
 
-setPrisonerClass(string prisonerClass) {
-    sayDebug("setPrisonerClass("+prisonerClass+")");
-    integer classi = llListFindList(classNames, [prisonerClass]);
-    prisonerClassColor = llList2Vector(classColors, classi);
-    vector prisonerClassPaddingColor =  llList2Vector(classPaddingColors, classi);
-    prisonerClassLong = llList2String(classNamesLong, classi);
+setclass(string class) {
+    sayDebug("setclass("+class+")");
+
+// Diffuse = Textures
+key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
+key BG_CollarV4_DiffuseBLU = "512f7f51-69b3-1623-fe79-128f2fc72927";
+key BG_CollarV4_DiffuseCLN = "6cf8859d-e117-6470-b8d2-4a2bc3e69f5e"; // White
+key BG_CollarV4_DiffuseGRN = "fa3369fa-bff9-9df9-3824-45fe2ea25711";
+key BG_CollarV4_DiffuseORNG = "05b8b472-25ee-4d48-9306-b322e1329c82";
+key BG_CollarV4_DiffusePRPL = "85b92d52-bc50-6232-ca40-1fc5d4f5e5f3";
+key BG_CollarV4_DiffuseRED = "6c5e4c59-5a20-abb0-cd10-36a7a314b0d4";
+// alpha blending shoudl be None
+
+// Specular = Shininess
+key BG_CollarV4_SpecularBLK = "c8514866-6d1b-1a14-08c9-6f5f6cf19852";
+key BG_CollarV4_SpecularBLU = "57a81cdf-dd18-e56b-d954-1beb95231680";
+key BG_CollarV4_SpecularCLN = "c8fd2092-eae7-a73c-2603-528c7303d895"; // White
+key BG_CollarV4_SpecularGRN = "45ace4a9-808d-9a80-3024-ffb882968ffd";
+key BG_CollarV4_SpecularORNG = "cc716d0a-0e3b-72b4-4933-6888ce9631a6";
+key BG_CollarV4_SpecularPRPL = "c5ab17c6-a9aa-3b4c-6a51-873a72b3d376";
+key BG_CollarV4_SpecularRED = "706aee2e-f690-b1f7-8a1d-80a15ce2e835";
+
+// Bump = Normals
+key BG_CollarV4_NormalCln = "43bff6ec-96c3-7159-c73e-c50c6bb3944e"; // Clean
+key BG_CollarV4_NormalCol = "4cc3a580-be55-1511-7c0b-4bf1094b1dbf"; // Colors
+
+list classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
+            BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
+list classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
+            BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
+list classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
+            BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
+
+    integer classi = llListFindList(classNames, [class]);
+    classColor = llList2Vector(classColors, classi);
+    vector classPaddingColor =  llList2Vector(classPaddingColors, classi);
+    classLong = llList2String(classNamesLong, classi);
 
     // set the blinky color
-    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, prisonerClassColor*brightnessMultiplier, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, classColor*brightnessMultiplier, 1.0]);
             
     // set the padding color
-    llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, prisonerClassPaddingColor, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, classPaddingColor, 1.0]);
 
     // set the light frame around the alphanum text area
-    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_COLOR, FaceAlphanumFrame, prisonerClassColor*brightnessMultiplier, 1.0]);
+    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_COLOR, FaceAlphanumFrame, classColor*brightnessMultiplier, 1.0]);
     llSetLinkPrimitiveParamsFast(LinkAlphanumFrame, [PRIM_GLOW, FaceAlphanumFrame, 0.3]);
 
     // set the collar frame texture, reflectivity, and bumpiness
@@ -392,17 +401,13 @@ setPrisonerClass(string prisonerClass) {
     displayTitler();
 }
 
-
 // try to recover some settings based on colors of faces
 attachStartup(key theAvatar) {
     sayDebug("attachStartup");
     avatar = theAvatar;
-    prisonerMood = blinkyFaceColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "prisonerMood");
-    prisonerClass = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "prisonerClass");
-    prisonerThreat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "prisonerThreat");
-    // set up the responder
-    responderChannel = uuidToInteger(llGetOwner());
-    responderListen = llListen(responderChannel,"", "", "");
+    mood = blinkyFaceColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "mood");
+    class = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "class");
+    threat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "threat");
     }
 
 default
@@ -413,7 +418,7 @@ default
         sayDebug("state_entry");
         
         // set up lists and shit
-        prisonerMood = "OOC";
+        mood = "OOC";
         
         // LinksAlphanum
         integer i;
@@ -437,17 +442,17 @@ default
 
         // Initialize the world
         batteryPercent = 0; 
-        prisonerCrime = "";
+        crime = "";
         if (llGetAttached() != 0) {
             attachStartup(llGetOwner());
         } else {
             assetNumber = unassignedAsset;
-            prisonerMood = "OOC";
-            prisonerClass = "white";
-            prisonerClassColor = WHITE;
-            prisonerThreat = "none";
+            mood = "OOC";
+            class = "white";
+            classColor = WHITE;
+            threat = "none";
             
-            setPrisonerClass(prisonerClass);
+            setclass(class);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, BLACK, 1.0]);            
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);            
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, BLACK, 1.0]);
@@ -466,11 +471,14 @@ default
     link_message( integer sender_num, integer num, string json, key id ){ 
         sayDebug("link_message "+json);
 
+        list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
+        list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
+
         // IC/OOC Mood sets frame color, text color, and Blinky1
-        string value = llJsonGetValue(json, ["prisonerMood"]);
+        string value = llJsonGetValue(json, ["mood"]);
         if (value != JSON_INVALID) {
-            prisonerMood = value;
-            integer moodi = llListFindList(moodNames, [prisonerMood]);
+            mood = value;
+            integer moodi = llListFindList(moodNames, [mood]);
             vector moodColor = llList2Vector(moodColors, moodi);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, moodColor, 1.0]);
             setTextColor(moodColor);
@@ -478,28 +486,28 @@ default
         }
 
         // Prisoner Class sets text color and blinky 3
-        value = llJsonGetValue(json, ["prisonerClass"]);
+        value = llJsonGetValue(json, ["class"]);
         if (value != JSON_INVALID) {
-            prisonerClass = value;
-            setPrisonerClass(prisonerClass);
-            sayDebug("link_message "+(string)num+" "+prisonerClass+"->prisonerClass");            
+            class = value;
+            setclass(class);
+            sayDebug("link_message "+(string)num+" "+class+"->class");            
         }
                 
         // Lock level sets blinky 2
-        value = llJsonGetValue(json, ["prisonerLockLevel"]);
+        value = llJsonGetValue(json, ["lockLevel"]);
         if (value != JSON_INVALID) {
-            prisonerLockLevel = value;
-            integer locki = llListFindList(lockLevels, [prisonerLockLevel]);
+            lockLevel = value;
+            integer locki = llListFindList(lockLevels, [lockLevel]);
             vector lockcolor = llList2Vector(lockColors, locki);
-            sayDebug("lock level message:"+prisonerLockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
+            sayDebug("lock level message:"+lockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, lockcolor, 1.0]);
         }
         
         // Threat level sets blinky 4
-        value = llJsonGetValue(json, ["prisonerThreat"]);
+        value = llJsonGetValue(json, ["threat"]);
         if (value != JSON_INVALID) {
-            prisonerThreat = value;
-            integer threati = llListFindList(threatLevels, [prisonerThreat]);
+            threat = value;
+            integer threati = llListFindList(threatLevels, [threat]);
             vector threatcolor = llList2Vector(threatColors, threati);
             sayDebug("threat level json:"+json+" threati:"+(string)threati+" threatcolor:"+(string)threatcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, threatcolor, 1.0]);
@@ -514,9 +522,9 @@ default
         }
         
         // Prisoner Crime
-        value = llJsonGetValue(json, ["prisonerCrime"]);
+        value = llJsonGetValue(json, ["crime"]);
         if (value != JSON_INVALID) {
-            prisonerCrime = value;
+            crime = value;
             displayTitler();
         }
 
@@ -577,24 +585,7 @@ default
             }
     }
     
-    listen(integer channel, string name, key id, string message)
-    {
-        if (message == "Request Status") {
-            string statusJsonList = llList2Json(JSON_OBJECT, [
-                "assetNumber", assetNumber, 
-                "prisonerCrime", prisonerCrime, 
-                "prisonerClass", prisonerClass, 
-                "prisonerThreat", prisonerThreat,
-                "prisonerMood", prisonerMood, 
-                "batteryPercent", batteryPercent, 
-                "prisonerLockLevel", prisonerLockLevel, 
-                "ZapLevels", zapLevelsJSON]);
-            sayDebug("listen("+name+","+message+") responds with " + statusJsonList);
-            llSay(responderChannel, statusJsonList);
-        }
-    }
-
-    timer() {
+   timer() {
         sayDebug("timer()");
             if (TIMER_REDISPLAY > 0) {
                 if (assetNumber == unassignedAsset) {

@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2021-03-03";
+string version = "2021-03-07";
 
 // Handles all the menus for the collar. 
 // State is kept here and transmitted to interested scripts by link message calls. 
@@ -34,11 +34,11 @@ integer allowZapHigh = 1;
 integer allowVision = 1;
 
 list assetNumbers;
-string prisonerMood;
-string prisonerClass = "white";
-list prisonerClasses = ["white", "pink", "red", "orange", "green", "blue", "black"];
-list prisonerClassesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
-string prisonerLockLevel;
+string mood;
+string class = "white";
+list classes = ["white", "pink", "red", "orange", "green", "blue", "black"];
+list classesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
+string lockLevel;
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 string lockLevelOff = "Off";
 integer rlvPresent = 0;
@@ -55,9 +55,9 @@ integer speechPenaltyGarbleTime = 0;
 integer speechPenaltyBuzz = 0;
 integer speechPenaltyZap = 0;
 
-string prisonerCrime = "Unknown";
+string crime = "Unknown";
 string assetNumber = "P-00000";
-string prisonerThreat = "Moderate";
+string threat = "Moderate";
 integer batteryActive = 0;
 integer batteryPercent = 100;
 string batteryGraph = "";
@@ -65,15 +65,6 @@ integer badWordsActive = 0;
 integer titlerActive = TRUE;
 
 key approveAvatar;
-
-integer LinkBlinky = 17;
-integer FaceBlinky1 = 1;
-integer FaceBlinky2 = 2;
-integer FaceBlinky3 = 3;
-integer FaceBlinky4 = 4;
-integer batteryIconFace = 0;
-integer batteryCoverLink = 1;
-integer batteryCoverFace = 6;
 
 string menuMain = "Main";
 string moodDND = "DnD";
@@ -262,20 +253,20 @@ mainMenu(key avatarKey) {
     integer doRelease = 0;
     
     // Collar functions controlled by Mood: punish, force sit, leash, speech
-    if (prisonerMood == moodDND | prisonerMood == moodLockup) {
+    if (mood == moodDND | mood == moodLockup) {
         if (avatarKey == llGetOwner()) {
             doPunish = 1;
             doForceSit = 1;
             doLeash = 1;
             doSpeech = 1;
         }
-    } else if (prisonerMood == moodOOC) {
+    } else if (mood == moodOOC) {
             // everyone can do everything (but you better ask)
             doPunish = 1;
             doForceSit = 1;
             doLeash = 1;
             doSpeech = 1;
-    } else { // prisonerMood == anything else
+    } else { // mood == anything else
         if (avatarKey == llGetOwner()) {
             // wearer can't do anything
         } else if (llSameGroup(avatarKey)) {
@@ -300,13 +291,13 @@ mainMenu(key avatarKey) {
     }
     
     // Collar functions controlled by locklevel: Safeword and Release
-    if (prisonerLockLevel == "Hardcore" && !llSameGroup(avatarKey)) {
+    if (lockLevel == "Hardcore" && !llSameGroup(avatarKey)) {
         doRelease = 1;
     } else {
         message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
     }
     
-    if (avatarKey == llGetOwner() && prisonerLockLevel != "Hardcore" && prisonerLockLevel != lockLevelOff) {
+    if (avatarKey == llGetOwner() && lockLevel != "Hardcore" && lockLevel != lockLevelOff) {
         doSafeword = 1;
     } else {
         message = message + "\nSafeword is availavle to the Prisoner in RLV levels Medium and Heavy.";
@@ -373,8 +364,8 @@ punishMenu(key avatarKey)
 }
 
 string class2Description(string class) {
-    return llList2String(prisonerClasses, llListFindList(prisonerClasses, [class])) + ": " +
-        llList2String(prisonerClassesLong, llListFindList(prisonerClasses, [class]));
+    return llList2String(classes, llListFindList(classes, [class])) + ": " +
+        llList2String(classesLong, llListFindList(classes, [class]));
 }
 
 infoGive(key avatarKey){
@@ -388,9 +379,9 @@ infoGive(key avatarKey){
         menuCheckbox("High", allowZapHigh);
         // allowVision
         message = message + 
-        "Crime: " + prisonerCrime + "\n" +
-        "Class: "+class2Description(prisonerClass)+"\n" +
-        "Threat: " + prisonerThreat + "\n" +
+        "Crime: " + crime + "\n" +
+        "Class: "+class2Description(class)+"\n" +
+        "Threat: " + threat + "\n" +
         "Punishment: shock " + ZapLevels + "\n"; 
     } else {
         string restricted = "RESTRICTED INFO";
@@ -403,9 +394,9 @@ infoGive(key avatarKey){
     message = message + "Battery Level: " + batteryGraph + "\n";
     message = message + "\nOOC Information:\n";
     message = message + "Version: " + version + "\n";
-    message = message + "Mood: " + prisonerMood + "\n";
+    message = message + "Mood: " + mood + "\n";
     if (rlvPresent) {
-        message = message + "RLV Active: " + prisonerLockLevel + "\n";
+        message = message + "RLV Active: " + lockLevel + "\n";
     } else {
         message = message + "RLV not detected.\n";
     }
@@ -451,7 +442,7 @@ infoGive(key avatarKey){
 speechMenu(key avatarKey)
 {
     integer itsMe = avatarKey == llGetOwner();
-    integer locked = prisonerLockLevel != lockLevelOff;
+    integer locked = lockLevel != lockLevelOff;
     
     string message = buttonSpeech + "\n";
     list buttons = [];
@@ -483,7 +474,7 @@ speechMenu(key avatarKey)
         message = message + "\nRenamer, BadWords, and Displaytok (Display-Talk) work only when RLV is active.";
     }
     if (itsMe) {
-        if (prisonerMood == moodOOC) {
+        if (mood == moodOOC) {
             doWordList = 1;
         } else {
             message = message + "\nYou can only change your word list while OOC.";
@@ -493,7 +484,7 @@ speechMenu(key avatarKey)
             message = message + "\nOnly Guards can change the word list";
         } else {
             doWordList = 1;
-            if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
+            if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
                 doBadWords = 1;
                 doDisplayTok = 1;
                 doPenalties = 1;
@@ -503,7 +494,7 @@ speechMenu(key avatarKey)
         }
     }
     
-    if (prisonerLockLevel == "Heavy" | prisonerLockLevel == "Hardcore") {
+    if (lockLevel == "Heavy" | lockLevel == "Hardcore") {
         doRenamer = 0;
         }
     
@@ -605,7 +596,7 @@ settingsMenu(key avatarKey) {
         setBattery = 1;
         
         // Some things you can only change OOC
-        if ((prisonerMood == moodOOC) || (prisonerMood == moodDND)) {
+        if ((mood == moodOOC) || (mood == moodDND)) {
             sayDebug("settingsMenu: ooc");
             // IC or DnD you change everything
             setClass = 1;
@@ -626,7 +617,7 @@ settingsMenu(key avatarKey) {
         setSpeech = 1;
         
         // some things guard can change only OOC
-        if (prisonerMood == moodOOC) {
+        if (mood == moodOOC) {
             sayDebug("settingsMenu: ooc");
             // OOC, guards can change some things
             // DnD means Do Not Disturb
@@ -638,7 +629,7 @@ settingsMenu(key avatarKey) {
     }
     
     // Lock level changes some privileges
-    if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
+    if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
         if (avatarKey == llGetOwner()) {
             sayDebug("settingsMenu: heavy-owner");
             setPunishments = 0;
@@ -658,7 +649,7 @@ settingsMenu(key avatarKey) {
         }
     }
 
-    if ((prisonerLockLevel == "Hardcore") && (avatarKey == llGetOwner())) {
+    if ((lockLevel == "Hardcore") && (avatarKey == llGetOwner())) {
         setLock = 0;
     }
         
@@ -778,10 +769,10 @@ classMenu(key avatarKey)
     string message = "Set your Prisoner Class";
     list buttons = [];
     integer index = 0;
-    integer length = llGetListLength(prisonerClasses);
+    integer length = llGetListLength(classes);
     for (index = 0; index < length; index++) {
-        string class = llList2String(prisonerClasses, index);
-        buttons = buttons + menuRadioButton(class, prisonerClass);
+        string thisClass = llList2String(classes, index);
+        buttons = buttons + menuRadioButton(thisClass, class);
     }
     buttons = buttons + [buttonBlank, buttonBlank, buttonSettings];
     setUpMenu("Class", avatarKey, message, buttons);
@@ -793,14 +784,14 @@ moodMenu(key avatarKey)
     {
         string message = "Set your Mood";
         list buttons = [];
-        buttons = buttons + menuRadioButton(moodDND, prisonerMood);
-        buttons = buttons + menuRadioButton(moodOOC, prisonerMood);
-        buttons = buttons + menuRadioButton(moodLockup, prisonerMood);
-        buttons = buttons + menuRadioButton(moodSubmissive, prisonerMood);
-        buttons = buttons + menuRadioButton(moodVersatile, prisonerMood);
-        buttons = buttons + menuRadioButton(moodDominant, prisonerMood);
-        buttons = buttons + menuRadioButton(moodNonsexual, prisonerMood);
-        buttons = buttons + menuRadioButton(moodStory, prisonerMood);
+        buttons = buttons + menuRadioButton(moodDND, mood);
+        buttons = buttons + menuRadioButton(moodOOC, mood);
+        buttons = buttons + menuRadioButton(moodLockup, mood);
+        buttons = buttons + menuRadioButton(moodSubmissive, mood);
+        buttons = buttons + menuRadioButton(moodVersatile, mood);
+        buttons = buttons + menuRadioButton(moodDominant, mood);
+        buttons = buttons + menuRadioButton(moodNonsexual, mood);
+        buttons = buttons + menuRadioButton(moodStory, mood);
         buttons = buttons + [buttonBlank, buttonSettings];
         setUpMenu("Mood", avatarKey, message, buttons);
     }
@@ -823,11 +814,11 @@ lockMenu(key avatarKey)
             
         // LockLevels: 0=Off 1=Light 2=Medium 3=Heavy 4=Hardcore
         // convert our locklevel to an integer
-        sayDebug("lockMenu prisonerLockLevel:"+prisonerLockLevel);
-        integer iLockLevel = llListFindList(LockLevels, [prisonerLockLevel]);
+        sayDebug("lockMenu lockLevel:"+lockLevel);
+        integer iLockLevel = llListFindList(LockLevels, [lockLevel]);
         sayDebug("lockMenu iLocklevel:"+(string)iLockLevel);
         // make a list of wjether each lock level is available from that lock level
-        // prisonerLockLevel: 0=off, 1=light, 2=medium, 3=heavy, 4=hardcore
+        // lockLevel: 0=off, 1=light, 2=medium, 3=heavy, 4=hardcore
         list lockListOff = [0, 1, 1, 1, 0];
         list lockListLight = [1, 0, 1, 1, 0];
         list lockListMedium = [1, 1, 0, 1, 0];
@@ -844,7 +835,7 @@ lockMenu(key avatarKey)
         for (levelIndex = 0; levelIndex < 5; levelIndex++) {
             integer buttonActive =  llList2Integer(lockListMenu, levelIndex);
             string buttonText = llList2String(LockLevels, levelIndex);
-            string radioButton = llList2String(menuRadioButton(buttonText, prisonerLockLevel), 0);
+            string radioButton = llList2String(menuRadioButton(buttonText, lockLevel), 0);
             buttons = buttons + menuButtonActive(radioButton, buttonActive);
             if (buttonActive) {
                 allTheButtons = allTheButtons + buttonText;
@@ -868,7 +859,7 @@ doLockMenu(key avatarKey, string message, string messageButtonsTrimmed) {
             if (message == "○ Hardcore") {
                 confirmHardcore(avatarKey);
             } else if (message == "⨷ Hardcore") {
-                sayDebug("listen set prisonerLockLevel:\""+prisonerLockLevel+"\"");
+                sayDebug("listen set lockLevel:\""+lockLevel+"\"");
                 sendJSON("RLV", "Hardcore", avatarKey);
             } else if (llSubStringIndex(message, RelayOFF) >= 0) {
                 llMessageLinked(LINK_THIS, 0, "relay-reset", avatarKey);
@@ -880,10 +871,10 @@ doLockMenu(key avatarKey, string message, string messageButtonsTrimmed) {
                 llMessageLinked(LINK_THIS, 0, "relay-ask", avatarKey);
                 RelayLockState = RelayON;
             } else {
-                sayDebug("listen set prisonerLockLevel:\""+prisonerLockLevel+"\"");
+                sayDebug("listen set lockLevel:\""+lockLevel+"\"");
                 sendJSON("RLV", messageButtonsTrimmed, avatarKey);
                 if (messageButtonsTrimmed == "Heavy" && !renamerActive) {
-                    sayDebug("listen prisonerLockLevel Heavy, so turn on renamer");
+                    sayDebug("listen lockLevel Heavy, so turn on renamer");
                     renamerActive = 1;
                     sendJSONCheckbox(buttonSpeech, "Renamer", avatarKey, renamerActive);
                     }
@@ -907,10 +898,10 @@ confirmHardcore(key avatarKey) {
 threatMenu(key avatarKey) {
     string message = "Threat";
     list buttons = [];
-    buttons = buttons + menuRadioButton("None", prisonerThreat);
-    buttons = buttons + menuRadioButton("Moderate", prisonerThreat);
-    buttons = buttons + menuRadioButton("Dangerous", prisonerThreat);
-    buttons = buttons + menuRadioButton("Extreme", prisonerThreat);
+    buttons = buttons + menuRadioButton("None", threat);
+    buttons = buttons + menuRadioButton("Moderate", threat);
+    buttons = buttons + menuRadioButton("Dangerous", threat);
+    buttons = buttons + menuRadioButton("Extreme", threat);
     buttons = buttons + [buttonBlank, buttonBlank, buttonSettings];
     setUpMenu("Threat", avatarKey, message, buttons);
 }
@@ -934,18 +925,17 @@ default
     {
         sayDebug("state_entry");
         menuAgentKey = "";
-        prisonerMood = moodOOC;
-        prisonerLockLevel = lockLevelOff; 
+        mood = moodOOC;
+        lockLevel = lockLevelOff; 
         renamerActive = 0;       
-        LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
 
         // Initialize Unworn
         if (llGetAttached() == 0) {
             sendJSON("assetNumber", "P-00000", "");
-            sendJSON("prisonerClass", "white", "");
-            sendJSON("prisonerCrime", "unknown", "");
-            sendJSON("prisonerThreat", "None", "");
-            sendJSON("prisonerMood", moodOOC, "");            
+            sendJSON("class", "white", "");
+            sendJSON("crime", "unknown", "");
+            sendJSON("threat", "None", "");
+            sendJSON("mood", moodOOC, "");            
             doSetPunishmentLevels(llGetOwner(),""); // initialize
         } else {
             attachStartup();
@@ -966,25 +956,7 @@ default
         integer touchedFace = llDetectedTouchFace(0);
         vector touchedUV = llDetectedTouchUV(0);
         sayDebug("Link "+(string)touchedLink+", Face "+(string)touchedFace+", UV "+(string)touchedUV);
-        
-        if (touchedLink == LinkBlinky) {
-            if (touchedFace == FaceBlinky1) {// Prepare text of collar settings for the information menu
-                string ZapLevels = "";
-                ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
-                menuCheckbox("Medium", allowZapMed) +  "  " +
-                menuCheckbox("High", allowZapHigh);
-                llInstantMessage(whoClicked, assetNumber+" Zap: "+ZapLevels);
-                }
-            else if (touchedFace == FaceBlinky2) {llInstantMessage(whoClicked, assetNumber+" Lock Level: "+prisonerLockLevel);}
-            else if (touchedFace == FaceBlinky3) {llInstantMessage(whoClicked, assetNumber+" Class: "+class2Description(prisonerClass));}
-            else if (touchedFace == FaceBlinky4) {llInstantMessage(whoClicked, assetNumber+" Threat: "+prisonerThreat);}
-            else if (touchedFace == batteryIconFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryPercent+"%");
-        } else if (touchedLink == batteryCoverLink) {
-            if (touchedFace == batteryCoverFace) llInstantMessage(whoClicked, assetNumber+" Battery level: "+(string)batteryPercent+"%");
-            mainMenu(whoClicked);
-        } else {
-            mainMenu(whoClicked);
-        }
+        mainMenu(whoClicked);
     }
     
     listen(integer channel, string name, key avatarKey, string message){
@@ -1066,16 +1038,16 @@ default
         // Class
         else if (menuIdentifier == "Class") {
             sayDebug("listen: Class:"+messageButtonsTrimmed);
-            prisonerClass = messageButtonsTrimmed;
-            sendJSON("prisonerClass", prisonerClass, avatarKey);
+            class = messageButtonsTrimmed;
+            sendJSON("class", class, avatarKey);
             settingsMenu(avatarKey);
         }
         
         // Mood
         else if (menuIdentifier == "Mood") {
             sayDebug("listen: Mood:"+messageButtonsTrimmed);
-            prisonerMood = messageButtonsTrimmed;
-            sendJSON("prisonerMood", prisonerMood, avatarKey);
+            mood = messageButtonsTrimmed;
+            sendJSON("mood", mood, avatarKey);
             settingsMenu(avatarKey);
         }
         
@@ -1110,9 +1082,9 @@ default
 
         // Threat Level
         else if (menuIdentifier == "Threat") {
-            sayDebug("listen: prisonerThreat:"+messageButtonsTrimmed);
-            prisonerThreat = messageButtonsTrimmed;
-            sendJSON("prisonerThreat", prisonerThreat, avatarKey);
+            sayDebug("listen: threat:"+messageButtonsTrimmed);
+            threat = messageButtonsTrimmed;
+            sendJSON("threat", threat, avatarKey);
             settingsMenu(avatarKey);
         }
         
@@ -1135,11 +1107,11 @@ default
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("link_message json "+json);
         assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-        prisonerCrime = getJSONstring(json, "prisonerCrime", prisonerCrime);
-        prisonerClass = getJSONstring(json, "prisonerClass", prisonerClass);
-        prisonerThreat = getJSONstring(json, "prisonerThreat", prisonerThreat);
-        prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
-        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        crime = getJSONstring(json, "crime", crime);
+        class = getJSONstring(json, "class", class);
+        threat = getJSONstring(json, "threat", threat);
+        mood = getJSONstring(json, "mood", mood);
+        lockLevel = getJSONstring(json, "lockLevel", lockLevel);
         renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
         badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
@@ -1151,7 +1123,7 @@ default
             badWordsActive = 0;
             DisplayTokActive = 0;
         }
-        if ((prisonerLockLevel == "Hardcore" || prisonerLockLevel == "Heavy")) {
+        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
             batteryActive = 1;
         }
     }

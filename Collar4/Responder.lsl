@@ -70,17 +70,17 @@ integer uuidToInteger(key uuid)
     return sum;
 }
 
-string Role = "Inmate";
+string Role = "inmate";
 string assetNumber;
-string prisonerMood;
-string prisonerClass;
-string prisonerCrime;
-string prisonerThreat;
-string prisonerLockLevel;
-string prisonerZapLevels;
+string mood;
+string class;
+string crime;
+string threat;
+string locklevel;
+string zaplevels;
 integer batteryPercent;
 
-list symbols = ["Role", "assetNumber", "Mood", "Class", "Crime", "Threat", "LockLevel", "batteryPercent", "ZapLevels"];
+list symbols = ["role", "assetNumber", "mood", "class", "crime", "threat", "lockLevel", "batteryPercent", "ZapLevels"];
 list values;
 
 
@@ -97,25 +97,26 @@ default
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("link_message json "+json);
         assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-        prisonerCrime = getJSONstring(json, "prisonerCrime", prisonerCrime);
-        prisonerClass = getJSONstring(json, "prisonerClass", prisonerClass);
-        prisonerThreat = getJSONstring(json, "prisonerThreat", prisonerThreat);
-        prisonerMood = getJSONstring(json, "prisonerMood", prisonerMood);
-        prisonerLockLevel = getJSONstring(json, "prisonerLockLevel", prisonerLockLevel);
+        crime = getJSONstring(json, "crime", crime);
+        class = getJSONstring(json, "class", class);
+        threat = getJSONstring(json, "threat", threat);
+        mood = getJSONstring(json, "mood", mood);
+        locklevel = getJSONstring(json, "locklevel", locklevel);
         batteryPercent = getJSONinteger(json, "batteryPercent", batteryPercent);
-        prisonerZapLevels = getJSONstring(json, "ZapLevels", prisonerZapLevels);
-        values = [Role, assetNumber, prisonerMood, prisonerClass, prisonerCrime, prisonerThreat, prisonerLockLevel, batteryPercent, prisonerZapLevels];
+        zaplevels = getJSONstring(json, "ZapLevels", zaplevels);
+        values = [Role, assetNumber, mood, class, crime, threat, locklevel, batteryPercent, zaplevels];
     } 
 
     listen(integer channel, string name, key id, string json)
     {
+        sayDebug("listen channel:"+(string)channel+" name:"+name+" json:"+json);
+        string value = getJSONstring(json, "request", ""); 
         // {"request":["Mood","Class","LockLevel"]}
-        string value = getJSONstring(json, "request", "");  // ["Mood","Class","LockLevel"]
-        if (value != "") {
+        if ((batteryPercent > 4) && (value != "")) {
             sayDebug("listen request value: "+value);
             list requests = llJson2List(value);
             integer i;
-            list responses;
+            list responses = ["key", llGetOwner()];
             for (i = 0; i < llGetListLength(requests); i++) {
                 string symbolkey = llList2String(requests, i);
                 integer index = llListFindList(symbols, [symbolkey]);
@@ -124,15 +125,14 @@ default
                     value = llList2String(values, index);
                 }
                 sayDebug(symbolkey+" -> "+value);
-                string onejson = llList2Json(JSON_OBJECT, [symbolkey, value]); // {"Mood":"OOC"}
-                responses = responses + [onejson];
+                responses = responses + [symbolkey, value];
             }
-            string jsonlist = llList2Json(JSON_ARRAY, responses); // [{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]
+            string jsonlist = llList2Json(JSON_OBJECT, responses); // [{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]
             sayDebug("jsonlist:"+jsonlist);
             string jsonresponse = llList2Json(JSON_OBJECT, ["response", jsonlist]); // {"response":[{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]}
             sayDebug("jsonresponse:"+jsonresponse);
             llWhisper(responderChannel, jsonresponse);
-        }        
+        }
 
         if (name == "L-CON Battery Charger") {
             sayDebug("listen "+name+" "+json);

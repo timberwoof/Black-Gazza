@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2021-03-03
+// version: 2021-03-07
 
 // controls Relay
 // manages Zap
@@ -40,7 +40,7 @@ string avatarName;
 string assetNumber = "P-00000";
 
 integer rlvPresent;
-string prisonerLockLevel;
+string lockLevel;
 integer RLVStatusChannel = 0;      // listen to itself for RLV responses; generated on the fly
 integer RLVStatusListen = 0;
 
@@ -128,26 +128,26 @@ sendRLVRestrictCommand(string level, key id) {
     // level can be Off Light Medium Heavy Hardcore
     string theSound = soundLatch;
     if (rlvPresent == 1) {
-        prisonerLockLevel = level;
-        sayDebug("sendRLVRestrictCommand(\""+prisonerLockLevel+"\")");
+        lockLevel = level;
+        sayDebug("sendRLVRestrictCommand(\""+lockLevel+"\")");
         llOwnerSay("@clear"); // this kills the speech settings
         string rlvcommand = ""; 
-        if (prisonerLockLevel == "Off") {
+        if (lockLevel == "Off") {
             theSound = soundUnlatch;
-        }else if (prisonerLockLevel == "Light") {
+        }else if (lockLevel == "Light") {
             rlvcommand = "@tplm=n,tploc=n,fly=n,detach=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,sittp=y,fartouch=y
-        } else if (prisonerLockLevel == "Medium") {
+        } else if (lockLevel == "Medium") {
             rlvcommand = "@tplm=n,tploc=n,showworldmap=n,showminimap=n,showloc=y,fly=n,detach=n,sittp=n,fartouch=n";
             // tplure=y,edit=y,rez=y,chatshout=y,chatnormal=y,chatwhisper=y,shownames=y,
-        } else if (prisonerLockLevel == "Heavy") {
+        } else if (lockLevel == "Heavy") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," +
             "fly=n,detach=n,edit=n,rez=n," +
             "chatshout=n,sittp=n,fartouch=n";
             // chatnormal=y,chatwhisper=y,
             llOwnerSay("You have been locked into Heavy mode. To Safeword, you must use the collar's Safeword function.");
-        } else if (prisonerLockLevel == "Hardcore") {
+        } else if (lockLevel == "Hardcore") {
             rlvcommand = "@tplm=n,tploc=n,tplure=n," +          
             "showworldmap=n,showminimap=n,showloc=n,setcam_avdistmax:2=n," + 
             "fly=n,detach=n,edit=n,rez=n," +
@@ -162,12 +162,12 @@ sendRLVRestrictCommand(string level, key id) {
             llOwnerSay(rlvcommand);
         }
         sendJSON("rlvPresent", "1", "");
-        sendJSON("prisonerLockLevel", prisonerLockLevel, "");
-        llOwnerSay("RLV lock level has been set to "+prisonerLockLevel+".");
+        sendJSON("lockLevel", lockLevel, "");
+        llOwnerSay("RLV lock level has been set to "+lockLevel+".");
     } else {
         sayDebug("sendRLVRestrictCommand was called but no RLV present");
         sendJSON("rlvPresent", "0", "");
-        sendJSON("prisonerLockLevel", "Off", "");
+        sendJSON("lockLevel", "Off", "");
     }
 }
 
@@ -266,7 +266,7 @@ integer zapTimeremaining ; // seconds remaining on timer: half an hour by defaul
 integer zapTimerunning = 0; // 0 = stopped; 1 = running
 
 list zapLevelNames = ["Low", "Med", "Hig"];
-list zapTimes = [2, 4, 8]; // ho wlong zap lasts
+list zapTimes = [2.0, 4.0, 8.0]; // how many seconds zap lasts
 list zapDischarges = [3600, 7200, 14400]; // how much battery time zap requires/discharges
 list zapTimeouts = [120, 240, 960]; // timeout before you can zap again
 
@@ -288,30 +288,42 @@ startZap(string zapLevel, key who) {
         } else {
             name = assetNumber + "'s collar";
         }
-        llWhisper(0, name + " zaps the inmate.");
         
-        sayDebug("startZap charging up");
-        OADStartBuzz();
-        llPlaySound(soundCharging, 1.0);
-        llSleep(1.5);
-        
-        sayDebug("startZap zapping("+zapLevel+")");
-        OADBuzz(zapLevel);
-        llLoopSound(soundZapLoop, 1.0);
-        if (haveAnimatePermissions) {
-            llStartAnimation("Zap");
-        }
-        
-        llSleep(llList2Integer(zapTimes, zapindex));
+        // calculate time of zap
         integer zapDischarge = llList2Integer(zapDischarges, zapindex);
-        sendJSONinteger("Discharge", zapDischarge, "");
-        zapTimeremaining = llList2Integer(zapTimeouts, zapindex);
-        
-        sayDebug("startZap llStopSound();");
-        llStopSound();
-        if (haveAnimatePermissions) {
-            llStopAnimation("Zap");
+        float zapTime = llList2Float(zapTimes, zapindex);
+        if (batteryCharge < zapDischarge) {
+            zapTime = zapTime * batteryCharge / zapDischarge;
         }
+
+        if (zapTime > 0.1) {
+            llWhisper(0, name + " zaps the inmate.");
+        
+            sayDebug("startZap charging up");
+            OADStartBuzz();
+            llPlaySound(soundCharging, 1.0);
+            llSleep(1.5);
+            
+            sayDebug("startZap zapping("+zapLevel+")");
+            OADBuzz(zapLevel);
+            llLoopSound(soundZapLoop, 1.0);
+            if (haveAnimatePermissions) {
+                llStartAnimation("Zap");
+            }
+        
+            llSleep(zapTime);
+            sendJSONinteger("Discharge", zapDischarge, "");
+            zapTimeremaining = llList2Integer(zapTimeouts, zapindex);
+        
+            sayDebug("startZap llStopSound();");
+            llStopSound();
+            if (haveAnimatePermissions) {
+                llStopAnimation("Zap");
+            }
+        } else {
+            sayDebug("Not enough charge for a zap.");
+        }
+    
     }
     llSleep(1);
     llStopSound();
@@ -481,7 +493,7 @@ default
         sayDebug("state_entry attachPoint:"+(string)llGetAttached());
         llStopSound();
         rlvPresent = 0;
-        prisonerLockLevel = "Off";
+        lockLevel = "Off";
         HudFunctionState = 0;
         SafewordListen = 0;
         llPreloadSound(soundCharging);
@@ -594,7 +606,7 @@ default
             llListenRemove(RLVStatusListen);
             RLVStatusListen = 0;
             sendJSON("rlvPresent", "1", "");
-            sendRLVRestrictCommand(prisonerLockLevel, id);
+            sendRLVRestrictCommand(lockLevel, id);
             lockTimerRestart(); // why?
             llOwnerSay(message+"; RLV is present.");
         }
@@ -644,7 +656,7 @@ default
             //RLVStatusListen = 0; *** debug
             lockTimerRestart();
             sendJSON("rlvPresent", "0", "");
-            sendJSON("prisonerLockLevel", "Off", "");
+            sendJSON("lockLevel", "Off", "");
         //} else if (visionTimeout > 0) {
         //    restrictVision(0);
         }
