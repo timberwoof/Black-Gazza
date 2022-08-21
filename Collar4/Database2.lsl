@@ -6,25 +6,26 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2020-06-24
+// version: 2020-11-23
 
 integer OPTION_DEBUG = 0;
 key databaseQuery;
 string myQueryStatus;
 
-string prisonerName;
+string name;
 string start_date;
 list assetNumbers; // there's only one
 string assetNumber;
-string prisonerCrime;
-string prisonerClass;
+string unassignedAsset = "P-00000";
+string crime;
+string class;
 
 
 sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("Database:"+message);
+        llOwnerSay("Database: "+message);
     }
 }
 
@@ -39,7 +40,7 @@ sendDatabaseQuery() {
         sayDebug("sendDatabaseQuery unattached");
         string statusJsonList = llList2Json(JSON_OBJECT, [
             "assetNumber", assetNumber, 
-            "prisonerCrime", prisonerCrime]);
+            "crime", crime]);
         llMessageLinked(LINK_THIS, 0, statusJsonList, "");
     }
 }
@@ -58,8 +59,8 @@ default
     state_entry() // reset
     {
         sayDebug("state_entry");
-        assetNumber = "P-00000";
-        prisonerCrime = "Unknown";
+        assetNumber = unassignedAsset;
+        crime = "Unknown";
         sendDatabaseQuery();
         sayDebug("state_entry done");
     }
@@ -68,24 +69,38 @@ default
     {
         sayDebug("attach");
         sendDatabaseQuery();
+        sayDebug("attach done");
     }
 
     http_response(key request_id, integer status, list metadata, string message)
     // handle the response from the crime database
     {
-        sayDebug("http_response message="+message);
         displayCentered("status "+(string)status);
         if (status == 200) {
             // decode the response
             // looks like 
             // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+            integer whereTwoCommas = llSubStringIndex(message, ",,");
+            if (whereTwoCommas > 1) {
+                message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
+            }
+            whereTwoCommas = llSubStringIndex(message, ",,");
+            if (whereTwoCommas > 1) {
+                message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
+            }
+            sayDebug("http_response message="+message);
+            
             list returnedStuff = llParseString2List(message, [","], []);
-            prisonerName = llList2String(returnedStuff, 0);
-            prisonerCrime = llList2String(returnedStuff, 2);
+            name = llList2String(returnedStuff, 0);
+            string mysteriousNumber = llList2String(returnedStuff, 1);
+            crime = llList2String(returnedStuff, 2);
+            string avatarKey = llList2String(returnedStuff, 3);
             assetNumber = llList2String(returnedStuff, 4);
             
-            sayDebug("name:"+prisonerName);
-            sayDebug("crime:"+prisonerCrime);
+            sayDebug("name:"+name);
+            sayDebug("number:"+mysteriousNumber);
+            sayDebug("crime:"+crime);
+            sayDebug("key:"+avatarKey);
             sayDebug("assetNumber:"+assetNumber);
         }
         else {
@@ -93,7 +108,7 @@ default
             assetNumber = "ERR-" + (string)status;
         }
         sendJSON("assetNumber", assetNumber, llGetOwner());
-        sendJSON("prisonerCrime", prisonerCrime, llGetOwner());
+        sendJSON("crime", crime, llGetOwner());
     
     }
     

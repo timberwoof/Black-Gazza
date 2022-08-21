@@ -46,7 +46,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("Relay:"+message);
+        llOwnerSay("Relay: "+message);
     }
 }
 

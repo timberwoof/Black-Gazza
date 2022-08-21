@@ -10,7 +10,7 @@ string version = "2021-03-07";
 // • battery display
 // • floaty text
 
-integer OPTION_DEBUG = 1;
+integer OPTION_DEBUG = 0;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;

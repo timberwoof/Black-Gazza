@@ -90,6 +90,7 @@ default
     {
         responderChannel = uuidToInteger(llGetOwner());
         responderListen = llListen(responderChannel,"", "", "");
+        sayDebug("state_enntry responderChannel:"+(string)responderChannel);
     }
     
     link_message(integer sender_num, integer num, string json, key id)

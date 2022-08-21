@@ -2,7 +2,7 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-04-10
+// version: 2020-11-23
 
 // Handles all leash menu, authroization, and leashing functionality
 
@@ -28,7 +28,7 @@ sayDebug(string message)
 {
     if (OPTION_DEBUG)
     {
-        llOwnerSay("Leash:"+message);
+        llOwnerSay("Leash: "+message);
     }
 }
 
@@ -113,7 +113,7 @@ leashMenuFilter(key avatarKey) {
         }
     } else {
         if (action == "Leash") {
-            llInstantMessage(avatarKey, "You are not permitted to mess with the leash.");
+            llInstantMessage(avatarKey, "You are not permitted to mess with the leash. "+llKey2Name(leasherAvatar)+" has the leash.");
             llSay (0, prisonerNumber + " tugs on the leash.");
         } else {
             llInstantMessage(avatarKey, "You are not permitted to stand.");
@@ -251,6 +251,7 @@ default
         leasherAvatar = llGetOwner();
         leashParticlesOff();
         sensorState = "";
+        sayDebug("state_entry done");
     }
     
     attach(key avatar) {
@@ -267,6 +268,7 @@ default
                 sitPending = 1; 
             }
         }
+        sayDebug("attach done");
     }
 
     link_message( integer sender_num, integer num, string json, key id ){ 
