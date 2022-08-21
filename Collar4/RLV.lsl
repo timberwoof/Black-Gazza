@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2021-03-07
+// version: 2021-12-23
 
 // controls Relay
 // manages Zap
@@ -536,10 +536,9 @@ default
     // RLV zapPrisoner
     // RLV <lockLevel>
 
-        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-        
+        assetNumber = getJSONstring(json, "assetNumber", assetNumber);        
         batteryCharge = getJSONinteger(json, "batteryCharge", batteryCharge); // Seconds
-
+        
         string RLVCommand = getJSONstring(json, "RLV", "");
         if (RLVCommand != "") {
             sayDebug("link_message (\""+RLVCommand+"\")");

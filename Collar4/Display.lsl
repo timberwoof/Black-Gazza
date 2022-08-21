@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2021-03-07";
+string version = "2021-12-29";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
