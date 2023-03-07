@@ -340,7 +340,7 @@ infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string message = "Prisoner Information \n" +
     "\nNumber: " + assetNumber + "\n";
-    if (!agentIsGuard(avatarKey) || avatarKey == llGetOwner()) {
+    if (agentIsGuard(avatarKey) || avatarKey == llGetOwner()) {
         string ZapLevels = "";
         ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
         menuCheckbox("Medium", allowZapMed) +  "  " +
