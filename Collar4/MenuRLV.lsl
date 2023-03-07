@@ -80,7 +80,7 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
 /**
     since you can't directly check the agent's active group, this will get the group from the agent's attached items
 */
-integer agentHasGuard(key agent)
+integer agentIsGuard(key agent)
 {
     list attachList = llGetAttachedList(agent);
     integer item;

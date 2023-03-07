@@ -106,7 +106,7 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
 /**
     since you can't directly check the agent's active group, this will get the group from the agent's attached items
 */
-integer agentHasGuard(key agent)
+integer agentIsGuard(key agent)
 {
     list attachList = llGetAttachedList(agent);
     integer item;
@@ -257,7 +257,7 @@ settingsMenu(key avatarKey) {
         }
     }
     // What a guard can change
-    else if(agentHasGuard(avatarKey))
+    else if(agentIsGuard(avatarKey))
     { // (avatarKey != llGetOwner())
         // guard can always set some things
         sayDebug("settingsMenu: guard");
@@ -289,7 +289,7 @@ settingsMenu(key avatarKey) {
             setBattery = 0;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         } 
-        else if(agentHasGuard(avatarKey))
+        else if(agentIsGuard(avatarKey))
         {
             
             sayDebug("settingsMenu: heavy-guard");
@@ -500,7 +500,7 @@ speechMenu(key avatarKey)
             message = message + "\nYou can only change your word list while OOC.";
         }
     } else {
-        if(agentHasGuard(avatarKey))
+        if(agentIsGuard(avatarKey))
         {
             doWordList = 1;
             if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {

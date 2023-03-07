@@ -103,7 +103,7 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
 /**
     since you can't directly check the agent's active group, this will get the group from the agent's attached items
 */
-integer agentHasGuard(key agent)
+integer agentIsGuard(key agent)
 {
     list attachList = llGetAttachedList(agent);
     integer item;
@@ -246,7 +246,7 @@ mainMenu(key avatarKey) {
     } else { // mood == anything else
         if (avatarKey == llGetOwner()) {
             // wearer can't do anything
-        } else if (agentHasGuard(avatarKey)) {
+        } else if (agentIsGuard(avatarKey)) {
             // Guards can do anything
             doPunish = 1;
             doForceSit = 1;
@@ -266,7 +266,7 @@ mainMenu(key avatarKey) {
     }
     
     // Collar functions controlled by locklevel: Safeword and Release
-    if (lockLevel == "Hardcore" && agentHasGuard(avatarKey)) {
+    if (lockLevel == "Hardcore" && agentIsGuard(avatarKey)) {
         doRelease = 1;
     } else {
         message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
@@ -340,7 +340,7 @@ infoGive(key avatarKey){
     // Prepare text of collar settings for the information menu
     string message = "Prisoner Information \n" +
     "\nNumber: " + assetNumber + "\n";
-    if (!agentHasGuard(avatarKey) || avatarKey == llGetOwner()) {
+    if (!agentIsGuard(avatarKey) || avatarKey == llGetOwner()) {
         string ZapLevels = "";
         ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
         menuCheckbox("Medium", allowZapMed) +  "  " +
