@@ -319,6 +319,8 @@ startZap(string zapLevel, key who) {
             llStopSound();
             if (haveAnimatePermissions) {
                 llStopAnimation("Zap");
+                if(zapindex == 2)
+                    llStartAnimation("ZapRecover");
             }
         } else {
             sayDebug("Not enough charge for a zap.");
