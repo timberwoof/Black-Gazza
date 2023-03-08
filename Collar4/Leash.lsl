@@ -6,12 +6,12 @@
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
-integer rlvPresent = 0;
+integer rlvPresent = FALSE;
 string prisonerLockLevel = "";
-integer sitActive = 0;
-integer sitPending = 0;
+integer sitActive = FALSE;
+integer sitPending = FALSE;
 
 string prisonerNumber = "P-00000"; // to make the menus nice
 integer menuChannel = 0;
@@ -232,14 +232,14 @@ sendRLVSitCommand(key what) {
     rlvcommand = "@sit:"+(string)what+"=force,unsit=n";
     sayDebug("sendRLVRestrictCommand rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    sitActive = 1;
+    sitActive = TRUE;
 }
 
 sendRLVReleaseCommand() {
     string rlvcommand = "@unsit=y,unsit=force";
     sayDebug("sendRLVReleaseCommand rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    sitActive = 0;
+    sitActive = FALSE;
 }
 
 default
@@ -263,9 +263,9 @@ default
             } else if (sensorState == "LeashObject") {
                 llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
                 leashParticlesOn("attach leashTarget", leashTarget);
-            } else if (sitActive == 1) {
+            } else if (sitActive) {
                 // We may not be ready for RLV yet. 
-                sitPending = 1; 
+                sitPending = TRUE; 
             }
         }
         sayDebug("attach done");
@@ -294,9 +294,9 @@ default
             sendRLVReleaseCommand();
         }
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-        if (rlvPresent == 1 & sitPending == 1) {
+        if (rlvPresent & sitPending) {
             sendRLVSitCommand(leashTarget);
-            sitPending = 0;
+            sitPending = TRUE;
         }
     }
     
