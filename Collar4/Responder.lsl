@@ -1,13 +1,13 @@
 // Responder.lsl
 // Script for Black Gazza Collar 4
 // Timberwoof Lupindo, February 2020
-// version: 2023-03-08
+// version: 2021-03-03
 
 integer responderChannel;
 integer responderListen;
 string lockLevel;
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = 0;
 
 sayDebug(string message)
 {
@@ -105,12 +105,12 @@ default
         batteryPercent = getJSONinteger(json, "batteryPercent", batteryPercent);
         zaplevels = getJSONstring(json, "ZapLevels", zaplevels);
         values = [Role, assetNumber, mood, class, crime, threat, locklevel, batteryPercent, zaplevels];
-    } 
+    }
 
     listen(integer channel, string name, key id, string json)
     {
         sayDebug("listen channel:"+(string)channel+" name:"+name+" json:"+json);
-        string value = getJSONstring(json, "request", ""); 
+        string value = getJSONstring(json, "request", "");
         // {"request":["Mood","Class","LockLevel"]}
         if ((batteryPercent > 4) && (value != "")) {
             sayDebug("listen request value: "+value);
