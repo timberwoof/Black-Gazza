@@ -2,16 +2,16 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2023-03-08
+// version: 2020-11-23
 
 // Handles all leash menu, authroization, and leashing functionality
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = 0;
 
-integer rlvPresent = FALSE;
+integer rlvPresent = 0;
 string prisonerLockLevel = "";
-integer sitActive = FALSE;
-integer sitPending = FALSE;
+integer sitActive = 0;
+integer sitPending = 0;
 
 string prisonerNumber = "P-00000"; // to make the menus nice
 integer menuChannel = 0;
@@ -37,18 +37,18 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-    }
+        }
     return result;
-}
+    }
     
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-    }
+        }
     return result;
-}
+    }
 
 list menuRadioButton(string title, string match)
 // make radio button menu item out of a button and the state text
@@ -92,8 +92,8 @@ setUpMenu(key avatarKey, string message, list buttons)
 
 leashMenuFilter(key avatarKey) {
     // action = "Leash" or "ForceSit"
-    // If an inmate wants to leash you, ask your permission. 
-    // If you or anybody esle wants to leash you, just present the leash menu. 
+    // If an inmate wants to leash you, ask your permission.
+    // If you or anybody esle wants to leash you, just present the leash menu.
     sayDebug("leashMenuFilter leasherAvatar: "+(string)leasherAvatar);
     sayDebug("leashMenuFilter avatarKey: "+(string)avatarKey);
     sayDebug("leashMenuFilter llGetOwner: "+(string)llGetOwner());
@@ -142,7 +142,7 @@ key leashMenuAsk(key avatarKey) {
 }
 
 leashMenu(key avatarKey)
-// We passed all the tests. Present the leash menu. 
+// We passed all the tests. Present the leash menu.
 {
     sayDebug("leashMenu action:"+action+" sensorState:"+sensorState);
     string message = "Set "+prisonerNumber+"'s Leash.";
@@ -165,7 +165,7 @@ leashMenu(key avatarKey)
     integer unleash = sensorState == "LeashObject" || sensorState == "LeashAgent";
     buttons = buttons + menuButtonActive("Unleash", unleash);
     
-    setUpMenu(avatarKey, message, buttons);    
+    setUpMenu(avatarKey, message, buttons);
 }
 
 sitMenu(key avatarKey, string calledBy)
@@ -176,40 +176,40 @@ sitMenu(key avatarKey, string calledBy)
     list buttons = [];
     buttons = buttons + menuButtonActive("Sit On", rlvPresent & !sitActive);
     buttons = buttons + menuButtonActive("Unsit", sitActive);
-    setUpMenu(avatarKey, message, buttons);        
+    setUpMenu(avatarKey, message, buttons);
 }
 
 leashParticlesOn(string whocalled, key target) {
     sayDebug("leashParticlesOn("+whocalled+", "+llKey2Name(target)+")");
-    string texturename = "1d15cba4-91dd-568c-b2b4-d25331bebe73"; 
-    float age = 5; 
-    float gravity = 0.2; 
+    string texturename = "1d15cba4-91dd-568c-b2b4-d25331bebe73";
+    float age = 5;
+    float gravity = 0.2;
 
     llLinkParticleSystem(leashRingPrim, [
-        PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
-        PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
-        PSYS_PART_START_COLOR,(vector) <1,1,1>,
-        PSYS_PART_END_COLOR,(vector) <1,1,1>,
-        PSYS_PART_START_ALPHA,(float) 1.0,
-        PSYS_PART_END_ALPHA,(float) 1.0,
-        PSYS_SRC_TEXTURE,(string) texturename,
-        PSYS_SRC_BURST_PART_COUNT,(integer) 4,
-        PSYS_SRC_BURST_RATE,(float) .025,
-        PSYS_PART_MAX_AGE,(float) age,
-        PSYS_SRC_MAX_AGE,(float) 0.0,
-        PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
-        PSYS_SRC_BURST_RADIUS,(float) 0.5,
-        PSYS_SRC_INNERANGLE,(float) 0.0,
-        PSYS_SRC_OUTERANGLE,(float) 0.0,
-        PSYS_SRC_OMEGA,(vector) <0,0,0>,
-        PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
-        PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
-        PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
-        PSYS_SRC_TARGET_KEY,(key) target,
-        PSYS_PART_FLAGS,
-        PSYS_PART_RIBBON_MASK |
-        PSYS_PART_FOLLOW_SRC_MASK |
-        PSYS_PART_TARGET_POS_MASK | 0
+    PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
+    PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
+    PSYS_PART_START_COLOR,(vector) <1,1,1>,
+    PSYS_PART_END_COLOR,(vector) <1,1,1>,
+    PSYS_PART_START_ALPHA,(float) 1.0,
+    PSYS_PART_END_ALPHA,(float) 1.0,
+    PSYS_SRC_TEXTURE,(string) texturename,
+    PSYS_SRC_BURST_PART_COUNT,(integer) 4,
+    PSYS_SRC_BURST_RATE,(float) .025,
+    PSYS_PART_MAX_AGE,(float) age,
+    PSYS_SRC_MAX_AGE,(float) 0.0,
+    PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
+    PSYS_SRC_BURST_RADIUS,(float) 0.5,
+    PSYS_SRC_INNERANGLE,(float) 0.0,
+    PSYS_SRC_OUTERANGLE,(float) 0.0,
+    PSYS_SRC_OMEGA,(vector) <0,0,0>,
+    PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
+    PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
+    PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
+    PSYS_SRC_TARGET_KEY,(key) target,
+    PSYS_PART_FLAGS,
+    PSYS_PART_RIBBON_MASK |
+    PSYS_PART_FOLLOW_SRC_MASK |
+    PSYS_PART_TARGET_POS_MASK | 0
     ] );
 }
 
@@ -222,7 +222,7 @@ integer getLinkWithName(string name) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
     for (; i < x; ++i)
-        if (llGetLinkName(i) == name) 
+        if (llGetLinkName(i) == name)
             return i; // Found it! Exit loop early with result
     return -1; // No prim with that name, return -1.
 }
@@ -232,14 +232,14 @@ sendRLVSitCommand(key what) {
     rlvcommand = "@sit:"+(string)what+"=force,unsit=n";
     sayDebug("sendRLVRestrictCommand rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    sitActive = TRUE;
+    sitActive = 1;
 }
 
 sendRLVReleaseCommand() {
     string rlvcommand = "@unsit=y,unsit=force";
     sayDebug("sendRLVReleaseCommand rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    sitActive = FALSE;
+    sitActive = 0;
 }
 
 default
@@ -263,15 +263,15 @@ default
             } else if (sensorState == "LeashObject") {
                 llSensorRepeat("", leashTarget, ( ACTIVE | PASSIVE | SCRIPTED ), 25, PI, 1);
                 leashParticlesOn("attach leashTarget", leashTarget);
-            } else if (sitActive) {
-                // We may not be ready for RLV yet. 
-                sitPending = TRUE; 
+            } else if (sitActive == 1) {
+                // We may not be ready for RLV yet.
+                sitPending = 1;
             }
         }
         sayDebug("attach done");
     }
 
-    link_message( integer sender_num, integer num, string json, key id ){ 
+    link_message( integer sender_num, integer num, string json, key id ){
     
         string value = llJsonGetValue(json, ["Leash"]);
         if (value != JSON_INVALID) {
@@ -294,9 +294,9 @@ default
             sendRLVReleaseCommand();
         }
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-        if (rlvPresent & sitPending) {
+        if (rlvPresent == 1 & sitPending == 1) {
             sendRLVSitCommand(leashTarget);
-            sitPending = TRUE;
+            sitPending = 0;
         }
     }
     
@@ -311,7 +311,7 @@ default
                 leashMenu(leasherAvatar);
             } else {
                 sitMenu(leasherAvatar, "Listen Okay");
-            }            
+            }
         } else if (message == "No"){
             if (action == "Leash") {
                 llInstantMessage(leasherAvatar,"Permission to leash was not granted.");
@@ -352,7 +352,7 @@ default
                 sensorState = "";
                 sendRLVSitCommand(leashTarget);
                 sitMenu(leasherAvatar, "leash to Point");
-            }            
+            }
         } else if (message == "Unleash") {
             llSensorRemove();
             leashParticlesOff();
@@ -370,7 +370,7 @@ default
 
     sensor(integer detected)
     {
-        float distance; 
+        float distance;
         
         if (sensorState == "LeashAgent" || sensorState == "LeashObject") {
             // distance to avatar holding the leash or the object leashed to.
@@ -382,7 +382,7 @@ default
             }
         } else if (sensorState == "Findpost") {
             // we got a list of nearby objects we might be able to leash to or sit on.
-            // Male a dialog box out of the list. 
+            // Male a dialog box out of the list.
             sayDebug("sensor("+(string)detected+")  action: "+action);
             string message;
             if (action == "Leash") {
@@ -395,12 +395,12 @@ default
             if (detected > 12) detected = 12;
             for(pointi = 0; pointi < detected; pointi++) {
                 sayDebug("sensor Findpost "+(string)pointi+": "+llDetectedName(pointi));
-                message = message + (string)pointi + " " + llDetectedName(pointi) + "\n"; 
+                message = message + (string)pointi + " " + llDetectedName(pointi) + "\n";
                 leashPoints = leashPoints + [llDetectedKey(pointi)];
                 buttons = buttons + ["Point "+(string)pointi];
             }
             setUpMenu(leasherAvatar, message, buttons);
-        } 
+        }
     }
     
     no_sensor()
@@ -410,9 +410,9 @@ default
         sensorState = "";
     }
 
-    timer() 
+    timer()
     {
         llListenRemove(menuListen);
-        menuListen = 0;    
+        menuListen = 0;
     }
 }

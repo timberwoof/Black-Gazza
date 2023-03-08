@@ -1,14 +1,14 @@
 // database2.lsl
-// interim connectivity for Collar 4 to the old database. 
-// This has the same commections to the rest of the collar as database.lsl but it connects to the current db. 
+// interim connectivity for Collar 4 to the old database.
+// This has the same commections to the rest of the collar as database.lsl but it connects to the current db.
 
 // Database.lsl
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2023-03-08
+// version: 2021-12-29
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = 0;
 key databaseQuery;
 string myQueryStatus;
 
@@ -63,7 +63,7 @@ string AgentKeyWithRole(string agentKey, integer slot) {
 }
 
 // fire off a request to the crime database for this wearer.
-// Reads global iSlot to determine which character to get.  
+// Reads global iSlot to determine which character to get.
 sendDatabaseQuery(integer iSlot) {
     if (llGetAttached() != 0) {
         displayCentered("Accessing DB");
@@ -106,7 +106,7 @@ setUpMenu(key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
 // - adds required buttons such as Close or Main
 // - displays the menu command on the alphanumeric display
-// - sets up the menu channel, listen, and timer event 
+// - sets up the menu channel, listen, and timer event
 // - calls llDialog
 // parameters:
 // avatarKey - uuid of who clicked
@@ -149,7 +149,7 @@ default
         sayDebug("state_entry done");
     }
     
-    attach(key avatar) 
+    attach(key avatar)
     {
         sayDebug("attach");
         sendDatabaseQuery(1);
@@ -165,7 +165,7 @@ default
         string theName = llGetOwner();
         if (status == 200) {
             // decode the response
-            // looks like 
+            // looks like
             // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
             integer whereTwoCommas = llSubStringIndex(message, ",,");
             if (whereTwoCommas > 1) {
@@ -206,16 +206,17 @@ default
                 
                 characterMenu();
             }
-        } else {
+        }
+        else {
             displayCentered("error "+(string)status);
             assetNumber = "ERR-" + (string)status;
-        }    
+        }
     }
     
-    link_message(integer sender_num, integer num, string json, key id){ 
+    link_message(integer sender_num, integer num, string json, key id){
         string request = getJSONstring(json, "database", "");
         if (request == "getupdate") sendDatabaseQuery(characterSlot);
-        if (request == "setcharacter") setCharacter(); 
+        if (request == "setcharacter") setCharacter();
     }
     
     listen(integer channel, string name, key id, string text) {

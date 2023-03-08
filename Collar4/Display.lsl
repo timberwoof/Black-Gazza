@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2023-03-08";
+string version = "2021-12-29";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -10,7 +10,7 @@ string version = "2023-03-08";
 // • battery display
 // • floaty text
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = 0;
 
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
@@ -124,30 +124,30 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
-}
+    }
     
 integer getLinkWithName(string name) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
     for (; i < x; ++i)
-        if (llGetLinkName(i) == name) 
+        if (llGetLinkName(i) == name)
             return i; // Found it! Exit loop early with result
     return -1; // No prim with that name, return -1.
 }
 
 tone(string number) {
-    string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
-    string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
-    string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
-    string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
-    string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
-    string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
-    string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
-    string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
-    string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
-    string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
-    list touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4, 
-        touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];        
+string touchTone0 = "ccefe784-13b0-e59e-b0aa-c818197fdc03";
+string touchTone1 = "303afb6c-158f-aa6f-03fc-35bd42d8427d";
+string touchTone2 = "c4499d5e-85df-0e8e-0c6f-2c7e101517b5";
+string touchTone3 = "c3f88066-894e-7a3d-39b5-2619e8ae7e73";
+string touchTone4 = "10748aa2-753f-89ad-2802-984dc6e3d530";
+string touchTone5 = "2d9cf7a7-08e5-5687-6976-8d256b1dc84b";
+string touchTone6 = "97a896a8-0677-8281-f4e3-ba21c8f88b64";
+string touchTone7 = "01c5c969-daf1-6d7d-ade6-fd54dcb1aab5";
+string touchTone8 = "dafc5c77-8c81-02f1-6d36-9602d306dc0d";
+string touchTone9 = "d714bede-cfa3-7c33-3a7c-bcffd49534eb";
+list touchTones = [touchTone0, touchTone1, touchTone2, touchTone3, touchTone4,
+            touchTone5, touchTone6, touchTone7, touchTone8, touchTone9];
 
     integer i;
     for (i = 0; i < llStringLength(number); i++) {
@@ -167,8 +167,8 @@ toneAlpha(string message) {
         integer index = llSubStringIndex(characters, llGetSubString(message, i, i));
         if (index > -1) {
             digitized = digitized + llGetSubString(digits, index, index);
+            }
         }
-    }
     sayDebug("toneAlpha("+message+") returns "+digitized);
     tone(digitized);
 }
@@ -181,20 +181,20 @@ displayTitler() {
     string description = "Class " + class + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber + "\n" + description + "\nCrime: " + crime + "\nThreat: " + threat + "\nMood: " + mood ;
     if (mood == "DND") {
-        llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);  
+        llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);
     } else {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
-    } 
+    }
 }
 
 displayText(string text){
-// Display a string of 12 characters on the collar display. 
-// If you supply less than 12 characters, the last ones don't get reset. 
-// Anything after 12 characters gets truncated. 
+// Display a string of 12 characters on the collar display.
+// If you supply less than 12 characters, the last ones don't get reset.
+// Anything after 12 characters gets truncated.
     sayDebug("displaytext(\""+text+"\")");
 
-    // The text map is in this jumbled order because the bitmap maps weirdly. 
-    string textMap = 
+    // The text map is in this jumbled order because the bitmap maps weirdly.
+    string textMap =
         "ZabcdUVWXY" + // 4 U-Za-d
         "jklmnefghi" + // 5 e-n
         "tuvwxopqrs" + // 6 o-x
@@ -223,7 +223,7 @@ setTextColor(vector textColor){
     sayDebug("setTextColor "+(string)textColor);
     integer i;
     for (i = 0; i < 12; i++){
-        integer linkNumber = llList2Integer(LinksAlphanum, i); 
+        integer linkNumber = llList2Integer(LinksAlphanum, i);
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_COLOR, 0, textColor*brightnessMultiplier, 0.5]);
         llSetLinkPrimitiveParamsFast(linkNumber, [PRIM_GLOW, 0, 0.3]);
     }
@@ -232,13 +232,13 @@ setTextColor(vector textColor){
 displayCentered(string text){
 // display a string of less than 12 characters on the alphanumeric display, more or less centered
     sayDebug("displayCentered("+text+")");
-    integer pad = (12 - llStringLength(text)) / 2; 
+    integer pad = (12 - llStringLength(text)) / 2;
     displayText(llInsertString("            ", pad, text));
 }
 
 displayScroll(string text){
-// display a string of more than 12 characters in a lovely scrolling manner. 
-// needs some support from timer 
+// display a string of more than 12 characters in a lovely scrolling manner.
+// needs some support from timer
     sayDebug("displayScroll("+text+")");
     string displayText = "            "; // 12 spaces
     scrollText = llToUpper(text) + " " + llToUpper(text) + " " ;
@@ -249,7 +249,7 @@ displayScroll(string text){
 
 displayBattery(integer percent)
 // based on the percentage, display the correct icon and color
-{   
+{
     // The battery icon has 5 states. Horizontal Offsets can be
     // -0.4 full charge 100% - 88%
     // -0.2 3/4 charge   87% - 75% - 62%
@@ -257,7 +257,7 @@ displayBattery(integer percent)
     //  0.2 1/4 charge   37% - 25% - 12%
     //  0.4 0/4 charge   12% - 0%
     //  Between 5% and 1% it shows red.
-    //  At 0% it turns black. 
+    //  At 0% it turns black.
     
     if (percent > 87) batteryIconHoffset = -0.4; // full
     else if (percent > 61) batteryIconHoffset = -0.2; // 3/4
@@ -341,7 +341,7 @@ string blinkyFaceColorToMeaning(integer face, list colors, list names, string js
     list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
     vector threatColor = llList2Vector(colorList,0);
     integer index = llListFindList(colors, [threatColor]);
-    string stateName = llList2String(names, index); 
+    string stateName = llList2String(names, index);
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonTag, stateName]), "");
     return stateName;
 }
@@ -349,35 +349,35 @@ string blinkyFaceColorToMeaning(integer face, list colors, list names, string js
 setclass(string class) {
     sayDebug("setclass("+class+")");
 
-    // Diffuse = Textures
-    key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
-    key BG_CollarV4_DiffuseBLU = "512f7f51-69b3-1623-fe79-128f2fc72927";
-    key BG_CollarV4_DiffuseCLN = "6cf8859d-e117-6470-b8d2-4a2bc3e69f5e"; // White
-    key BG_CollarV4_DiffuseGRN = "fa3369fa-bff9-9df9-3824-45fe2ea25711";
-    key BG_CollarV4_DiffuseORNG = "05b8b472-25ee-4d48-9306-b322e1329c82";
-    key BG_CollarV4_DiffusePRPL = "85b92d52-bc50-6232-ca40-1fc5d4f5e5f3";
-    key BG_CollarV4_DiffuseRED = "6c5e4c59-5a20-abb0-cd10-36a7a314b0d4";
-    // alpha blending shoudl be None
+// Diffuse = Textures
+key BG_CollarV4_DiffuseBLK = "875eca8e-0dd3-1384-9dec-56dc680d0628";
+key BG_CollarV4_DiffuseBLU = "512f7f51-69b3-1623-fe79-128f2fc72927";
+key BG_CollarV4_DiffuseCLN = "6cf8859d-e117-6470-b8d2-4a2bc3e69f5e"; // White
+key BG_CollarV4_DiffuseGRN = "fa3369fa-bff9-9df9-3824-45fe2ea25711";
+key BG_CollarV4_DiffuseORNG = "05b8b472-25ee-4d48-9306-b322e1329c82";
+key BG_CollarV4_DiffusePRPL = "85b92d52-bc50-6232-ca40-1fc5d4f5e5f3";
+key BG_CollarV4_DiffuseRED = "6c5e4c59-5a20-abb0-cd10-36a7a314b0d4";
+// alpha blending shoudl be None
 
-    // Specular = Shininess
-    key BG_CollarV4_SpecularBLK = "c8514866-6d1b-1a14-08c9-6f5f6cf19852";
-    key BG_CollarV4_SpecularBLU = "57a81cdf-dd18-e56b-d954-1beb95231680";
-    key BG_CollarV4_SpecularCLN = "c8fd2092-eae7-a73c-2603-528c7303d895"; // White
-    key BG_CollarV4_SpecularGRN = "45ace4a9-808d-9a80-3024-ffb882968ffd";
-    key BG_CollarV4_SpecularORNG = "cc716d0a-0e3b-72b4-4933-6888ce9631a6";
-    key BG_CollarV4_SpecularPRPL = "c5ab17c6-a9aa-3b4c-6a51-873a72b3d376";
-    key BG_CollarV4_SpecularRED = "706aee2e-f690-b1f7-8a1d-80a15ce2e835";
+// Specular = Shininess
+key BG_CollarV4_SpecularBLK = "c8514866-6d1b-1a14-08c9-6f5f6cf19852";
+key BG_CollarV4_SpecularBLU = "57a81cdf-dd18-e56b-d954-1beb95231680";
+key BG_CollarV4_SpecularCLN = "c8fd2092-eae7-a73c-2603-528c7303d895"; // White
+key BG_CollarV4_SpecularGRN = "45ace4a9-808d-9a80-3024-ffb882968ffd";
+key BG_CollarV4_SpecularORNG = "cc716d0a-0e3b-72b4-4933-6888ce9631a6";
+key BG_CollarV4_SpecularPRPL = "c5ab17c6-a9aa-3b4c-6a51-873a72b3d376";
+key BG_CollarV4_SpecularRED = "706aee2e-f690-b1f7-8a1d-80a15ce2e835";
 
-    // Bump = Normals
-    key BG_CollarV4_NormalCln = "43bff6ec-96c3-7159-c73e-c50c6bb3944e"; // Clean
-    key BG_CollarV4_NormalCol = "4cc3a580-be55-1511-7c0b-4bf1094b1dbf"; // Colors
+// Bump = Normals
+key BG_CollarV4_NormalCln = "43bff6ec-96c3-7159-c73e-c50c6bb3944e"; // Clean
+key BG_CollarV4_NormalCol = "4cc3a580-be55-1511-7c0b-4bf1094b1dbf"; // Colors
 
-    list classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED, 
-        BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
-    list classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED, 
-        BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
-    list classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, 
-        BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
+list classTextures = [BG_CollarV4_DiffuseCLN, BG_CollarV4_DiffusePRPL, BG_CollarV4_DiffuseRED,
+            BG_CollarV4_DiffuseORNG, BG_CollarV4_DiffuseGRN, BG_CollarV4_DiffuseBLU, BG_CollarV4_DiffuseBLK];
+list classSpeculars = [BG_CollarV4_SpecularCLN, BG_CollarV4_SpecularPRPL, BG_CollarV4_SpecularRED,
+            BG_CollarV4_SpecularORNG, BG_CollarV4_SpecularGRN, BG_CollarV4_SpecularBLU, BG_CollarV4_SpecularBLK];
+list classBumpmaps = [BG_CollarV4_NormalCln, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol,
+            BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol, BG_CollarV4_NormalCol];
 
     integer classi = llListFindList(classNames, [class]);
     classColor = llList2Vector(classColors, classi);
@@ -408,7 +408,7 @@ attachStartup(key theAvatar) {
     mood = blinkyFaceColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "mood");
     class = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "class");
     threat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "threat");
-}
+    }
 
 default
 {
@@ -427,7 +427,7 @@ default
             integer link = getLinkWithName(linkname);
             sayDebug("init linking "+linkname+" to "+(string)link);
             LinksAlphanum = LinksAlphanum + [link];
-        }        
+            }
         linkTitler = getLinkWithName("Titler");
         LinkBlinky = getLinkWithName("BG_CollarV4_LightsMesh");
         LinkAlphanumFrame = getLinkWithName("BG_CollarV4_LightsMesh");
@@ -441,7 +441,7 @@ default
         llSetLinkTextureAnim(batteryIconLink, 0, batteryIconFace, 1, 1, 0.0, 0.0, 0.0);
 
         // Initialize the world
-        batteryPercent = 0; 
+        batteryPercent = 0;
         crime = "";
         if (llGetAttached() != 0) {
             attachStartup(llGetOwner());
@@ -453,8 +453,8 @@ default
             threat = "none";
             
             setclass(class);
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, BLACK, 1.0]);            
-            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);            
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, BLACK, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, LIGHT_GRAY, 1.0]);
             displayTitler();
@@ -468,7 +468,7 @@ default
         sayDebug("attach done");
     }
 
-    link_message( integer sender_num, integer num, string json, key id ){ 
+    link_message( integer sender_num, integer num, string json, key id ){
         sayDebug("link_message "+json);
 
         list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
@@ -490,7 +490,7 @@ default
         if (value != JSON_INVALID) {
             class = value;
             setclass(class);
-            sayDebug("link_message "+(string)num+" "+class+"->class");            
+            sayDebug("link_message "+(string)num+" "+class+"->class");
         }
                 
         // Lock level sets blinky 2
@@ -542,8 +542,8 @@ default
                 if (llGetObjectName() != newCollarName && llGetAttached() != 0) {
                     llOwnerSay("This collar will now rename itself to \""+newCollarName+"\"");
                     llSetObjectName(newCollarName);
+                    }
                 }
-            }
             displayCentered(assetNumber);
             displayTitler();
         }
@@ -571,7 +571,7 @@ default
             sayDebug("badWordCount "+value);
             TIMER_BADWORDS = (integer)value;
             llSetTimerEvent(1);
-        }
+            }
             
         //set titler visible
         value = llJsonGetValue(json, [buttonTitler]);
@@ -582,37 +582,37 @@ default
                 titlerActive = 1.0;
             }
             displayTitler();
-        }
+            }
     }
     
    timer() {
         sayDebug("timer()");
-        if (TIMER_REDISPLAY > 0) {
-            if (assetNumber == unassignedAsset) {
-                sendJSON("database", "getupdate", llGetOwner());
+            if (TIMER_REDISPLAY > 0) {
+                if (assetNumber == unassignedAsset) {
+                    sendJSON("database", "getupdate", llGetOwner());
+                }
+                sayDebug("set and display assetNumber \""+assetNumber+"\"");
+                displayCentered(assetNumber);
+                llSetTimerEvent(0);
+                TIMER_REDISPLAY = 0;
             }
-            sayDebug("set and display assetNumber \""+assetNumber+"\"");
-            displayCentered(assetNumber);
-            llSetTimerEvent(0);  
-            TIMER_REDISPLAY = 0;
-        }
-        
-        // Blink the battery light off and red for every bad word spokem.
-        // Timer shoud be on one-second interval
-        if (TIMER_BADWORDS > 0) {
-            sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-            llSetLinkColor(LinkBlinky, RED*brightnessMultiplier, 0);
-            llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, RED, 1.0]);
-            TIMER_BADWORDS = - TIMER_BADWORDS;
-        } else if (TIMER_BADWORDS < 0) {
-            sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
-            displayBattery(batteryPercent); // reset the red light
-            llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
-            TIMER_BADWORDS = -TIMER_BADWORDS - 1;
-            if (TIMER_BADWORDS == 0) {
-                llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
-                llSetTimerEvent(0);  
+            
+            // Blink the battery light off and red for every bad word spokem.
+            // Timer shoud be on one-second interval
+            if (TIMER_BADWORDS > 0) {
+                sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
+                llSetLinkColor(LinkBlinky, RED*brightnessMultiplier, 0);
+                llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, RED, 1.0]);
+                TIMER_BADWORDS = - TIMER_BADWORDS;
+            } else if (TIMER_BADWORDS < 0) {
+                sayDebug("timer TIMER_BADWORDS:"+(string)TIMER_BADWORDS);
+                displayBattery(batteryPercent); // reset the red light
+                llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, BLACK, 1.0]);
+                TIMER_BADWORDS = -TIMER_BADWORDS - 1;
+                if (TIMER_BADWORDS == 0) {
+                    llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, moodColor, 1.0]);
+                    llSetTimerEvent(0);
+                }
             }
         }
     }
-}
