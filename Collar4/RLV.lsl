@@ -1,7 +1,7 @@
 // RLV.lsl
 // RLV script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2021-12-23
+// version: 2023-03-08
 
 // controls Relay
 // manages Zap

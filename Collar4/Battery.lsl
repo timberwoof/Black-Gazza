@@ -1,7 +1,7 @@
 // Battery.lsl
 // Battery script for Black Gazza Collar 4
 // Timberwoof Lupindo, June 2019
-// version: 2021-03-07
+// version: 2023-03-08
 
 // Receives events from other sytsems and discgarhes the battery accordingly. 
 // Receives recharge message from the charger and charges the battery accordingly. 

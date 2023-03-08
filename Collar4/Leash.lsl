@@ -2,7 +2,7 @@
 // Menu and control script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // July 2019
-// version: 2020-11-23
+// version: 2023-03-08
 
 // Handles all leash menu, authroization, and leashing functionality
 

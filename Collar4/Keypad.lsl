@@ -1,3 +1,7 @@
+// keypad.lsl
+// script for inflicting a keypd on the user nd giving back a number
+// Lormyr Daviau, back when they used oscilloscopes to debug fire
+// version 2023-03-08
 integer KEYPAD_CHANNEL;
 integer KEYPAD_CHANNEL_HANDLE;
 string MESSAGE;
