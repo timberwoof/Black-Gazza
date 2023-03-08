@@ -7,7 +7,7 @@
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words 
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 sayDebug(string message)
 {
@@ -26,18 +26,18 @@ integer renameEmoteListen = 0;
 integer textboxChannel = 0;
 integer textboxListen = 0;
 
-integer renamerActive = 0;
-integer DisplayTokActive = 0;
-integer badWordsActive = 0;
+integer renamerActive = FALSE;
+integer DisplayTokActive = FALSE;
+integer badWordsActive = FALSE;
 
-integer speechPenaltyDisplay = 0;
-integer speechPenaltyGarbleWord = 0;
-integer speechPenaltyGarbleTime = 0;
-integer speechPenaltyBuzz = 0;
-integer speechPenaltyZap = 0;
+integer speechPenaltyDisplay = FALSE;
+integer speechPenaltyGarbleWord = FALSE;
+integer speechPenaltyGarbleTime = FALSE;
+integer speechPenaltyBuzz = FALSE;
+integer speechPenaltyZap = FALSE;
 
-integer batteryLevel = 0;
-integer rlvPresent = 0;
+integer batteryLevel = FALSE;
+integer rlvPresent = FALSE;
 
 list badWords;
 list listWordsSpoken; // needed globally for displaytok
@@ -48,29 +48,29 @@ integer numTimesToBuzz = 0;
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
-    }
+}
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
-    }
+}
     
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
     
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 processSpeech(string speech, key avatarKey){
     sayDebug("processSpeech("+speech+")");
@@ -126,7 +126,7 @@ sendRLVRestrictCommand(string why) {
     string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=add,rediremote:"+(string)renameEmoteChannel+"=add";
     sayDebug("sendRLVRestrictCommand "+why+" rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    renamerActive  = 1;
+    renamerActive  = TRUE;
 }
 
 sendRLVReleaseCommand(string why) {
@@ -135,7 +135,7 @@ sendRLVReleaseCommand(string why) {
     string rlvcommand = "@redirchat:"+(string)renameSpeechChannel+"=rem,rediremote:"+(string)renameEmoteChannel+"=rem";
     sayDebug("sendRLVReleaseCommand "+why+" rlvcommand:"+rlvcommand);
     llOwnerSay(rlvcommand);
-    renamerActive = 0;
+    renamerActive = FALSE;
 }
 
 default
@@ -191,36 +191,36 @@ default
             }
         }
         if (speechCommand == "BadWordsOFF") {
-            badWordsActive = 0;
+            badWordsActive = FALSE;
         } else if (speechCommand == "BadWordsON") {
-            badWordsActive = 1;
+            badWordsActive = TRUE;
         } else  if (speechCommand == "DisplayTokOFF") {
-            DisplayTokActive = 0;
+            DisplayTokActive = FALSE;
         } else if (speechCommand == "DisplayTokON") {
-            DisplayTokActive = 1;
+            DisplayTokActive = TRUE;
         }
         
         string penaltyCommand = getJSONstring(json, "Penalties", "");
         if (penaltyCommand == "DisplayON") {
-            speechPenaltyDisplay = 1;
+            speechPenaltyDisplay = TRUE;
         } else if (penaltyCommand == "DisplayOFF") {
-            speechPenaltyDisplay = 0;
+            speechPenaltyDisplay = FALSE;
         } else if (penaltyCommand == "GarbleWordON") {
-            speechPenaltyGarbleWord = 1;
+            speechPenaltyGarbleWord = TRUE;
         } else if (penaltyCommand == "GarbleWordOFF") {
-            speechPenaltyGarbleWord = 0;
+            speechPenaltyGarbleWord = FALSE;
         } else if (penaltyCommand == "GarbleTimeON") {
-            speechPenaltyGarbleTime = 1;
+            speechPenaltyGarbleTime = TRUE;
         } else if (penaltyCommand == "GarbleTimeOFF") {
-            speechPenaltyGarbleTime = 0;
+            speechPenaltyGarbleTime = FALSE;
         } else if (penaltyCommand == "BuzzON") {
-            speechPenaltyBuzz = 1;
+            speechPenaltyBuzz = TRUE;
         } else if (penaltyCommand == "BuzzOFF") {
-            speechPenaltyBuzz = 0;
+            speechPenaltyBuzz = FALSE;
         } else if (penaltyCommand == "ZapON") {
-            speechPenaltyZap = 1;
+            speechPenaltyZap = TRUE;
         } else if (penaltyCommand == "ZapOFF") {
-            speechPenaltyZap = 0;
+            speechPenaltyZap = FALSE;
         }
 
         batteryLevel = getJSONinteger(json, "batteryLevel", batteryLevel);
@@ -246,7 +246,7 @@ default
         // handle player's emotes
         if (channel == renameEmoteChannel && name == llKey2Name(llGetOwner()) && avatarKey == llGetOwner()) {
             llSay(0,message);
-            }
+        }
             
         // handle the bad word list dialog
         if (channel == textboxChannel) {

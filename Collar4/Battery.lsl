@@ -7,7 +7,7 @@
 // Receives recharge message from the charger and charges the battery accordingly. 
 // Sends battery state commands to Display. 
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 integer basicCharge; // battery capacity in seconds
 integer batteryCharge; // seconds left
@@ -21,10 +21,10 @@ integer timerInterval;
 string mood = "OOC";
 string lockLevel = "Off";
 list LockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
-integer renamerActive = 0;
-integer badWordsActive = 0;
-integer gagActive = 0;
-integer DisplayTokActive = 0;
+integer renamerActive = FALSE;
+integer badWordsActive = FALSE;
+integer gagActive = FALSE;
+integer DisplayTokActive = FALSE;
 string batteryActive = "OFF";
 
 sayDebug(string message)
@@ -41,25 +41,25 @@ sendJSON(string jsonKey, string value, key avatarKey){
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
-    }
+}
     
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
         
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 integer updateValue(string json, string jsonKey, integer now, integer replace) {
     string value = llJsonGetValue(json, [jsonKey]);
@@ -158,7 +158,7 @@ default
                 
         // One-time discharges for events. 
         // When something gets set, discharge the battery a little.
-        integer chargeUsed = 0;
+        integer chargeUsed = FALSE;
         chargeUsed = updateValue(json, "mood", chargeUsed, 600);
         chargeUsed = updateValue(json, "zapLevels", chargeUsed, 600);
         chargeUsed = updateValue(json, "threat", chargeUsed, 600);
@@ -173,7 +173,7 @@ default
             return;
         }
 
-        chargeUsed = getJSONinteger(json, "Discharge", 0);
+        chargeUsed = getJSONinteger(json, "Discharge", FALSE);
         if (chargeUsed) {
             dischargeBattery("discharge", chargeUsed);
             return;
@@ -183,19 +183,19 @@ default
         mood = getJSONstring(json, "mood", mood);
         lockLevel = getJSONstring(json, "lockLevel", lockLevel);
         string speechCommand = getJSONstring(json, "Speech", "");
-        if (speechCommand == "RenamerOFF") renamerActive = 0;
-        if (speechCommand == "RenamerON")  renamerActive = 1;
-        if (speechCommand == "BadWordsOFF") badWordsActive = 0;
-        if (speechCommand == "BadWordsON") badWordsActive = 1;
-        if (speechCommand == "GagOFF") gagActive = 0;
-        if (speechCommand == "GagON") gagActive = 1;
-        if (speechCommand == "DisplayTokOFF") DisplayTokActive = 0;
-        if (speechCommand == "DisplayTokON") DisplayTokActive = 1;
+        if (speechCommand == "RenamerOFF") renamerActive = FALSE;
+        if (speechCommand == "RenamerON")  renamerActive = TRUE;
+        if (speechCommand == "BadWordsOFF") badWordsActive = FALSE;
+        if (speechCommand == "BadWordsON") badWordsActive = TRUE;
+        if (speechCommand == "GagOFF") gagActive = FALSE;
+        if (speechCommand == "GagON") gagActive = TRUE;
+        if (speechCommand == "DisplayTokOFF") DisplayTokActive = FALSE;
+        if (speechCommand == "DisplayTokON") DisplayTokActive = TRUE;
         if (lockLevel == "Off") {
-            renamerActive = 0;
-            badWordsActive = 0;
-            gagActive = 0; 
-            DisplayTokActive = 0;
+            renamerActive = FALSE;
+            badWordsActive = FALSE;
+            gagActive = FALSE; 
+            DisplayTokActive = FALSE;
         }
         
         // Current discharge rate depending on things that are on.

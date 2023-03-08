@@ -7,7 +7,7 @@ integer responderChannel;
 integer responderListen;
 string lockLevel;
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 sayDebug(string message)
 {
