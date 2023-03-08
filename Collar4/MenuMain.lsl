@@ -198,19 +198,6 @@ integer getLinkWithName(string name) {
     return -1; // No prim with that name, return -1.
 }
 
-// Menus and Handlers ****************
-
-attachStartup(string calledby) {
-    sayDebug("attachStartup("+calledby+")");
-    // set up chanel 1 menu command
-    string canonicalName = llToLower(llKey2Name(llGetOwner()));
-    list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
-    string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
-    menuPhrase = initials + "menu";
-    llOwnerSay("Access the collar menu by typing /1"+menuPhrase);
-    wearerListen = llListen(wearerChannel, "", "", menuPhrase);
-}
-
 mainMenu(key avatarKey) {
     string message = menuMain + "\n";
 
@@ -441,13 +428,19 @@ default
             sendJSON("mood", moodOOC, "");            
             doSetPunishmentLevels(llGetOwner(),""); // initialize
         }
-        
+
         sayDebug("MainMenu: state_entry");
     }
 
     attach(key avatar) {
+        if(llGetAttached() == 0) return;
         sayDebug("attach");
-        attachStartup("attach");
+        string canonicalName = llToLower(llKey2Name(llGetOwner()));
+        list canoncialList = llParseString2List(llToLower(canonicalName), [" "], []);
+        string initials = llGetSubString(llList2String(canoncialList,0),0,0) + llGetSubString(llList2String(canoncialList,1),0,0);
+        menuPhrase = initials + "menu";
+        llOwnerSay("Access the collar menu by typing /1"+menuPhrase);
+        wearerListen = llListen(wearerChannel, "", "", menuPhrase);
         sayDebug("attach done");
     }
 
