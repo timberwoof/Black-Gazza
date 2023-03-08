@@ -440,9 +440,9 @@ default
             sendJSON("threat", "None", "");
             sendJSON("mood", moodOOC, "");            
             doSetPunishmentLevels(llGetOwner(),""); // initialize
-        } else {
-            sayDebug("MainMenu: state_entry");
         }
+        
+        sayDebug("MainMenu: state_entry");
     }
 
     attach(key avatar) {
