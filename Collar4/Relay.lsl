@@ -22,7 +22,7 @@
 // more sophisticated startup behavior
 // communicates to otehr modules with json
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 integer relayChannel = -1812221819;
 string version = "1030";

@@ -9,7 +9,7 @@
 // manages OAD/Lovense vibrator toys
 // Sends OAD Lovense commands to channel -20200610
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 integer SafewordChannel = 0;
 integer SafewordListen = 0;
@@ -127,7 +127,7 @@ checkRLV(string why) {
 sendRLVRestrictCommand(string level, key id) {
     // level can be Off Light Medium Heavy Hardcore
     string theSound = soundLatch;
-    if (rlvPresent == 1) {
+    if (rlvPresent) {
         lockLevel = level;
         sayDebug("sendRLVRestrictCommand(\""+lockLevel+"\")");
         llOwnerSay("@clear"); // this kills the speech settings
@@ -263,7 +263,7 @@ string firstname(key who) {
 // Zap
 integer zapTimerInterval = 5; // 5 seconds ;for all timers
 integer zapTimeremaining ; // seconds remaining on timer: half an hour by default
-integer zapTimerunning = 0; // 0 = stopped; 1 = running
+integer zapTimerunning = TRUE; // 0 = stopped; 1 = running
 
 list zapLevelNames = ["Low", "Med", "Hig"];
 list zapTimes = [2.0, 4.0, 8.0]; // how many seconds zap lasts
@@ -274,7 +274,7 @@ list zapTimeouts = [120, 240, 960]; // timeout before you can zap again
 startZap(string zapLevel, key who) {
     sayDebug("startZap("+zapLevel+")");
     integer zapindex = llListFindList(zapLevelNames, [zapLevel]);
-    if ( (zapindex >= 0) & (zapTimerunning == 0))
+    if ( (zapindex >= 0) & (!zapTimerunning))
     {
         // announce in chat what's happening
         string name;
@@ -327,7 +327,7 @@ startZap(string zapLevel, key who) {
     }
     llSleep(1);
     llStopSound();
-    zapTimerunning = 0;
+    zapTimerunning = FALSE;
     llSetTimerEvent(zapTimerInterval);
 }
 
@@ -366,7 +366,7 @@ OADBuzz(string level){
 
 restrictVision(integer enabled) {
     sayDebug("restrictVision");
-    if (rlvPresent == 1) {
+    if (rlvPresent) {
         string rlvcommand;
         string message;
         if (enabled) {
@@ -403,7 +403,7 @@ restrictVision(integer enabled) {
 // It has non-obvious states that need to be announced and displayed
 integer lockTimerInterval = 5; // 5 seconds ;for all timers
 integer lockTimeremaining = 1800; // seconds remaining on timer: half an hour by default
-integer lockTimerunning = 0; // 0 = stopped; 1 = running
+integer lockTimerunning = FALSE; // 0 = stopped; 1 = running
 integer HUDTimeStart = 20; // seconds it was set to so we can set it again 
     // *** set to 20 for debug, 1800 for production
 
@@ -459,13 +459,13 @@ lockTimerSet(integer set_time) {
 
 lockTimerRun() {
     // make the timer run. Init and finish countdown. 
-    lockTimerunning = 1; // timer is running
+    lockTimerunning = TRUE; // timer is running
     llSetTimerEvent(5.0);
     llOwnerSay("Timer has started.");
 }
 
 lockTimerRestart() {
-    if (lockTimerunning == 1) {
+    if (lockTimerunning) {
         llSetTimerEvent(5.0);
     } else {
         llSetTimerEvent(0.0);
@@ -475,7 +475,7 @@ lockTimerRestart() {
 lockTimerStop() {
     // stop the timer. Nobody calls this ... yet. 
     // *** perhaps use this while prisoner is being schoked
-    lockTimerunning = 0; // timer is stopped
+    lockTimerunning = FALSE; // timer is stopped
     llOwnerSay("Timer has stopped.");
 }
 
@@ -650,7 +650,7 @@ default
             sayDebug("timer RLVStatusListen");   
             // we were asking local RLV status; this is the timeout
             llOwnerSay("Your SL viewer is not RLV-Enabled. You're missing out on all the fun!");
-            rlvPresent = 0;
+            rlvPresent = FALSE;
             //llListenRemove(RLVStatusListen); *** debug
             //RLVStatusListen = 0; *** debug
             lockTimerRestart();
@@ -659,10 +659,10 @@ default
         //} else if (visionTimeout > 0) {
         //    restrictVision(0);
         }
-        if (zapTimerunning == 1 && zapTimeremaining <= zapTimerInterval) {
-            zapTimerunning = 0;
+        if (zapTimerunning && zapTimeremaining <= zapTimerInterval) {
+            zapTimerunning = FALSE;
         }
-        if (lockTimerunning == 1) {
+        if (lockTimerunning) {
             lockTimeremaining -= lockTimerInterval;
             if (lockTimeremaining <= lockTimerInterval) {
                 // time has run out...
@@ -672,7 +672,7 @@ default
                 lockTimerReset();
             }
         }   
-        if ( (lockTimerunning == 0) && (zapTimerunning == 0) ) {
+        if ( (!lockTimerunning) && (!zapTimerunning) ) {
             llSetTimerEvent(0);
         }
     }

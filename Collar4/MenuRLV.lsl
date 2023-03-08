@@ -4,7 +4,7 @@
 // June 2019
 string version = "2022-09-06";
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -15,9 +15,9 @@ string RLV = "RLV";
 string lockLevel;
 list lockLevels = ["Off", "Light", "Medium", "Heavy", "Hardcore"];
 string lockLevelOff = "Off";
-integer rlvPresent = 0;
-integer renamerActive = 0;
-integer relayCheckboxState = 0;
+integer rlvPresent = FALSE;
+integer renamerActive = FALSE;
+integer relayCheckboxState = FALSE;
 string RelayOFF = "Off";
 string RelayASK = "Ask";
 string RelayON = "On";
@@ -187,7 +187,7 @@ setRelayState(integer on) {
             sendJSON("relayCommand", RelayASK, avatarKey);
         } else {
             // Heavy or hardcore
-            relayCheckboxState = 1;
+            relayCheckboxState = TRUE;
             sayDebug("setRelayState: "+(string)level+" "+RelayON);
             sendJSON("relayCommand", RelayON, avatarKey);
         }
@@ -215,11 +215,11 @@ lockMenu(key avatarKey)
         sayDebug("lockMenu iLocklevel:"+(string)iLockLevel);
         // make a list of wjether each lock level is available from that lock level
         // lockLevel: 0=off, 1=light, 2=medium, 3=heavy, 4=hardcore
-        list lockListOff = [0, 1, 1, 1, 0];
-        list lockListLight = [1, 0, 1, 1, 0];
-        list lockListMedium = [1, 1, 0, 1, 0];
-        list lockListHeavy = [0, 0, 0, 0, 1];
-        list lockListHardcore = [0, 0, 0, 0, 0];
+        list lockListOff = [FALSE, TRUE, TRUE, TRUE, FALSE];
+        list lockListLight = [TRUE, FALSE, TRUE, TRUE, FALSE];
+        list lockListMedium = [TRUE, TRUE, FALSE, TRUE, FALSE];
+        list lockListHeavy = [FALSE, FALSE, FALSE, FALSE, TRUE];
+        list lockListHardcore = [FALSE, FALSE, FALSE, FALSE, FALSE];
         list lockLists = lockListOff + lockListLight + lockListMedium + lockListHeavy + lockListHardcore; // strided list
         list lockListMenu = llList2List(lockLists, iLockLevel*5, (iLockLevel+1)*5); // list of lock levels to add to menu
         sayDebug("lockMenu lockListMenu:"+(string)lockListMenu); 
@@ -254,17 +254,17 @@ doLockMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     } else if (message == "⨷ Hardcore") {
         sayDebug("listen set lockLevel:\""+lockLevel+"\"");
         sendJSON(RLV, "Hardcore", avatarKey);
-        relayCheckboxState = 1;
+        relayCheckboxState = TRUE;
         setRelayState(relayCheckboxState);
         
     // Relay
     } else if (message == menuCheckbox("Relay", relayCheckboxState)) {
         // RelayState() now returns what the state is now, 
         // which the wearer wants to change to the opposite. 
-        if (relayCheckboxState == 1) {
-            relayCheckboxState = 0;
+        if (relayCheckboxState) {
+            relayCheckboxState = FALSE;
         } else {
-            relayCheckboxState = 1;
+            relayCheckboxState = TRUE;
         }
         sayDebug("listen set relayCheckboxState:"+(string)relayCheckboxState);
         setRelayState(relayCheckboxState);
@@ -275,9 +275,9 @@ doLockMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         sendJSON(RLV, messageButtonsTrimmed, avatarKey);
         if (messageButtonsTrimmed == "Heavy") {
             sayDebug("listen lockLevel Heavy, so turn on renamer");
-            renamerActive = 1;
+            renamerActive = TRUE;
             sendJSONCheckbox(buttonSpeech, "Renamer", avatarKey, renamerActive);
-            relayCheckboxState = 1;
+            relayCheckboxState = TRUE;
             }
         setRelayState(relayCheckboxState);
         // settingsMenu(avatarKey);
@@ -360,8 +360,8 @@ default
             lockLevel = getJSONstring(json, "lockLevel", lockLevel);
             renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
             rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-            if (rlvPresent == 0) {
-                renamerActive = 0;
+            if (!rlvPresent) {
+                renamerActive = FALSE;
             }
 
             if(getJSONstring(json, "menu", "") == RLV)

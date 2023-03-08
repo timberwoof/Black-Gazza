@@ -4,7 +4,7 @@
 // June 2019
 string version = "2022-09-06";
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -16,10 +16,10 @@ integer wearerListen = 0;
 string menuPhrase;
 
 // Punishments
-integer allowZapLow = 1;
-integer allowZapMed = 1;
-integer allowZapHigh = 1;
-integer allowVision = 1;
+integer allowZapLow = TRUE;
+integer allowZapMed = TRUE;
+integer allowZapHigh = TRUE;
+integer allowVision = TRUE;
 
 string mood;
 string class = "white";
@@ -29,9 +29,9 @@ list classesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "Genera
 string RLV = "RLV";
 string lockLevel;
 string lockLevelOff = "Off";
-integer rlvPresent = 0;
-integer renamerActive = 0;
-integer DisplayTokActive = 0;
+integer rlvPresent = FALSE;
+integer renamerActive = FALSE;
+integer DisplayTokActive = FALSE;
 string RelayLockState = "Off"; // what the relay told us
 
 string crime = "Unknown";
@@ -225,55 +225,55 @@ mainMenu(key avatarKey) {
         }
     
     // assume some things are not available
-    integer doPunish = 0;
-    integer doForceSit = 0;
-    integer doLeash = 0;
-    integer doSafeword = 0;
-    integer doRelease = 0;
+    integer doPunish = FALSE;
+    integer doForceSit = FALSE;
+    integer doLeash = FALSE;
+    integer doSafeword = FALSE;
+    integer doRelease = FALSE;
     
     // Collar functions controlled by Mood: punish, force sit, leash, speech
     if (mood == moodDND | mood == moodLockup) {
         if (avatarKey == llGetOwner()) {
-            doPunish = 1;
-            doForceSit = 1;
-            doLeash = 1;
+            doPunish = TRUE;
+            doForceSit = TRUE;
+            doLeash = TRUE;
         }
     } else if (mood == moodOOC) {
             // everyone can do everything (but you better ask)
-            doPunish = 1;
-            doForceSit = 1;
-            doLeash = 1;
+            doPunish = TRUE;
+            doForceSit = TRUE;
+            doLeash = TRUE;
     } else { // mood == anything else
         if (avatarKey == llGetOwner()) {
             // wearer can't do anything
         } else if (agentIsGuard(avatarKey)) {
             // Guards can do anything
-            doPunish = 1;
-            doForceSit = 1;
-            doLeash = 1;
+            doPunish = TRUE;
+            doForceSit = TRUE;
+            doLeash = TRUE;
         } else {
             // other prisoners can leash and force sit
-            doForceSit = 1;
-            doLeash = 1;
+            doForceSit = TRUE;
+            doLeash = TRUE;
         }
     }
     
     // Collar functions overridden by lack of RLV
     if (!rlvPresent) {
-        doForceSit = 0;
-        doLeash = 0;
+        doForceSit = FALSE;
+        doLeash = FALSE;
         message = message + "\nSome functions are available ony when RLV is present.";
     }
     
     // Collar functions controlled by locklevel: Safeword and Release
     if (lockLevel == "Hardcore" && agentIsGuard(avatarKey)) {
-        doRelease = 1;
+        doRelease = TRUE;
     } else {
         message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
     }
     
     if (avatarKey == llGetOwner() && lockLevel != "Hardcore" && lockLevel != lockLevelOff) {
-        doSafeword = 1;
+        doSafeword = TRUE;
     } else {
         message = message + "\nSafeword is availavle to the Prisoner in RLV levels Medium and Heavy.";
     }
@@ -397,10 +397,10 @@ doSetPunishmentLevels(key avatarKey, string message)
     {
         sayDebug("wearer sets allowable zap level: "+message);
         if (message == "") {
-            allowZapLow = 1;
-            allowZapMed = 1;
-            allowZapHigh = 1;
-            allowVision = 1;
+            allowZapLow = TRUE;
+            allowZapMed = TRUE;
+            allowZapHigh = TRUE;
+            allowVision = TRUE;
         }
         else if (message == "Zap Low") {
             allowZapLow = !allowZapLow;
@@ -411,8 +411,8 @@ doSetPunishmentLevels(key avatarKey, string message)
         //} else if (message == "Vision") {
         //    allowVision = !allowVision;
         }
-        if (allowZapLow + allowZapMed + allowZapHigh == 0) {
-            allowZapHigh = 1;
+        if (allowZapLow + allowZapMed + allowZapHigh == FALSE) {
+            allowZapHigh = TRUE;
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         sendJSON("ZapLevels", zapJsonList, avatarKey);
@@ -549,9 +549,9 @@ default
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
         batteryGraph = getJSONstring(json, "batteryGraph", batteryGraph);
         rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-        if (rlvPresent == 0) {
-            renamerActive = 0;
-            DisplayTokActive = 0;
+        if (!rlvPresent) {
+            renamerActive = FALSE;
+            DisplayTokActive = FALSE;
         }
         if(getJSONstring(json, "menu", "") == menuMain)
         {
