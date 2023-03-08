@@ -67,18 +67,18 @@ integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
@@ -86,7 +86,7 @@ sendJSONinteger(string jsonKey, integer value, key avatarKey){
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
-    }
+}
 
 generateChannels() {
     sayDebug("generateChannels");
@@ -174,50 +174,50 @@ sendRLVRestrictCommand(string level, key id) {
 // ***************************
 // ACS Interference
 processACSInterference(string name, string message) {
-        // interferenceCodes = "PMSNCY";
-        // interferenceNames = ["Power","Motor","Speaker","Sensory","Cognitive","Memory"];
+    // interferenceCodes = "PMSNCY";
+    // interferenceNames = ["Power","Motor","Speaker","Sensory","Cognitive","Memory"];
 
-        list commands = llCSV2List(message);
-        string acs = llList2String(commands,0);
-        string interfere = llList2String(commands,1);
+    list commands = llCSV2List(message);
+    string acs = llList2String(commands,0);
+    string interfere = llList2String(commands,1);
+    
+    if ((acs == "ACS") & (interfere == "interfere"))
+    {
+        // parse the ACS interference command
+        //string type = llList2String(commands,2); //  type:"+type+
+        integer time = llList2Integer(commands,3);
+        integer strength = llList2Integer(commands,4);
+        sayDebug("processACSInterference time:"+(string)time+" strength:"+(string)strength);
+
+        // Scale ACS strentgh to OAD strength.
+        // ACS interference strength ranges 0-9
+        // OAS buzz strength ranges 0-20
+        // 20 / 9 = 2.222, so 0:0 1:3 2:5 3:7 4:9 5:12 6:14 7:16 8:18 9:20
+        strength = llCeil(strength * 2.222); 
+        sayDebug("strength:"+(string)strength);
         
-        if ((acs == "ACS") & (interfere == "interfere"))
-        {
-            // parse the ACS interference command
-            //string type = llList2String(commands,2); //  type:"+type+
-            integer time = llList2Integer(commands,3);
-            integer strength = llList2Integer(commands,4);
-            sayDebug("processACSInterference time:"+(string)time+" strength:"+(string)strength);
-
-            // Scale ACS strentgh to OAD strength.
-            // ACS interference strength ranges 0-9
-            // OAS buzz strength ranges 0-20
-            // 20 / 9 = 2.222, so 0:0 1:3 2:5 3:7 4:9 5:12 6:14 7:16 8:18 9:20
-            strength = llCeil(strength * 2.222); 
-            sayDebug("strength:"+(string)strength);
-            
-            // Limit buzz time to 10 seconds.
-            // Adjust strength appropriately.
-            if (time > 10) {
-                strength = llCeil(strength * time / 10.0);
-                sayDebug("strength recalculated by time to:"+(string)strength);
-                time = 10;
-                }
-                
-            // limit strength to max
-            if (strength > 20) {
-                strength = 20;
-                sayDebug("strength capped:"+(string)strength);
-                }
-                
-            // buzz the wearer
-            sendOADCommand(OAD_VIBE, strength, OAD_ALL, time);
-            llSleep(time);
-            sendOADCommand(OAD_VIBE, 0, OAD_ALL, 0);
-        } else {
-            llSay(0,name+" transmitted on ACS Interference Channel.");
-            }
+        // Limit buzz time to 10 seconds.
+        // Adjust strength appropriately.
+        if (time > 10) {
+            strength = llCeil(strength * time / 10.0);
+            sayDebug("strength recalculated by time to:"+(string)strength);
+            time = 10;
         }
+            
+        // limit strength to max
+        if (strength > 20) {
+            strength = 20;
+            sayDebug("strength capped:"+(string)strength);
+        }
+            
+        // buzz the wearer
+        sendOADCommand(OAD_VIBE, strength, OAD_ALL, time);
+        llSleep(time);
+        sendOADCommand(OAD_VIBE, 0, OAD_ALL, 0);
+    } else {
+        llSay(0,name+" transmitted on ACS Interference Channel.");
+    }
+}
 
 // ***************************
 // Safeword
@@ -351,7 +351,7 @@ sendOADCommand(string command, integer level, string toy, integer time){
 OADStartBuzz() {
     sayDebug("OADStartBuzz");
     sendOADCommand(OAD_VIBE, 5, OAD_ALL, (integer)ZapTimeCharge);
-    }
+}
 
 OADBuzz(string level){
     sayDebug("OADBuzz:"+level);
@@ -371,9 +371,9 @@ restrictVision(integer enabled) {
         string message;
         if (enabled) {
             rlvcommand = "@shownames_sec=n,showhovertextall=n,"+
-            // setenv_daytime:0.0=force,
-            "setenv_hazedensity:1.9=force,setenv_densitymultiplier:0.5=force,setenv_distancemultiplier:1.8=force,setenv_hazehorizon:0.2=force,"+
-            "getenv_hazedensity=42,getenv_densitymultiplier=42,getenv_distancemultiplier=42,getenv_hazehorizon=42";
+                // setenv_daytime:0.0=force,
+                "setenv_hazedensity:1.9=force,setenv_densitymultiplier:0.5=force,setenv_distancemultiplier:1.8=force,setenv_hazehorizon:0.2=force,"+
+                "getenv_hazedensity=42,getenv_densitymultiplier=42,getenv_distancemultiplier=42,getenv_hazehorizon=42";
             
                 //"setenv_scenegamma:0.1=force"; // 0-10; 10 is bright this one's good
                 //"camdrawmin:5=n,camdrawmax:10=n,camdrawalphamin:1.0=n,camdrawalphamax:0.0=n";
@@ -417,29 +417,29 @@ string lockTimerDisplay() {
     } else {
 
     // Calculate
-    sayDebug("lockTimerDisplay received "+(string)lockTimeremaining+" seconds."); 
-    string display_time = ""; // "Unlocks in ";
-    integer days = lockTimeremaining/86400;
-    integer hours;
-    integer minutes;
-    integer seconds;
-    
-    if (days > 0) {
-        display_time += (string)days+" Days ";   
-    }
-    
-    integer carry_over_hours = lockTimeremaining - (86400 * days);
-    hours = carry_over_hours / 3600;
-    display_time += (string)hours+":"; // " Hours ";
-    
-    integer carry_over_minutes = carry_over_hours - (hours * 3600);
-    minutes = carry_over_minutes / 60;
-    display_time += (string)minutes+":"; // " Minutes ";
-    
-    seconds = carry_over_minutes - (minutes * 60);
-    
-    display_time += (string)seconds; //+" Seconds";    
-    return display_time; 
+        sayDebug("lockTimerDisplay received "+(string)lockTimeremaining+" seconds."); 
+        string display_time = ""; // "Unlocks in ";
+        integer days = lockTimeremaining/86400;
+        integer hours;
+        integer minutes;
+        integer seconds;
+        
+        if (days > 0) {
+            display_time += (string)days+" Days ";   
+        }
+        
+        integer carry_over_hours = lockTimeremaining - (86400 * days);
+        hours = carry_over_hours / 3600;
+        display_time += (string)hours+":"; // " Hours ";
+        
+        integer carry_over_minutes = carry_over_hours - (hours * 3600);
+        minutes = carry_over_minutes / 60;
+        display_time += (string)minutes+":"; // " Minutes ";
+        
+        seconds = carry_over_minutes - (minutes * 60);
+        
+        display_time += (string)seconds; //+" Seconds";    
+        return display_time; 
     }
 }
 
@@ -623,13 +623,13 @@ default
                 string intensity = llList2String(zapCommands,2);
                 if (command == "Zap") {
                     startZap(intensity, id);
-                    }
+                }
                 string buzz = getJSONstring(message, "buzz", "");
                 if (command == "Buzz") {
                     OADBuzz(intensity);
-                    }
-                } 
-            }
+                }
+            } 
+        }
         
         // request on ACSInterferenceChannel
         if (channel == ACSInterferenceChannel) {

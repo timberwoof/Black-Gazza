@@ -222,7 +222,7 @@ mainMenu(key avatarKey) {
         llInstantMessage(avatarKey, "The collar menu is being accessed by someone else.");
         sayDebug("Told " + llKey2Name(avatarKey) + "that the collar menu is being accessed by someone else.");
         return;
-        }
+    }
     
     // assume some things are not available
     integer doPunish = FALSE;
@@ -391,6 +391,7 @@ infoGive(key avatarKey){
     message = llGetSubString(message, 0, 511);
     setUpMenu(buttonInfo, avatarKey, message, buttons);
 }
+
 doSetPunishmentLevels(key avatarKey, string message)
 {
     if (avatarKey == llGetOwner()) 
@@ -485,8 +486,8 @@ default
             if (whereThing > -1) {
                 integer thingLength = llStringLength(thing)-1;
                 messageButtonsTrimmed = llDeleteSubString(messageButtonsTrimmed, whereThing, whereThing + thingLength);
-                }
             }
+        }
         sayDebug("listen messageButtonsTrimmed:"+messageButtonsTrimmed+" menuIdentifier: "+menuIdentifier);
         
         // display the menu item

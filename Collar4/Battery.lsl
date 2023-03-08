@@ -41,25 +41,25 @@ sendJSON(string jsonKey, string value, key avatarKey){
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
-    }
+}
     
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
         
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 integer updateValue(string json, string jsonKey, integer now, integer replace) {
     string value = llJsonGetValue(json, [jsonKey]);

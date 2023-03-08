@@ -381,6 +381,7 @@ PunishmentLevelMenu(key avatarKey)
     buttons = buttons + buttonSettings;
     setUpMenu("Punishments", avatarKey, message, buttons);
 }
+
 doSetPunishmentLevels(key avatarKey, string message)
 {
     if (avatarKey == llGetOwner()) 
@@ -520,7 +521,7 @@ speechMenu(key avatarKey)
     
     if (lockLevel == "Heavy" | lockLevel == "Hardcore") {
         doRenamer = FALSE;
-        }
+    }
     
     buttons = buttons + menuButtonActive(menuCheckbox("Renamer", renamerActive), doRenamer);
     buttons = buttons + menuButtonActive(menuCheckbox("BadWords", badWordsActive), doBadWords);
@@ -567,6 +568,7 @@ PenaltyMenu(key avatarKey) {
     buttons = buttons + [buttonBlank, buttonSpeech];
     setUpMenu(buttonPenalties, avatarKey, message, buttons);
 }
+
 doPenaltyMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     if (messageButtonsTrimmed == "Buzz") {
         speechPenaltyBuzz = !speechPenaltyBuzz;
@@ -605,8 +607,8 @@ default
             if (whereThing > -1) {
                 integer thingLength = llStringLength(thing)-1;
                 messageButtonsTrimmed = llDeleteSubString(messageButtonsTrimmed, whereThing, whereThing + thingLength);
-                }
             }
+        }
         sayDebug("listen messageButtonsTrimmed:"+messageButtonsTrimmed+" menuIdentifier: "+menuIdentifier);
         
         // display the menu item
@@ -688,39 +690,39 @@ default
 
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
         // We listen in on link status messages and pick the ones we're interested in
-            //sayDebug("link_message json "+json);
-            assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-            crime = getJSONstring(json, "crime", crime);
-            class = getJSONstring(json, "class", class);
-            threat = getJSONstring(json, "threat", threat);
-            mood = getJSONstring(json, "mood", mood);
-            lockLevel = getJSONstring(json, "lockLevel", lockLevel);
-            renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
-            badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
-            DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
-            rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-            if (!rlvPresent) {
-                renamerActive = FALSE;
-                badWordsActive = FALSE;
-                DisplayTokActive = FALSE;
-            }
-            if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
-                batteryActive = TRUE;
-            }
+        //sayDebug("link_message json "+json);
+        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
+        crime = getJSONstring(json, "crime", crime);
+        class = getJSONstring(json, "class", class);
+        threat = getJSONstring(json, "threat", threat);
+        mood = getJSONstring(json, "mood", mood);
+        lockLevel = getJSONstring(json, "lockLevel", lockLevel);
+        renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
+        badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
+        DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
+        rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
+        if (!rlvPresent) {
+            renamerActive = FALSE;
+            badWordsActive = FALSE;
+            DisplayTokActive = FALSE;
+        }
+        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+            batteryActive = TRUE;
+        }
 
-            if(getJSONstring(json, "menu", "") == buttonSettings)
-            {
-                menuIdentifier = buttonSettings;
-                settingsMenu(avatarKey);
-            }
-        }
-        
-        timer() 
+        if(getJSONstring(json, "menu", "") == buttonSettings)
         {
-            llSetTimerEvent(0);
-            // reset the menu setup
-            llListenRemove(menuListen);
-            menuListen = 0;   
-            menuAgentKey = "";
+            menuIdentifier = buttonSettings;
+            settingsMenu(avatarKey);
         }
+    }
+    
+    timer() 
+    {
+        llSetTimerEvent(0);
+        // reset the menu setup
+        llListenRemove(menuListen);
+        menuListen = 0;   
+        menuAgentKey = "";
+    }
 }

@@ -37,18 +37,18 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
     
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 list menuRadioButton(string title, string match)
 // make radio button menu item out of a button and the state text
@@ -186,30 +186,30 @@ leashParticlesOn(string whocalled, key target) {
     float gravity = 0.2; 
 
     llLinkParticleSystem(leashRingPrim, [
-    PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
-    PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
-    PSYS_PART_START_COLOR,(vector) <1,1,1>,
-    PSYS_PART_END_COLOR,(vector) <1,1,1>,
-    PSYS_PART_START_ALPHA,(float) 1.0,
-    PSYS_PART_END_ALPHA,(float) 1.0,
-    PSYS_SRC_TEXTURE,(string) texturename,
-    PSYS_SRC_BURST_PART_COUNT,(integer) 4,
-    PSYS_SRC_BURST_RATE,(float) .025,
-    PSYS_PART_MAX_AGE,(float) age,
-    PSYS_SRC_MAX_AGE,(float) 0.0,
-    PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
-    PSYS_SRC_BURST_RADIUS,(float) 0.5,
-    PSYS_SRC_INNERANGLE,(float) 0.0,
-    PSYS_SRC_OUTERANGLE,(float) 0.0,
-    PSYS_SRC_OMEGA,(vector) <0,0,0>,
-    PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
-    PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
-    PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
-    PSYS_SRC_TARGET_KEY,(key) target,
-    PSYS_PART_FLAGS,
-    PSYS_PART_RIBBON_MASK |
-    PSYS_PART_FOLLOW_SRC_MASK |
-    PSYS_PART_TARGET_POS_MASK | 0
+        PSYS_PART_START_SCALE,(vector) <0.075,0.075,0>,
+        PSYS_PART_END_SCALE,(vector) <0.075,0.075,0>,
+        PSYS_PART_START_COLOR,(vector) <1,1,1>,
+        PSYS_PART_END_COLOR,(vector) <1,1,1>,
+        PSYS_PART_START_ALPHA,(float) 1.0,
+        PSYS_PART_END_ALPHA,(float) 1.0,
+        PSYS_SRC_TEXTURE,(string) texturename,
+        PSYS_SRC_BURST_PART_COUNT,(integer) 4,
+        PSYS_SRC_BURST_RATE,(float) .025,
+        PSYS_PART_MAX_AGE,(float) age,
+        PSYS_SRC_MAX_AGE,(float) 0.0,
+        PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_DROP,
+        PSYS_SRC_BURST_RADIUS,(float) 0.5,
+        PSYS_SRC_INNERANGLE,(float) 0.0,
+        PSYS_SRC_OUTERANGLE,(float) 0.0,
+        PSYS_SRC_OMEGA,(vector) <0,0,0>,
+        PSYS_SRC_ACCEL,(vector) <0,0,-gravity>,
+        PSYS_SRC_BURST_SPEED_MIN,(float) 0.05,
+        PSYS_SRC_BURST_SPEED_MAX,(float) 0.05,
+        PSYS_SRC_TARGET_KEY,(key) target,
+        PSYS_PART_FLAGS,
+        PSYS_PART_RIBBON_MASK |
+        PSYS_PART_FOLLOW_SRC_MASK |
+        PSYS_PART_TARGET_POS_MASK | 0
     ] );
 }
 

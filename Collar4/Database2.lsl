@@ -206,8 +206,7 @@ default
                 
                 characterMenu();
             }
-        }
-        else {
+        } else {
             displayCentered("error "+(string)status);
             assetNumber = "ERR-" + (string)status;
         }    

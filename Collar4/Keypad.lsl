@@ -85,26 +85,26 @@ default
     listen(integer heard_channel, string name, key id, string message) {
         //llSay(0,"You pressed "+message);
         if (heard_channel == KEYPAD_CHANNEL) {
-        if (message == "E") {
-            if (ENTRY_STYLE == "TIMER MODE") {
-                llMessageLinked(LINK_THIS,3002,stringtime2integertime(MESSAGE),id);
+            if (message == "E") {
+                if (ENTRY_STYLE == "TIMER MODE") {
+                    llMessageLinked(LINK_THIS,3002,stringtime2integertime(MESSAGE),id);
+                } else {
+                    llMessageLinked(LINK_THIS,3001,MESSAGE,id);
+                }
+            } else if (message == "C") {
+                MESSAGE = "";
+                if (ENTRY_STYLE == "TIMER MODE") {
+                    llDialog(id,"Please enter in the time requested:\n\nEntered: "+string2stringtime(MESSAGE),keypad,KEYPAD_CHANNEL);
+                } else {
+                    llDialog(id,"Please enter in the combination.\n\nEntered: "+MESSAGE,keypad,KEYPAD_CHANNEL);
+                }
             } else {
-                llMessageLinked(LINK_THIS,3001,MESSAGE,id);
-            }
-        } else if (message == "C") {
-            MESSAGE = "";
-            if (ENTRY_STYLE == "TIMER MODE") {
-                llDialog(id,"Please enter in the time requested:\n\nEntered: "+string2stringtime(MESSAGE),keypad,KEYPAD_CHANNEL);
-            } else {
-                llDialog(id,"Please enter in the combination.\n\nEntered: "+MESSAGE,keypad,KEYPAD_CHANNEL);
-            }
-        } else {
-            MESSAGE += message;
-            if (ENTRY_STYLE == "TIMER MODE") {
-                llDialog(id,"Please enter in the time requested:\n\nEntered: "+string2stringtime(MESSAGE),keypad,KEYPAD_CHANNEL);
-            } else {
-                llDialog(id,"Please enter in the combination.\n\nEntered: "+MESSAGE,keypad,KEYPAD_CHANNEL);
-            }
+                MESSAGE += message;
+                if (ENTRY_STYLE == "TIMER MODE") {
+                    llDialog(id,"Please enter in the time requested:\n\nEntered: "+string2stringtime(MESSAGE),keypad,KEYPAD_CHANNEL);
+                } else {
+                    llDialog(id,"Please enter in the combination.\n\nEntered: "+MESSAGE,keypad,KEYPAD_CHANNEL);
+                }
             }
         }
     }

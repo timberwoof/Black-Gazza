@@ -317,8 +317,8 @@ default
             if (whereThing > -1) {
                 integer thingLength = llStringLength(thing)-1;
                 messageButtonsTrimmed = llDeleteSubString(messageButtonsTrimmed, whereThing, whereThing + thingLength);
-                }
             }
+        }
         sayDebug("listen messageButtonsTrimmed:"+messageButtonsTrimmed+" menuIdentifier: "+menuIdentifier);
         
         // display the menu item
@@ -355,21 +355,21 @@ default
 
     link_message(integer sender_num, integer num, string json, key avatarKey){ 
         // We listen in on link status messages and pick the ones we're interested in
-            //sayDebug("link_message json "+json);
-            assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-            lockLevel = getJSONstring(json, "lockLevel", lockLevel);
-            renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
-            rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
-            if (!rlvPresent) {
-                renamerActive = FALSE;
-            }
-
-            if(getJSONstring(json, "menu", "") == RLV)
-            {
-                menuIdentifier = RLV;
-                lockMenu(avatarKey);
-            }
+        //sayDebug("link_message json "+json);
+        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
+        lockLevel = getJSONstring(json, "lockLevel", lockLevel);
+        renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
+        rlvPresent = getJSONinteger(json, "rlvPresent", rlvPresent);
+        if (!rlvPresent) {
+            renamerActive = FALSE;
         }
+
+        if(getJSONstring(json, "menu", "") == RLV)
+        {
+            menuIdentifier = RLV;
+            lockMenu(avatarKey);
+        }
+    }
 
     timer()
     {

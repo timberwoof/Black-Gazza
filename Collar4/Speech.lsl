@@ -48,29 +48,29 @@ integer numTimesToBuzz = 0;
 
 sendJSONinteger(string jsonKey, integer value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, (string)value]), avatarKey);
-    }
+}
 
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
-    }
+}
     
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = value;
-        }
-    return result;
     }
+    return result;
+}
     
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
     if (value != JSON_INVALID) {
         result = (integer)value;
-        }
-    return result;
     }
+    return result;
+}
 
 processSpeech(string speech, key avatarKey){
     sayDebug("processSpeech("+speech+")");
@@ -246,7 +246,7 @@ default
         // handle player's emotes
         if (channel == renameEmoteChannel && name == llKey2Name(llGetOwner()) && avatarKey == llGetOwner()) {
             llSay(0,message);
-            }
+        }
             
         // handle the bad word list dialog
         if (channel == textboxChannel) {
