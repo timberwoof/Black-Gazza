@@ -6,9 +6,9 @@
 // All interactions with the external database
 // Timberwoof Lupindo
 // July 2019, February 2020
-// version: 2021-12-29
+// version: 2023-03-08
 
-integer OPTION_DEBUG = 0;
+integer OPTION_DEBUG = FALSE;
 key databaseQuery;
 string myQueryStatus;
 
@@ -206,8 +206,7 @@ default
                 
                 characterMenu();
             }
-        }
-        else {
+        } else {
             displayCentered("error "+(string)status);
             assetNumber = "ERR-" + (string)status;
         }
