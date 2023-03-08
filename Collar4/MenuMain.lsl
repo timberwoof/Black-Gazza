@@ -411,7 +411,7 @@ doSetPunishmentLevels(key avatarKey, string message)
         //} else if (message == "Vision") {
         //    allowVision = !allowVision;
         }
-        if (allowZapLow + allowZapMed + allowZapHigh == FALSE) {
+        if (!(allowZapLow & allowZapMed & allowZapHigh)) {
             allowZapHigh = TRUE;
         }
         string zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
