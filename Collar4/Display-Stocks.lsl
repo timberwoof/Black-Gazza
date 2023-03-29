@@ -353,7 +353,7 @@ integer uuidToInteger(key uuid)
 
 // get a value from color stored in the blinky and send it to the link
 string blinkyColorToMeaning(integer LinkBlinky, list colors, list names, string jsonTag){
-    list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
+    list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, 0]);
     vector theColor = llList2Vector(colorList,0);
     integer index = llListFindList(colors, [theColor]);
     string stateName = llList2String(names, index);
@@ -367,7 +367,7 @@ setclass(string class) {
 
     integer classi = llListFindList(classNames, [class]);
     classColor = llList2Vector(classColors, classi);
-    frameClassColor = llList2Vector(classFrameColors, classi);
+    vector frameClassColor = llList2Vector(classFrameColors, classi);
     classLong = llList2String(classNamesLong, classi);
     setTextColor(classColor);
     
@@ -401,7 +401,6 @@ default
         for (i = 0; i < 12; i++) {
             string linkname = "D"+(string)i;
             integer link = getLinkWithName(linkname);
-            sayDebug("init linking "+linkname+" to "+(string)link);
             LinksAlphanum = LinksAlphanum + [link];
         }
         linkTitler = getLinkWithName("Titler");
@@ -427,6 +426,7 @@ default
         if (llGetAttached() != 0) {
             attachStartup(llGetOwner());
         } else {
+            sayDebug("state_entry attached");
             // stock sets animation for arms up
             llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
             assetNumber = unassignedAsset;
@@ -456,6 +456,7 @@ default
     // Special for Stocks: Sets arms up in the stocks.
     run_time_permissions(integer perm)
     {
+        sayDebug("run_time_permissions("+(string)perm+")");
         if (perm & PERMISSION_TRIGGER_ANIMATION)
         {
             llStartAnimation("binder4a");
@@ -616,4 +617,4 @@ default
             }
         }
     }
-}
+
