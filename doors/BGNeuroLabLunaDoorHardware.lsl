@@ -492,6 +492,7 @@ default
         if (llDetectedTouchFace(0) == FACE_PUSH_TO_OPEN)
         {
             setPanelColor(BLUE);
+            llSetTimerEvent(2);
             llResetTime();
         }
     }
@@ -548,5 +549,10 @@ default
         } else if (command == "reportStatus") {
             reportStatus();
         }
+    }
+    
+    timer() {
+        llSetTimerEvent(0);
+        setColorsAndIcons();
     }
 }
