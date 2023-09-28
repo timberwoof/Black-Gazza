@@ -106,6 +106,15 @@ sayDebug(string message)
     }
 }
 
+integer getLinkWithName(string name, integer none) {
+    integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
+    integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
+    for (; i < x; ++i)
+        if (llGetLinkName(i) == name) 
+            return i; // Found it! Exit loop early with result
+    return none; // No prim with that name, return -1.
+}
+
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
 }
@@ -297,6 +306,23 @@ default
         sayDebug("state_entry");
         gPowerState = POWER_OFF;
         
+        //get the door's ID so it can find its panel
+        string myID = "";
+        string optionstring = llGetObjectDesc();
+        integer id_index = llSubStringIndex(optionstring,"id"); 
+        string theRest = llGetSubString(optionstring,id_index,-1);
+        integer lbracket = llSubStringIndex(theRest,"[");
+        integer rbracket = llSubStringIndex(theRest,"]");
+        myID = llGetSubString(theRest,lbracket+1,rbracket-1);
+        string doorID = myID + "panel";
+
+        if (myID != "")
+        {
+            PRIM_DOOR_1 = getLinkWithName(doorID, 2);
+            PRIM_PANEL_1 = getLinkWithName(doorID, 2);
+        }
+        sayDebug("myID:["+myID+"]   doorID:["+doorID+"]   PRIM_DOOR_1:["+(string)PRIM_DOOR_1+"]   PRIM_PANEL_1:["+(string)PRIM_PANEL_1+"]");
+        
         // panel texture scale and offset
         setPanelColor(WHITE);
         llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_padlock, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, PANEL_TEXTURE_ROTATION]);
@@ -341,6 +367,7 @@ default
         sayDebug("touch_start face "+(string)llDetectedTouchFace(0));
         setPanelColor(BLUE);
         llResetTime();
+        llSetTimerEvent(2);
     }
     
     touch_end(integer num_detected)
@@ -395,5 +422,10 @@ default
         } else if (command == "reportStatus") {
             reportStatus();
         }
+    }
+    
+    timer() {
+        llSetTimerEvent(0);
+        setColorsAndIcons();
     }
 }
