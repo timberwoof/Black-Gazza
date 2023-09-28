@@ -32,7 +32,7 @@ integer FACE_FRAME7 = 7; // big window
 // Physical Sizes
 vector LEAF_SCALE = <0.22, 0.4, 0.8>;
 float CLOSE_FACTOR = -0.35;
-float OPEN_FACTOR = -0.14; // plus or minus
+float OPEN_FACTOR = -0.142; // plus or minus
 float ZOFFSET_FACTOR = 0.0;
 
 vector PANEL_TEXTURE_SCALE = <1.0, 1.0, 0>;
@@ -328,7 +328,7 @@ default
         
         // set the initial leaf sizes and positions
         llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_SIZE,leafsize]);
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <-fclose, 0.0, fZoffset>]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <fclose, 0.0, fZoffset>]);
 
         gPowerState = POWER_ON;
         
@@ -359,6 +359,7 @@ default
         if (isDoorButton(link, face) || isPanelButton(link, face))
         {
             setPanelColor(BLUE);
+            llSetTimerEvent(2);
             llResetTime();
         }
     }
@@ -420,5 +421,10 @@ default
         } else if (command == "reportStatus") {
             reportStatus();
         }
+    }
+    
+    timer() {
+        llSetTimerEvent(0);
+        setColorsAndIcons();
     }
 }
