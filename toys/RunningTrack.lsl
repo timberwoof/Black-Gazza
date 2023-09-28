@@ -6,12 +6,15 @@ float gRadius;
 vector gMyPos;
 rotation gMyRot;
 vector gAgentSitPos;
-rotation gAgentSitRot;
+rotation gAgentSitRot; // avatar rotation where agent is
+float gAgentTheta; // position around the circle
+integer gCrawling;
+float gDeltaTheta;
 
 // avatar position and stuff
-float timerGrain = 0.1;
-float speed = 1.0; // meter/second
 key gAgent;
+float gRunningSpeed = 5.0; // meter/second running
+float gTimerGrain = 0.05;
 
 integer debug = TRUE;
 sayDebug(string message) {
@@ -78,12 +81,18 @@ default
 {
     state_entry()
     {
-        sayDebug("state_entry");
         gMyPos = llGetPos();
         gMyRot = llGetRot();
         vector scale = llGetScale();
         gRadius = (scale.y + scale.z) / 4.0 - 1.0;
+        sayDebug("state_entry gRadius:"+(string)gRadius);
+        // calculate angle per interval
+        float runCircumference = gRadius * TWO_PI;
+        float runSeconds = runCircumference / gRunningSpeed;
+        float runSteps = runSeconds / gTimerGrain;
+        gDeltaTheta = TWO_PI / runSteps;
         sayDebug("state_entry gMyPos:"+(string)gMyPos);
+        gCrawling = 0;
     }
 
     touch_start(integer total_number)
@@ -95,18 +104,18 @@ default
         
         // Wehn prim rotation os <0, 270, 0> the avatarRelPos is sane. 
         vector avatarRelPos = avatarPos - gMyPos; 
-        sayDebug("avatarRelPos:"+(string)avatarRelPos);
         float avatarRadius = llVecDist(avatarPos, gMyPos);
-        sayDebug("avatarRadius:"+(string)avatarRadius);
-        float Theta = llAsin(avatarRelPos.y / avatarRadius);
-        sayDebug("Theta:"+(string)Theta);
+        gAgentTheta = llAsin(avatarRelPos.y / avatarRadius);
         if  (avatarRelPos.x > 0) {
-            gAgentSitPos = gRadius * <0.0, llSin(Theta), -llCos(Theta)> + <1.0,0,0>;
+            sayDebug("X>0 Theta:"+(string)gAgentTheta);
+            gAgentSitPos = gRadius * <0.0, llSin(gAgentTheta), -llCos(gAgentTheta)> + <1.0,0,0>;
+            gAgentSitRot = llEuler2Rot(<0,0,gAgentTheta+PI_BY_TWO>) / gMyRot;
         } else {
-            gAgentSitPos = gRadius * <0.0, llSin(Theta), llCos(Theta)> + <1.0,0,0>;
+            sayDebug("X<0 Theta:"+(string)gAgentTheta);
+            gAgentSitPos = gRadius * <0.0, llSin(gAgentTheta), llCos(gAgentTheta)> + <1.0,0,0>;
+            gAgentSitRot = llEuler2Rot(<0,0,-gAgentTheta-PI_BY_TWO>) / gMyRot;
         }
-        sayDebug("gAgentSitPos:"+(string)gAgentSitPos);
-        gAgentSitRot = llEuler2Rot(<0,0,Theta>) / gMyRot;
+        //sayDebug("gAgentSitPos:"+(string)gAgentSitPos);
         sayDebug("gAgentSitRot:"+(string)gAgentSitRot);
         llSitTarget(gAgentSitPos, gAgentSitRot);
     }
@@ -132,6 +141,7 @@ default
                     {
                         llSetTimerEvent(0);
                         stop_anims(gAgent);
+                        gCrawling = 0;
                         llResetScript(); // *** temporary
                     }
                 }
@@ -153,13 +163,19 @@ default
             {
                 stop_anims(gAgent);
                 llStartAnimation("run");
-                llSetTimerEvent(timerGrain);
+                llSetTimerEvent(gTimerGrain);
+                gCrawling = 1;
             }
         }
     }
     
     timer()
     {
-        UpdateSitTarget(gAgentSitPos, gAgentSitRot);
+        if (gCrawling == 1) {
+            gAgentTheta = gAgentTheta + gDeltaTheta;
+            gAgentSitPos = gRadius * <0.0, llSin(gAgentTheta), -llCos(gAgentTheta)> + <1.0,0,0>;
+            gAgentSitRot = llEuler2Rot(<0,0,gAgentTheta+PI_BY_TWO>) / gMyRot;
+            UpdateSitTarget(gAgentSitPos, gAgentSitRot);
+        }
     }
 }
