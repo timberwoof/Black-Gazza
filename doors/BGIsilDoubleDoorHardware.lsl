@@ -301,24 +301,6 @@ setPanelTexture(string texture)
     llSetLinkTexture(PRIM_PANEL_1, texture, FACE_PANEL_2);
 }
 
-string enterExit(key avatar)
-{
-    vector doorPos = llGetPos();
-    rotation doorRot = llGetRot();
-    vector avatarPos = llDetectedPos(0);
-    vector end = llVecNorm(avatarPos - doorPos); // vector from dor to avatar, normalized
-    vector start = <0,1,0>; // a point out from door, normalized
-    rotation rotBetween = llRotBetween(start, end) / doorRot;
-    vector eulerBetween = llRot2Euler(rotBetween) * RAD_TO_DEG;
-    if  (eulerBetween.z < 0) {
-         return "Exit";
-    } else {
-         return "Enter";
-    }   
-}
-    
-
-
 default
 {
     state_entry()
@@ -382,6 +364,7 @@ default
         sayDebug("touch_start face "+(string)llDetectedTouchFace(0));
         setPanelColor(BLUE);
         llResetTime();
+        llSetTimerEvent(2);
     }
     
     touch_end(integer num_detected)
@@ -391,11 +374,11 @@ default
         {
             if (llGetTime() >= 2.0)
             {
-                sendJSON("admin", enterExit(llDetectedKey(0)), llDetectedKey(0));
+                sendJSON("command", "admin", llDetectedKey(0));
             }
             else if (OPTION_BUTTON)
             {
-                sendJSON("button", enterExit(llDetectedKey(0)), llDetectedKey(0));
+                sendJSON("command", "button", llDetectedKey(0));
             }
             else {
                 setPanelColor(WHITE);
@@ -408,7 +391,7 @@ default
         sayDebug("collision_start");
         if (OPTION_BUMP) 
         {
-             sendJSON("bump", enterExit(llDetectedKey(0)), llDetectedKey(0));
+             sendJSON("command", "bump", llDetectedKey(0));
         }
     }
     
@@ -436,5 +419,10 @@ default
         } else if (command == "reportStatus") {
             reportStatus();
         }
+    }
+    
+    timer() {
+        llSetTimerEvent(0);
+        setColorsAndIcons();
     }
 }
