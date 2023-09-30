@@ -2,7 +2,7 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2023-03-08";
+string version = "2023-09-29";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
@@ -10,8 +10,16 @@ string version = "2023-03-08";
 // • battery display
 // • floaty text
 
+// This script requires some prims to have specific names:
+// Titler
+// BG_CollarV4_LightsMesh
+// powerDisplay
+// powerHoseNozzle
+// leashPoint
+
 integer OPTION_DEBUG = FALSE;
 
+// **** general use colors
 vector BLACK = <0,0,0>;
 vector DARK_GRAY = <0.2, 0.2, 0.2>;
 vector GRAY = <0.5, 0.5, 0.5>;
@@ -27,37 +35,24 @@ vector DARK_GREEN = <0.0, 0.5, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
 vector DARK_BLUE = <0.0, 0.0, 0.5>;
 vector BLUE = <0.0, 0.0, 1.0>;
-vector LIGHT_BLUE = <0.1, 0.5, 1.0>;
 vector DARK_MAGENTA = <0.5, 0.0, 0.5>;
 vector MAGENTA = <1.0, 0.0, 1.0>;
 vector DARK_CYAN = <0.0, 0.5, 0.5>;
 vector CYAN = <0.0, 1.0, 1.0>;
 vector PURPLE = <0.7, 0.1, 1.0>;
 
-// only lists that are needed in a lot of places are kept here.
-// Other lists are dedined only where they are needed, in an effort to save space.
-list moodNames = ["OOC", "Lockup", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
-list moodColors = [LIGHT_GRAY, WHITE, GREEN, YELLOW, ORANGE, CYAN, PURPLE, BLACK];
-
-list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
-list threatColors = [GREEN, YELLOW, ORANGE, RED];
-
-list classNames = ["white","pink","red","orange","green","blue","black"];
-list classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
-list classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, BLUE, GRAY];
-list classPaddingColors = [GRAY, DARK_MAGENTA, DARK_RED, DARK_ORANGE, DARK_GREEN, DARK_BLUE, DARK_GRAY];
-        
+// **** links and faces
 integer LinkFrame = 1;
 integer FaceFrame = 0;
 integer FacePadding = 1;
 
-integer LinkBlinky = 17;
+integer LinkBlinky = -1; // set in setup
 integer FaceBlinkyMood = 1;
 integer FaceBlinkyLock = 2;
 integer FaceBlinkyClass = 3;
 integer FaceBlinkyThreat = 4;
 
-integer LinkAlphanumFrame = 17;
+integer LinkAlphanumFrame = -1;
 integer FaceAlphanumFrame = 5;
 integer FaceAlphanum = 1;
 list LinksAlphanum = [];
@@ -67,10 +62,10 @@ float titlerActive = 1.0;
 string buttonTitler = "Titler";
 
 // BG_CollarV4_PowerDisplay_PNG
+key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
 integer batteryPercent;
 float brightnessMultiplier = 1.0;
-key batteryIconID = "ef369716-ead2-b691-8f5c-8253f79e690a";
-integer batteryIconLink = 16;
+integer batteryIconLink = -1;
 integer batteryIconFace = 0;
 float batteryIconHScale = 0.2;
 float batteryIconVScale = 0.75;
@@ -85,7 +80,21 @@ integer scrollPos;
 integer scrollLimit;
 string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 
-string mood;
+// *** Collar State
+// only lists that are needed in a lot of places are kept here.
+// Other lists are dedined only where they are needed, in an effort to save space.
+list moodNames = ["OOC", "Lockup", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
+list moodColors = [LIGHT_GRAY, WHITE, GREEN, YELLOW, ORANGE, CYAN, PURPLE, BLACK];
+
+list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
+list threatColors = [GREEN, YELLOW, ORANGE, RED];
+
+list classNames = ["white","pink","red","orange","green","blue","black"];
+list classNamesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental","Unknown"];
+list classColors = [WHITE, MAGENTA, RED, ORANGE, GREEN, BLUE, GRAY];
+list classPaddingColors = [GRAY, DARK_MAGENTA, DARK_RED, DARK_ORANGE, DARK_GREEN, DARK_BLUE, DARK_GRAY];
+        
+string mood = "OOC";
 vector moodColor;
 
 string class;
@@ -97,7 +106,6 @@ string threat;
 
 string assetNumber = "P-00000";
 string unassignedAsset = "P-00000";
-string zapLevelsJSON;
 
 integer TIMER_BADWORDS = 0;
 integer TIMER_SCROLL = 0;
@@ -129,10 +137,13 @@ sendJSON(string jsonKey, string value, key avatarKey){
 integer getLinkWithName(string name) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
+    integer result = -1;
     for (; i < x; ++i)
-        if (llGetLinkName(i) == name)
-            return i; // Found it! Exit loop early with result
-    return -1; // No prim with that name, return -1.
+        if (llGetLinkName(i) == name) {
+            result = i; // Found it! Exit loop early with result
+        }
+    sayDebug("getLinkWithName("+name+") returns "+(string)result);
+    return result; // No prim with that name, return -1.
 }
 
 tone(string number) {
@@ -258,7 +269,7 @@ displayBattery(integer percent)
     //  0.4 0/4 charge   12% - 0%
     //  Between 5% and 1% it shows red.
     //  At 0% it turns black.
-    
+
     if (percent > 87) batteryIconHoffset = -0.4; // full
     else if (percent > 61) batteryIconHoffset = -0.2; // 3/4
     else if (percent > 37) batteryIconHoffset =  0.0; // 1/2
@@ -337,10 +348,10 @@ integer uuidToInteger(key uuid)
 }
 
 // get a value from color stored in the blinky and send it to the link
-string blinkyFaceColorToMeaning(integer face, list colors, list names, string jsonTag){
+string blinkyColorToMeaning(integer face, list colors, list names, string jsonTag){
     list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
-    vector threatColor = llList2Vector(colorList,0);
-    integer index = llListFindList(colors, [threatColor]);
+    vector theColor = llList2Vector(colorList,0);
+    integer index = llListFindList(colors, [theColor]);
     string stateName = llList2String(names, index);
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonTag, stateName]), "");
     return stateName;
@@ -381,12 +392,12 @@ setclass(string class) {
 
     integer classi = llListFindList(classNames, [class]);
     classColor = llList2Vector(classColors, classi);
-    vector classPaddingColor =  llList2Vector(classPaddingColors, classi);
+    vector classPaddingColor = llList2Vector(classPaddingColors, classi);
     classLong = llList2String(classNamesLong, classi);
 
     // set the blinky color
     llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, classColor*brightnessMultiplier, 1.0]);
-            
+
     // set the padding color
     llSetLinkPrimitiveParamsFast(LinkFrame,[PRIM_COLOR, FacePadding, classPaddingColor, 1.0]);
 
@@ -405,20 +416,17 @@ setclass(string class) {
 attachStartup(key theAvatar) {
     sayDebug("attachStartup");
     avatar = theAvatar;
-    mood = blinkyFaceColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "mood");
-    class = blinkyFaceColorToMeaning(FaceBlinkyClass, classColors, classNames, "class");
-    threat = blinkyFaceColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "threat");
+    mood = blinkyColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "Mood");
+    class = blinkyColorToMeaning(FaceBlinkyClass, classColors, classNames, "Class");
+    threat = blinkyColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "Threat");
 }
 
 default
 {
-    state_entry() // reset
+    state_entry()
     {
         llSetObjectName("BG L-CON Collar V4 "+version);
         sayDebug("state_entry");
-        
-        // set up lists and shit
-        mood = "OOC";
         
         // LinksAlphanum
         integer i;
@@ -451,17 +459,18 @@ default
             class = "white";
             classColor = WHITE;
             threat = "none";
-            
             setclass(class);
+
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyMood, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, BLACK, 1.0]);
+            llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyClass, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, BLACK, 1.0]);
             llSetLinkPrimitiveParamsFast(LinkAlphanumFrame,[PRIM_COLOR, FaceAlphanumFrame, LIGHT_GRAY, 1.0]);
             displayTitler();
         }
         sayDebug("state_entry done");
     }
-    
+
     attach(key theAvatar) {
         sayDebug("attach("+(string)theAvatar+") assetNumber:'"+assetNumber+"'");
         attachStartup(theAvatar);
@@ -471,11 +480,8 @@ default
     link_message( integer sender_num, integer num, string json, key id ){
         sayDebug("link_message "+json);
 
-        list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
-        list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
-
         // IC/OOC Mood sets frame color, text color, and Blinky1
-        string value = llJsonGetValue(json, ["mood"]);
+        string value = llJsonGetValue(json, ["Mood"]);
         if (value != JSON_INVALID) {
             mood = value;
             integer moodi = llListFindList(moodNames, [mood]);
@@ -486,25 +492,28 @@ default
         }
 
         // Prisoner Class sets text color and blinky 3
-        value = llJsonGetValue(json, ["class"]);
+        value = llJsonGetValue(json, ["Class"]);
         if (value != JSON_INVALID) {
             class = value;
             setclass(class);
             sayDebug("link_message "+(string)num+" "+class+"->class");
         }
-                
+
         // Lock level sets blinky 2
-        value = llJsonGetValue(json, ["lockLevel"]);
+        value = llJsonGetValue(json, ["LockLevel"]);
         if (value != JSON_INVALID) {
+            list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
+            list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
+
             lockLevel = value;
             integer locki = llListFindList(lockLevels, [lockLevel]);
             vector lockcolor = llList2Vector(lockColors, locki);
             sayDebug("lock level message:"+lockLevel+" locki:"+(string)locki+" lockColors:"+(string)lockcolor);
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyLock, lockcolor, 1.0]);
         }
-        
+
         // Threat level sets blinky 4
-        value = llJsonGetValue(json, ["threat"]);
+        value = llJsonGetValue(json, ["Threat"]);
         if (value != JSON_INVALID) {
             threat = value;
             integer threati = llListFindList(threatLevels, [threat]);
@@ -513,23 +522,23 @@ default
             llSetLinkPrimitiveParamsFast(LinkBlinky,[PRIM_COLOR, FaceBlinkyThreat, threatcolor, 1.0]);
             displayTitler();
         }
-        
+
         // Battery Level Report
-        value = llJsonGetValue(json, ["batteryPercent"]);
+        value = llJsonGetValue(json, ["BatteryPercent"]);
         if (value != JSON_INVALID) {
             batteryPercent = (integer)value;
             displayBattery(batteryPercent);
         }
         
         // Prisoner Crime
-        value = llJsonGetValue(json, ["crime"]);
+        value = llJsonGetValue(json, ["Crime"]);
         if (value != JSON_INVALID) {
             crime = value;
             displayTitler();
         }
 
         // Prisoner Asset Number
-        value = llJsonGetValue(json, ["assetNumber"]);
+        value = llJsonGetValue(json, ["AssetNumber"]);
         if (value != JSON_INVALID) {
             assetNumber = value;
             string firstName = "Unassigned";
@@ -547,7 +556,7 @@ default
             displayCentered(assetNumber);
             displayTitler();
         }
-        
+
         // display a message
         value = llJsonGetValue(json, ["Display"]);
         if (value != JSON_INVALID) {
@@ -572,7 +581,7 @@ default
             TIMER_BADWORDS = (integer)value;
             llSetTimerEvent(1);
         }
-            
+
         //set titler visible
         value = llJsonGetValue(json, [buttonTitler]);
         if (value != JSON_INVALID) {
@@ -589,7 +598,7 @@ default
         sayDebug("timer()");
         if (TIMER_REDISPLAY > 0) {
             if (assetNumber == unassignedAsset) {
-                sendJSON("database", "getupdate", llGetOwner());
+                sendJSON("Database", "getupdate", llGetOwner());
             }
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
             displayCentered(assetNumber);
