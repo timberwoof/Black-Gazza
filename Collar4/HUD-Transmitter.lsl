@@ -8,14 +8,15 @@ string version = "2023-09-29";
 
 integer OPTION_DEBUG = FALSE;
 
-
 integer subliminalChannel = -36984125;
 string sAssetNumber = "P-00000";
 integer iAssetNumber = 0;
 
-list interestingMessages = ["AssetNumber", "Name", "Crime", "Class", "Threat", 
-    "rlvPresent", "RLV", "LockLevel", "RelayLockState", 
-    "ZapLevels", "Mood", "ZAP"];
+// link message json keys of things we're interested in showing the wearer
+list interestingMessages = ["AssetNumber", "Crime", "Class", "Threat", 
+    "RLV", "LockLevel", "ZapLevels", "Mood", "ZAP"];
+// not interesting now but could be added: 
+// "Name", "rlvPresent", "RelayLockState", 
 
 sayDebug(string message)
 {
@@ -25,27 +26,10 @@ sayDebug(string message)
     }
 }
 
-string getJSONstring(string jsonValue, string jsonKey, string valueNow){
-    string result = valueNow;
-    string value = llJsonGetValue(jsonValue, [jsonKey]);
-    if (value != JSON_INVALID) {
-        result = value;
-    }
-    return result;
-}
-
 default
 {
-    state_entry()
-    {
-        sayDebug("state_entry done");
-    }
-
-    attach(key theAvatar) {
-        sayDebug("attach done");
-    }
-
-    link_message( integer sender_num, integer num, string json, key id ){
+    link_message(integer sender_num, integer num, string json, key id) {
+        // If the key is "interesting" then send it to the HUD. 
         string jsonkey = llList2String(llJson2List(json),0);
         if (llListFindList(interestingMessages, [jsonkey]) > 0) {
             sayDebug("link_message "+json);
