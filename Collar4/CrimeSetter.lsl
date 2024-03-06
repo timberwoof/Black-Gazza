@@ -1,6 +1,6 @@
-// CrimeSetter2
-// Allow an inmate to set their Crimes and Character Names in the database.
-// Manages six sets of UUID, Crime, Name
+// getCrimeSetter2
+// Allow an inmate to set their getCrimes and Character Names in the database.
+// Manages six sets of UUID, getCrime, Name
 // Timberwoof Lupindo, March 2024
 
 
@@ -8,11 +8,13 @@ key Sound_Open = "482b14cb-ff89-178a-b3f3-ee0e9a403b24";
 key Sound_Close = "375397f6-531c-aa00-275f-caeb66c56e71";
 key userKey;
 
-integer DEBUG = TRUE;
+integer DEBUG = FALSE;
 sayDebug(string message) {
     if (DEBUG) {
         llWhisper(0, message);
         llSetText(message, <1,1,1>,1);
+    } else {
+        llSetText("", <1,1,1>,1);
     }
 }
 
@@ -22,29 +24,45 @@ sayDebug(string message) {
 string URL_BASE = "http://sl.blackgazza.com/";
 string URL_READ = "read_inmate.cgi?key=";
 string URL_ADD = "add_inmate.cgi?key=";
-key crimeRequest;
+string GET = "GET";
+string PUT = "PUT";
 
 // These lists are 1-based, numbered 1-6
-string myQueryStatus;
-list databaseRequests = ["", "", "", "", "", "", ""]; // 1-based so 0 is unassigned
-list assetNumberList = ["P-00000","","","","","",""]; // 1-based so 0 is unassigned
-list crimeList = ["","","","","","",""];  // 1-based so 0 is unassigned
-list nameList = ["","","","","","",""];  // 1-based so 0 is unassigned
-list sentenceList = ["0","0","0","0","0","0","0"]; // it is not used in this collar but i decided to keep it
-string tempCrimes = "";
+string queryType;
+list databaseRequestList; // 1-based so 0 is unassigned
+list assetNumberList; // 1-based so 0 is unassigned
+list crimeList;  // 1-based so 0 is unassigned
+list charNameList;  // 1-based so 0 is unassigned
+list sentenceList; // it is not used in this collar but i decided to keep it
+integer lists_populated;
+integer currentIndex;
 
-string assetNumber(integer index) {
+initLists() {
+    userKey = NULL_KEY;
+    currentIndex = 0;
+    databaseRequestList = [NULL_KEY, "", "", "", "", "", ""];
+    assetNumberList = ["P-00000","","","","","",""];
+    crimeList = ["DUMMY","","","","","",""];
+    charNameList = ["DUMMY","","","","","",""];
+    sentenceList = ["-999","0","0","0","0","0","0"];
+    lists_populated = FALSE;
+}
+
+string getAssetNumber(integer index) {
     return llList2String(assetNumberList, index);
 }
 
-string crime(integer index) {
+string getCrime(integer index) {
     return llList2String(crimeList, index);
 }
 
-string name(integer index) {
-    return llList2String(nameList, index);
+string getCharName(integer index) {
+    return llList2String(charNameList, index);
 }
 
+string getSentence(integer index) {
+    return llList2String(sentenceList, index);
+}
 
 // convert agent key to database key
 string AgentKeyWithRole(string agentKey, integer slot) {
@@ -59,14 +77,96 @@ string AgentKeyWithRole(string agentKey, integer slot) {
     return result;
 }
 
-// fire off a request to the crime database for this wearer.
+// fire off a request to the getCrime database for this wearer.
 // Parameter iSlot determines which character to get.
 sendReadDatabaseQuery(key avatarKey, integer index) {
-    sayDebug("sendReadDatabaseQuery "+(string)index);
-    string URL = URL_BASE + URL_READ + AgentKeyWithRole((string)llGetOwner(),index);
-    sayDebug("sendReadDatabaseQuery URL:"+URL);
+    //sayDebug("sendReadDatabaseQuery "+(string)index);
+    string URL = URL_BASE + URL_READ + AgentKeyWithRole(avatarKey, index);
+    //sayDebug("sendReadDatabaseQuery URL:"+URL);
+    queryType = GET;
     key databaseQuery = llHTTPRequest(URL,[],""); // append reqest_id for use it later in responder event
-    databaseRequests = llListReplaceList(databaseRequests, [databaseQuery], index, index);
+    sayDebug("sendReadDatabaseQuery sent query " + (string)databaseQuery);
+    databaseRequestList = llListReplaceList(databaseRequestList, [databaseQuery], index, index);
+}
+
+// what the collar give does:
+// llHTTPRequest(URL+"add_inmate.cgi?key="+(string)id+"&name="+name+"&number=P-foobar",[],"");
+// what the crime setter does: 
+// sMsg = llEscapeURL(llDumpList2String(llParseStringKeepNulls((sMsg = "")  +  sMsg, [";"], []), ","));
+// string name = llEscapeURL(llKey2Name(user_key));
+// string final_url = URL + URL_ADD + AgentKeyWithRole(user_key, iSlot) + "&name=" + name + "&crime=" + sMsg + "&sentence=0";
+// debug("Database_Save " + (string)iSlot + " " + final_url);
+// llHTTPRequest(final_url, [], "");
+
+// fire off a request to the getCrime database for this wearer.
+// Parameter iSlot determines which character to get.
+sendWriteDatabaseQuery(key avatarKey, integer index, string charName, string crime, string sentence) {
+    sayDebug("sendWriteDatabaseQuery ("+(string)index+", '"+charName+"', '"+crime+"')");
+    string URL = URL_BASE + URL_ADD + AgentKeyWithRole(avatarKey, index) + 
+    "&name=" + llEscapeURL(charName) + 
+    "&crime=" + llEscapeURL(crime) + 
+    "&sentence=" + (string)sentence;
+    sayDebug("sendWriteDatabaseQuery URL:"+URL);
+    queryType = PUT;
+    key databaseQuery = llHTTPRequest(URL, [], "");
+    sayDebug("sendWriteDatabaseQuery sent query " + (string)databaseQuery);
+    databaseRequestList = llListReplaceList(databaseRequestList, [databaseQuery], index, index);
+}
+
+setCharName(key avatarKey, integer index, string newCharName) {
+    sayDebug("setName ("+(string)index+", "+newCharName+")");
+    sendWriteDatabaseQuery(avatarKey, index, newCharName, getCrime(index), getSentence(index));
+}
+
+setCrime(key avatarKey, integer index, string newCrime) { 
+    sayDebug("setCrime ("+(string)index+", "+newCrime+")");
+    sendWriteDatabaseQuery(avatarKey, index, getCharName(index), newCrime, getSentence(index));
+}
+
+setSentence(key avatarKey, integer index, string newSentence) { 
+    sayDebug("setSentence ("+(string)index+", "+(string)newSentence+")");
+    sendWriteDatabaseQuery(avatarKey, index, getCharName(index), getCrime(index), newSentence);
+}
+
+handleHttpResponse(integer index, string message) {
+        sayDebug("handleHttpResponse message="+message);
+        // decode the response which looks like
+        // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+
+        // Fix missing data in the response
+        integer whereTwoCommas = llSubStringIndex(message, ",,");
+        if (whereTwoCommas > 1) {
+            message = llInsertString(message, whereTwoCommas, ",Unrecorded," );
+        }
+        whereTwoCommas = llSubStringIndex(message, ",,");
+        if (whereTwoCommas > 1) {
+            message = llInsertString(message, whereTwoCommas, ",Unrecorded," );
+        }
+
+        // extract the individual pieces
+        list returnedStuff = llParseString2List(message, [","], []);
+        string theName = llList2String(returnedStuff, 0);
+        string mysteriousNumber = llList2String(returnedStuff, 1);
+        string theCrime = llList2String(returnedStuff, 2);
+        string theAvatarKey = llList2String(returnedStuff, 3);
+        string theAssetNumber = llList2String(returnedStuff, 4);
+
+        //sayDebug("name:"+theName);
+        //sayDebug("number:"+mysteriousNumber);
+        //sayDebug("crime:"+theCrime);
+        //sayDebug("key:"+theAvatarKey);
+        //sayDebug("assetNumber:"+theAssetNumber);
+        llWhisper(0, "DB returns "+theAssetNumber+" "+theName+" - "+theCrime+": "+mysteriousNumber);
+        
+        if (theAvatarKey == AgentKeyWithRole(userKey, index)) {
+            assetNumberList = llListReplaceList(assetNumberList, [theAssetNumber], index, index);
+            crimeList = llListReplaceList(crimeList, [theCrime], index, index);
+            charNameList = llListReplaceList(charNameList, [theName], index, index);
+            sentenceList = llListReplaceList(sentenceList, [mysteriousNumber], index, index);
+            lists_populated = TRUE;
+        } else {
+            sayDebug("Error: returned agent key did not match userKey");
+        }
 }
 
 gatherInmateRecords(key avatarKey) {
@@ -75,22 +175,37 @@ gatherInmateRecords(key avatarKey) {
     for (index = 1; index <=6; index = index + 1) {
         sendReadDatabaseQuery(avatarKey, index);
     }
-    
 }
 
-
+listInmateRecords(key avatarKey, integer currentIndex) {
+    llWhisper(0, "Collar Database Records for "+llGetUsername(avatarKey)+" = "+llGetDisplayName(avatarKey));
+    integer index;
+    for (index = 1; index <= 6; index = index + 1) {
+        string tag = "  ";
+        if (index == currentIndex) {
+            tag = "* ";
+        }
+        llWhisper(0, tag + getAssetNumber(index) + ": " + getCrime(index));
+    }
+}
 
 // *************************'
 // MENU 
 
 string menuIdentifier;
-string menuMain = "Main";
-string readDB = "Read DB";
+string MENU_MAIN = "Main";
+string READ_DB = "Read DB";
+string SELECT_CHAR = "Select";
+string SET_NAME = "Set Name";
+string SET_CRIME = "Set Crime";
+string SET_SENTENCE = "Set Years";
+string LIST = "List";
+string characterChoice = "characterChoice";
 key menuAgentKey;
 integer menuChannel;
 integer menuListen;
-integer crimeSetChannel = 0;
-integer crimeSetListen;
+integer getSetTextChannel = 0;
+integer getSetTextListen;
 
 setUpMenu(string identifier, key avatarKey, string message, list buttons)
 // wrapper to do all the calls that make a simple menu dialog.
@@ -106,8 +221,8 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
 {
     sayDebug("setUpMenu "+identifier);
 
-    if (identifier != menuMain) {
-        buttons = buttons + [menuMain];
+    if (identifier != MENU_MAIN) {
+        buttons = buttons + [MENU_MAIN];
     }
     buttons = buttons + ["Close"];
 
@@ -165,43 +280,116 @@ list menuButtonActive(string title, integer onOff)
     return [button];
 }
 
-
 main_menu(key avatarKey) {
-    string message = "Crime Setter";
+    string message = "getCrime Setter\n";
+   
+    if (currentIndex == 0) {
+        message = message + "No character is selected.\n";
+    } else {
+        message = message + "Selected Caracter:\n";
+        message = message + "Asset Number: " + getAssetNumber(currentIndex) + "\n";
+        message = message + "Name: " + getCharName(currentIndex) + "\n";
+        message = message + "Crime: " + getCrime(currentIndex);
+    } 
+    
     list buttons = [];
-    buttons = buttons + [readDB];
-    setUpMenu(menuMain, avatarKey, message, buttons);
+    buttons = buttons + [READ_DB];
+    buttons = buttons + menuButtonActive(SELECT_CHAR, lists_populated);
+    buttons = buttons + menuButtonActive(LIST, lists_populated);
+    buttons = buttons + menuButtonActive(SET_CRIME, (currentIndex != 0));
+    //buttons = buttons + [SET_SENTENCE];
+    setUpMenu(MENU_MAIN, avatarKey, message, buttons);
 
+}
+
+string headerForGetTextDialog(key avatarKey, integer index) {
+    return getAssetNumber(index) + "\n"+
+    "Character Name: " + getCharName(index)  + "\n"+
+    "Current Crime: " + getCrime(index) + "\n"+
+    "Current Sentence: " + getSentence(index) + "\n";
+}
+
+getCrimeFromPlayer(key avatarKey, integer index)
+{
+    menuIdentifier = SET_CRIME;
+    string message = headerForGetTextDialog(avatarKey, index);
+    message = message + "Please set new Crime: ";
+    getSetTextChannel = -(llFloor(llFrand(1000)+1000));
+    getSetTextListen = llListen(getSetTextChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llTextBox(avatarKey, message, getSetTextChannel);
+}
+
+getNameFromPlayer(key avatarKey, integer index)
+{
+    menuIdentifier = SET_NAME;
+    string message = headerForGetTextDialog(avatarKey, index);
+    message = message +"Please set new Name: ";
+    getSetTextChannel = -(llFloor(llFrand(1000)+1000));
+    getSetTextListen = llListen(getSetTextChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llTextBox(avatarKey, message, getSetTextChannel);
+}
+
+getSentenceFromPlayer(key avatarKey, integer index)
+{
+    menuIdentifier = SET_SENTENCE;
+    string message = headerForGetTextDialog(avatarKey, index);
+    message = message + "Please set new Sentence: ";
+    getSetTextChannel = -(llFloor(llFrand(1000)+1000));
+    getSetTextListen = llListen(getSetTextChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llTextBox(avatarKey, message, getSetTextChannel);
 }
 
 doMainMenu(key avatarKey, string message) {
     sayDebug("doMainMenu "+message);
     
-    if (message == readDB) {
-        gatherInmateRecords(avatarKey);
-    }
+        // Main button
+        if (message == MENU_MAIN) {
+            main_menu(avatarKey);
+        } else if (message == READ_DB) {
+            // query database for the character records
+            gatherInmateRecords(avatarKey);
+        } else if (message == SELECT_CHAR) {
+            // present player with menu of asset numbers and names
+            characterMenu(avatarKey);
+        } else if (message == SET_NAME) {
+            getNameFromPlayer(avatarKey, currentIndex);
+        } else if (message == SET_CRIME) {
+            getCrimeFromPlayer(avatarKey, currentIndex);
+        } else if (message == SET_SENTENCE) {
+            getSentenceFromPlayer(avatarKey, currentIndex);
+        } else if (message == LIST) {
+            listInmateRecords (avatarKey, currentIndex);
+        } else if (message == "Close") {
+            initLists();
+        } else if (menuIdentifier == SELECT_CHAR) {
+            // set the specific character we will work with 
+            currentIndex = (integer)message;
+            main_menu(avatarKey);
+        } else if (menuIdentifier == SET_NAME) {
+            setCharName(avatarKey, currentIndex, message);
+        } else if (menuIdentifier == SET_CRIME) {
+            setCrime(avatarKey, currentIndex, message);
+        } else if (menuIdentifier == SET_SENTENCE) {
+            setSentence(avatarKey, currentIndex, message);
+        } else {
+            sayDebug("listen ERROR: did not handle message '"+message+"'  menuIdentifier '"+menuIdentifier+"'");
+        }
 }
 
 characterMenu(key avatarKey) {
+    // lets the player choose from asset numbers and names
     sayDebug("characterMenu()");
+    string message = "Select the Character to work with:\n";
     list buttons = [];
-    integer i = 0;
-    for (i=1; i<7; i = i + 1) {
-        string assetNumber = llList2String(assetNumberList, i);
-        if (assetNumber != "") {
-            buttons = buttons + [assetNumber];
-        }
+    integer index;
+    for (index=1; index<7; index = index + 1) {
+        buttons = buttons + [(string)index];
+        message = message + (string)index+ " " + getAssetNumber(index) + " " + getCrime(index) + "\n";
     }
-    setUpMenu(llGetOwner(), avatarKey, "Choose your Asset Number", buttons);
-}
-
-setCharacterCrimes(key avatarKey, integer index)
-{
-    string message = assetNumber(index) + "\nCharacter Name: " + name(index)  + "\nCurrent Crimes: " + crime(index) + "\nPlease set new Crimes: ";
-    crimeSetChannel = -(llFloor(llFrand(1000)+1000));
-    crimeSetListen = llListen(crimeSetChannel, "", avatarKey, "");
-    llSetTimerEvent(30);
-    llTextBox(avatarKey, message, crimeSetChannel);
+    setUpMenu(SELECT_CHAR, avatarKey, message, buttons);
 }
 
 default
@@ -210,6 +398,7 @@ default
     {
         sayDebug("state_entry");
         userKey = NULL_KEY;
+        initLists();
     }
 
     touch_start(integer total_number)
@@ -227,9 +416,9 @@ default
         }
     }
     
-    listen( integer channel, string name, key avatarKey, string message )
+    listen(integer channel, string avatarName, key avatarKey, string message )
     {
-        sayDebug("listen name:"+name+" message:"+message);
+        sayDebug("listen(avatarName='"+avatarName+"' message='"+message+"')");
 
         string messageButtonsTrimmed = message;
         list striplist = ["☒ ","☐ ","● ","○ "];
@@ -243,7 +432,6 @@ default
             }
         }
 
-        // display the menu item
         if (llGetSubString(message,1,1) == " ") {
             sayDebug(messageButtonsTrimmed);
         } else {
@@ -257,72 +445,41 @@ default
         menuAgentKey = "";
         llSetTimerEvent(0);
 
-        // Main button
-        if (message == menuMain) {
-            main_menu(avatarKey);
-        }
-        
-        if (message == readDB) {
-            gatherInmateRecords(avatarKey);
-        }
-
-        if (message == "Close") {
-            return;
-        }
-
+        doMainMenu(avatarKey, message);
     }
 
     http_response(key request_id, integer status, list metadata, string message)
-    // handle a response from the crime database
+    // handle a response from the getCrime database
     {
+        // validate the response
         // find out which of the pending requests this is
-        integer index = llListFindList(databaseRequests, [request_id]);
-        if (index == -1) return; // skip response if this script did not require it
+        integer index = llListFindList(databaseRequestList, [request_id]);
+        if (index == -1) {
+            sayDebug("handleHttpResponse did not find request_id "+(string)request_id);
+            sayDebug("status:"+(string)status);
+            sayDebug("metadata:"+(string)metadata);
+            sayDebug("message:"+(string)message);
+            return; // skip response if this script did not require it
+        } else {
+            sayDebug("found request "+(string)request_id+" in index "+(string)index);
+            sayDebug("request belongs to "+getAssetNumber(index));
+        }
 
-        // if response status code not equal 200(OK)
-        // then remove item with request_id from list and exit
         if (status != 200)
         {
-            sayDebug("DB Error "+(string)status);
-            databaseRequests = llListReplaceList(databaseRequests, [0], index, index);
-            crimeList = llListReplaceList(crimeList, ["uninitialized"], index, index);
-            nameList = llListReplaceList(nameList, ["uninitialized"], index, index);
-            assetNumberList = llListReplaceList(assetNumberList, ["P-00000"], index, index);
+            sayDebug("handleHttpResponse got error response for request id "+(string)request_id);
+            sayDebug("status:"+(string)status);
+            sayDebug("metadata:"+(string)metadata);
+            sayDebug("message:"+(string)message);
+
+            databaseRequestList = llListReplaceList(databaseRequestList, [0], index, index);
             return;
         }
 
-        // decode the response which looks like
-        // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
-
-        // Fix missing data in the response
-        integer whereTwoCommas = llSubStringIndex(message, ",,");
-        if (whereTwoCommas > 1) {
-            message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
+        // Then send it to the database
+        if (queryType == GET) {
+            handleHttpResponse(index, message);
         }
-        whereTwoCommas = llSubStringIndex(message, ",,");
-        if (whereTwoCommas > 1) {
-            message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
-        }
-        sayDebug("http_response message="+message);
-
-        // extract the individual pieces
-        list returnedStuff = llParseString2List(message, [","], []);
-        string theName = llList2String(returnedStuff, 0);
-        string mysteriousNumber = llList2String(returnedStuff, 1);
-        string theCrime = llList2String(returnedStuff, 2);
-        string avatarKey = llList2String(returnedStuff, 3);
-        string theAssetNumber = llList2String(returnedStuff, 4);
-
-        sayDebug("name:"+theName);
-        sayDebug("number:"+mysteriousNumber);
-        sayDebug("crime:"+theCrime);
-        sayDebug("key:"+avatarKey);
-        sayDebug("assetNumber:"+theAssetNumber);
-
-        assetNumberList = llListReplaceList(assetNumberList, [theAssetNumber], index, index);
-        crimeList = llListReplaceList(crimeList, [theCrime], index, index);
-        nameList = llListReplaceList(nameList, [theName], index, index);
-        sentenceList = llListReplaceList(sentenceList, [mysteriousNumber], index, index);
     }
 
 
