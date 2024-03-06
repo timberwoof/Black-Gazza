@@ -266,16 +266,14 @@ default
             if(inmate_number != "") { 
                 g_iOnline = 1;
                 if(iMenu) {
-                    debug("http_response links message");
-                    llMessageLinked(LINK_SET, 2, "1", kKey);
+                    llMessageLinked(LINK_SET, 4, "numbers", kKey);
                 } 
                 //llSetTexture(COLLAR_GIVER, FACE);
             } else{            
-                if(iMenu) {
-                    debug("http_response links message");
-                    llMessageLinked(LINK_SET, 2, "0", kKey);
-                } 
                 g_iOnline = 0;
+                if(iMenu) {
+                    llMessageLinked(LINK_SET, 4, "numbers", kKey);
+                } 
             } 
             iMenu = 0;
             kKey = NULL_KEY;
@@ -338,13 +336,7 @@ default
     link_message(integer iSender, integer iNum, string sStr, key kID) {
         debug("link_message iNum:"+(string)iNum+" sStr:"+sStr);
         // why the FUCK are you sending yourself link messages?
-        if(iNum == 2) {
-            g_iOnline = (integer)sStr;
-            if(g_iOnline) {
-                debug("link_message links message");
-                llMessageLinked(LINK_SET, 4, "numbers", kID);
-            } 
-        } else if(iNum == 5) {
+        if (iNum == 5) {
             if((key)kID) {
                 assetNumbersList = ["0", "1", "2", "3", "4", "5", "6"];
                 crimesList = ["", "", "", "", "", "", ""];
