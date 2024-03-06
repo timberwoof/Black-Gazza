@@ -1,52 +1,54 @@
-integer g_iOnline;
+// CrimeSetter2
+// Allow an inmate to set their Crimes and Character Names in the database.
+// Manages six sets of UUID, Crime, Name
+// Timberwoof Lupindo, March 2024
+
+
 key Sound_Open = "482b14cb-ff89-178a-b3f3-ee0e9a403b24";
 key Sound_Close = "375397f6-531c-aa00-275f-caeb66c56e71";
-float fVolum = 0.5;
-string URL = "http://sl.blackgazza.com/";
+key userKey;
+
+integer DEBUG = TRUE;
+sayDebug(string message) {
+    if (DEBUG) {
+        llWhisper(0, message);
+        llSetText(message, <1,1,1>,1);
+    }
+}
+
+// *************************'
+// DATABASE 
+
+string URL_BASE = "http://sl.blackgazza.com/";
 string URL_READ = "read_inmate.cgi?key=";
 string URL_ADD = "add_inmate.cgi?key=";
 key crimeRequest;
-integer iFailed;
 
-integer chan;
-integer listener;
-integer skip_expired;
+// These lists are 1-based, numbered 1-6
+string myQueryStatus;
+list databaseRequests = ["", "", "", "", "", "", ""]; // 1-based so 0 is unassigned
+list assetNumberList = ["P-00000","","","","","",""]; // 1-based so 0 is unassigned
+list crimeList = ["","","","","","",""];  // 1-based so 0 is unassigned
+list nameList = ["","","","","","",""];  // 1-based so 0 is unassigned
+list sentenceList = ["0","0","0","0","0","0","0"]; // it is not used in this collar but i decided to keep it
+string tempCrimes = "";
 
-integer DEBUG = 0;
+string assetNumber(integer index) {
+    return llList2String(assetNumberList, index);
+}
 
-key user_key;
-key give_key;
+string crime(integer index) {
+    return llList2String(crimeList, index);
+}
 
-string sPromt;
-list assetNumbersList; // position 0 is a dummy so it'a 1-based
-list crimesList; // position 0 is a dummy so it'a 1-based
+string name(integer index) {
+    return llList2String(nameList, index);
+}
 
-integer iMakeInmate;
-integer iSetInmate;
 
-key INMATE_KEY;
-string INMATE_RESULT;
-
-key crimesRequest;
-vector red = <1.0, 0.0, 0.0>;
-integer run;
-
-debug(string message) {
-    if (DEBUG) {
-        llWhisper(0, message);
-    }
-} 
-
-string COLLAR_GIVER = "e4833429-22d9-a1cc-2e08-90f6562e8830";
-string COLLAR_GIVER_OFFLINE = "80e7148b-9a18-fe07-2476-fdbcebab5fce";
-integer FACE = 3;
-float TIMER = 900; 
-key statusRequest;
-integer iMenu;
-key kKey;
-
+// convert agent key to database key
 string AgentKeyWithRole(string agentKey, integer slot) {
-// if the slot number is 2 or greater, 
+// if the slot number is 2 or greater,
 // sticks the character key into the agent UUID
     string result = agentKey;
     if (slot > 1) {
@@ -54,356 +56,282 @@ string AgentKeyWithRole(string agentKey, integer slot) {
         string before = llGetSubString(agentKey, 24, -1);
         result = after + (string)slot + before;
     }
-    debug("AgentKeyWithRole("+(string)agentKey+", "+(string)slot+") returns "+result);
     return result;
 }
 
-Database_Read(integer g_iSlotLoad) {
-    string final_url = URL + URL_READ + AgentKeyWithRole(user_key, g_iSlotLoad) + "";
-    debug("Database_Read " + (string)g_iSlotLoad + " " + final_url);
-    crimeRequest = llHTTPRequest(final_url, [], "");    
+// fire off a request to the crime database for this wearer.
+// Parameter iSlot determines which character to get.
+sendReadDatabaseQuery(key avatarKey, integer index) {
+    sayDebug("sendReadDatabaseQuery "+(string)index);
+    string URL = URL_BASE + URL_READ + AgentKeyWithRole((string)llGetOwner(),index);
+    sayDebug("sendReadDatabaseQuery URL:"+URL);
+    key databaseQuery = llHTTPRequest(URL,[],""); // append reqest_id for use it later in responder event
+    databaseRequests = llListReplaceList(databaseRequests, [databaseQuery], index, index);
 }
 
-Other_Database_read(string kID) {
-    debug("Other_Database_read");
-    // was llMessageLinked 4
-            if((key)kID) {
-                if(kID != NULL_KEY) {
-                  INMATE_RESULT = "";
-                  run = 1;
-                  INMATE_KEY = kID;
-                  INMATE_RESULT = "";
-                  string final_url = URL + URL_READ + (string)INMATE_KEY + "";
-                  debug("link_message URL: " + final_url);
-                  crimesRequest = llHTTPRequest(final_url, [], "");
-                } else{
-                    buildCharacterList("<ERROR>", kID);
-                } 
-            } else{
-                buildCharacterList("<ERROR>", kID);
-            } 
-}
-
-check_database_status(key kID) {
-            debug("check_database_status");
-            llSetTimerEvent(TIMER);
-            iMenu = 1;
-            kKey = kID;
-            string final_url = URL + URL_READ + "937996d5-654e-4aee-92ef-7375970f1249" + "";
-            debug("link_message URL: " + final_url);
-            statusRequest = llHTTPRequest(final_url, [], "");
-}
-
-crimes_generate(integer iValue) {
-    debug("crimes_generate");
-    // you little fucker. You could be the end of a loop. 
-    if(iValue <= 6) {
-        string final_url = URL + URL_READ + AgentKeyWithRole(INMATE_KEY, iValue) + "";
-        debug("crimes_generate " + (string)iValue + " " + final_url);
-        crimesRequest = llHTTPRequest(final_url, [], "");
-    } else{
-        buildCharacterList(INMATE_RESULT, INMATE_KEY);
+gatherInmateRecords(key avatarKey) {
+    sayDebug("gatherInmateRecords");
+    integer index;
+    for (index = 1; index <=6; index = index + 1) {
+        sendReadDatabaseQuery(avatarKey, index);
     }
-} 
-
-buildCharacterList(string sStr, key kID) {
-    debug("buildCharacterList");
-    // was llMessageLinked 5
-            if((key)kID) {
-                assetNumbersList = ["0", "1", "2", "3", "4", "5", "6"];
-                crimesList = ["", "", "", "", "", "", ""];
-                sPromt = "INMATES:\n";
-                if(sStr == "<No records.>") {  
-                    sPromt += "None, maybe not registered.";
-                } else{
-                    list lParams = llParseString2List(sStr, ["@"], []);
-                    string sNumber;
-                    string sCrime;
-                    
-                    integer i;
-                    for (i = 1; i <= 6; i = i + 1) {
-                        sNumber = llList2String(lParams, (i-1)*2);
-                        sCrime = llList2String(lParams, (i-1)*2+1);
-                        if(~llSubStringIndex(sNumber, "P-6")) {
-                            assetNumbersList = llListReplaceList(assetNumbersList, [sNumber], i, i);
-                            crimesList = llListReplaceList(crimesList, [sCrime], 1, 1);
-                        } 
-                        sPromt += sNumber + " > " + sCrime + "\n";
-                    }
-                } 
-                sPromt = llGetSubString(sPromt, 0, 500);
-                if(llGetListLength(assetNumbersList) <= 0) {
-                    assetNumbersList = ["-", "-", "-"];
-                }
-                precommand_clean();
-                user_command_main(kID);
-            } 
+    
 }
 
-Database_Save(integer iSlot, string sMsg) {
-    // you little fucker. You could be the end of a loop. 
-    if(iSlot <= 6) {
-        debug("Database_Save (" + (string)iSlot + ", " + sMsg + ")");
-        sMsg = llEscapeURL(llDumpList2String(llParseStringKeepNulls((sMsg = "")  +  sMsg, [";"], []), ","));
-        string name = llEscapeURL(llKey2Name(user_key));
-        string final_url = URL + URL_ADD + AgentKeyWithRole(user_key, iSlot) + "&name=" + name + "&crime=" + sMsg + "&sentence=0";
-        debug("Database_Save " + (string)iSlot + " " + final_url);
-        llHTTPRequest(final_url, [], "");
+
+
+// *************************'
+// MENU 
+
+string menuIdentifier;
+string menuMain = "Main";
+string readDB = "Read DB";
+key menuAgentKey;
+integer menuChannel;
+integer menuListen;
+integer crimeSetChannel = 0;
+integer crimeSetListen;
+
+setUpMenu(string identifier, key avatarKey, string message, list buttons)
+// wrapper to do all the calls that make a simple menu dialog.
+// - adds required buttons such as Close or Main
+// - displays the menu command on the alphanumeric display
+// - sets up the menu channel, listen, and timer event
+// - calls llDialog
+// parameters:
+// identifier - sets menuIdentifier, the later context for the command
+// avatarKey - uuid of who clicked
+// message - text for top of blue menu dialog
+// buttons - list of button texts
+{
+    sayDebug("setUpMenu "+identifier);
+
+    if (identifier != menuMain) {
+        buttons = buttons + [menuMain];
     }
-    Clean();
-} 
+    buttons = buttons + ["Close"];
 
-user_command_main(key sID) {
-    debug("user_command_main");
-    iFailed = 0;
-    iSetInmate = 0;
-    iMakeInmate = 0;
-    give_key = NULL_KEY;
-    llDialog(sID, sPromt, llList2List(assetNumbersList,1,6), chan);
+    sayDebug("menu access");
+    menuIdentifier = identifier;
+    menuAgentKey = avatarKey; // remember who clicked
+    menuChannel = -(llFloor(llFrand(10000)+1000));
+    menuListen = llListen(menuChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llDialog(avatarKey, message, buttons, menuChannel);
 }
 
-user_command_crimesetter(key sID) {
-    debug("user_command_crimesetter");
-    if(iSetInmate > 0) {
-        string message = "Crime setter:\n";
-            
-        integer i;
-        for (i = 1; i <= 6; i = i + 1) {
-            if(iSetInmate == i) {
-                message += "Inmate selected:" + llList2String(assetNumbersList,iSetInmate);
-                message += "\nCrime:" +  llList2String(crimesList,iSetInmate);
-            }
-        }            
-        message += "\nPlease enter new crime:";
-        llTextBox(sID, message , chan);
-    } else if(iMakeInmate > 0) {
-        Database_Save(iMakeInmate, "none");
-        llSleep(2.0);
-        iSetInmate = iMakeInmate;
-        iMakeInmate = 0;
-        Database_Read(iSetInmate);
-    } 
+string menuCheckbox(string title, integer onOff)
+// make checkbox menu item out of a button title and boolean state
+{
+    string checkbox;
+    if (onOff)
+    {
+        checkbox = "☒";
+    }
+    else
+    {
+        checkbox = "☐";
+    }
+    return checkbox + " " + title;
 }
 
-UserComand(key sID, string msg) {
-    debug("UserComand:" + msg);
-    for (iSetInmate = 1; iSetInmate <= 6; iSetInmate = iSetInmate + 1) {
-        if (msg == llList2String(assetNumbersList, iSetInmate)) {
-            Clean();
-            debug("iSetInmate="+(string)iSetInmate);
-            precommand_clean();
-            user_command_crimesetter(sID);
+list menuRadioButton(string title, string match)
+// make radio button menu item out of a button and the state text
+{
+    string radiobutton;
+    if (title == match)
+    {
+        radiobutton = "●";
+    }
+    else
+    {
+        radiobutton = "○";
+    }
+    return [radiobutton + " " + title];
+}
+
+list menuButtonActive(string title, integer onOff)
+// make a menu button be the text or the Inactive symbol
+{
+    string button;
+    if (onOff)
+    {
+        button = title;
+    }
+    else
+    {
+        button = "["+title+"]";
+    }
+    return [button];
+}
+
+
+main_menu(key avatarKey) {
+    string message = "Crime Setter";
+    list buttons = [];
+    buttons = buttons + [readDB];
+    setUpMenu(menuMain, avatarKey, message, buttons);
+
+}
+
+doMainMenu(key avatarKey, string message) {
+    sayDebug("doMainMenu "+message);
+    
+    if (message == readDB) {
+        gatherInmateRecords(avatarKey);
+    }
+}
+
+characterMenu(key avatarKey) {
+    sayDebug("characterMenu()");
+    list buttons = [];
+    integer i = 0;
+    for (i=1; i<7; i = i + 1) {
+        string assetNumber = llList2String(assetNumberList, i);
+        if (assetNumber != "") {
+            buttons = buttons + [assetNumber];
         }
     }
-    for (iMakeInmate = 1; iMakeInmate <= 6; iMakeInmate = iMakeInmate + 1) {
-        if (msg == (string)iMakeInmate) {
-            Clean();
-            debug("iMakeInmate="+(string)iMakeInmate);
-            precommand_clean();
-            user_command_crimesetter(sID);
-        }
-    }
-} 
-
-precommand_clean() {
-    llListenRemove(listener);
-    chan = 100  +  (integer)llFrand(20000);
-    listener = llListen(chan, "", "", "");
-    skip_expired = 1;
-    llSetTimerEvent(60.0);
+    setUpMenu(llGetOwner(), avatarKey, "Choose your Asset Number", buttons);
 }
 
-
-Clean() {
-    llListenRemove(listener);
-    skip_expired = 1;
-    user_key = NULL_KEY;
-    llSetTimerEvent(5.0);
-} 
-
-integer Authentification(key sID) {
-    if(llSameGroup(sID)) {
-        return 1;
-    } 
-    list AttachedUUIDs = llGetAttachedList(sID);
-    string groupkey = (string)llGetObjectDetails((key)llList2String(AttachedUUIDs, 0) , [OBJECT_GROUP]);
-    if(groupkey == "ce9356ec-47b1-5690-d759-04d8c8921476"||groupkey == "b3947eb2-4151-bd6d-8c63-da967677bc69"||groupkey == "900e67b1-5c64-7eb2-bdef-bc8c04582122") {
-        return 1;
-    } 
-    if(groupkey == "49b2eab0-67e6-4d07-8df1-21d3e03069d0") {
-        return -1;
-    } 
-    return 0;
-} 
+setCharacterCrimes(key avatarKey, integer index)
+{
+    string message = assetNumber(index) + "\nCharacter Name: " + name(index)  + "\nCurrent Crimes: " + crime(index) + "\nPlease set new Crimes: ";
+    crimeSetChannel = -(llFloor(llFrand(1000)+1000));
+    crimeSetListen = llListen(crimeSetChannel, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llTextBox(avatarKey, message, crimeSetChannel);
+}
 
 default
 {
     state_entry()
     {
-        string options = llGetObjectDesc();
-        if (llSubStringIndex(options,"debug") > -1) {
-            DEBUG = TRUE;
-            debug("state_entry");
+        sayDebug("state_entry");
+        userKey = NULL_KEY;
+    }
+
+    touch_start(integer total_number)
+    {
+        key detectedKey = llDetectedKey(0);
+        if (userKey == NULL_KEY) {
+            userKey = detectedKey;
+            main_menu(userKey);
+        } else {
+            if (userKey == detectedKey) {
+                main_menu(userKey);
+            } else {
+                llSay(0, "This unit is in use by someoe else.");
+            }
+        }
+    }
+    
+    listen( integer channel, string name, key avatarKey, string message )
+    {
+        sayDebug("listen name:"+name+" message:"+message);
+
+        string messageButtonsTrimmed = message;
+        list striplist = ["☒ ","☐ ","● ","○ "];
+        integer i;
+        for (i=0; i < llGetListLength(striplist); i = i + 1) {
+            string thing = llList2String(striplist, i);
+            integer whereThing = llSubStringIndex(messageButtonsTrimmed, thing);
+            if (whereThing > -1) {
+                integer thingLength = llStringLength(thing)-1;
+                messageButtonsTrimmed = llDeleteSubString(messageButtonsTrimmed, whereThing, whereThing + thingLength);
+            }
+        }
+
+        // display the menu item
+        if (llGetSubString(message,1,1) == " ") {
+            sayDebug(messageButtonsTrimmed);
+        } else {
+            sayDebug(message);
+        }
+
+        // reset the menu setup
+        llListenRemove(menuListen);
+        menuListen = 0;
+        menuChannel = 0;
+        menuAgentKey = "";
+        llSetTimerEvent(0);
+
+        // Main button
+        if (message == menuMain) {
+            main_menu(avatarKey);
         }
         
-        Clean();
-        give_key = NULL_KEY;
-    
-    } 
-    
-    timer()
+        if (message == readDB) {
+            gatherInmateRecords(avatarKey);
+        }
+
+        if (message == "Close") {
+            return;
+        }
+
+    }
+
+    http_response(key request_id, integer status, list metadata, string message)
+    // handle a response from the crime database
     {
-        if(user_key == NULL_KEY) {
-            llSetTimerEvent(TIMER);
-            iMenu = 0;
-            kKey = NULL_KEY;
-        //    string funal_url = URL + URL_READ + "937996d5-654e-4aee-92ef-7375970f1249" + "";
-        //    debug("timer: " + funal_url);
-        //    statusRequest = llHTTPRequest(funal_url, [], "");
-        } else
-             Clean();
-        //} 
-       
-    } 
-    
-    http_response(key request_id, integer status, list metadata, string body) {
-        debug("http_response [" + (string)status + "] (" + (string)metadata + ")" + body);
-        if (request_id == crimeRequest) {
-            debug("http_response crimeRequest "+body);
-            list inmate_data = llCSV2List(body); 
-            string inmate_number = llList2String(inmate_data, 4);
-         
-            if(inmate_number != "") {
-                if(iSetInmate > 0) {
-                    Other_Database_read(user_key);   
-                } 
-            } else{
-                
-            } 
-        } 
-        if (request_id == crimesRequest) {
-            debug("http_response crimesRequest "+body);
-            
-            list inmate_data = llCSV2List(body); 
-            string inmate_number = llList2String(inmate_data, 4);
-            string inmate_channel = llGetSubString(inmate_number, 2, -1);
-            string inmate_sentence = llList2String(inmate_data, 1);
-            string inmate_crime = llList2String(inmate_data, 2);
-           
-           if(inmate_number != "")
-           { 
-                if(inmate_crime == ""||llStringLength(inmate_crime) < 2) {
-                    inmate_crime = "<No crimes.>";
-                } 
-                INMATE_RESULT += inmate_number + "@" + inmate_crime + "@";
-             
-                run ++;
-                crimes_generate(run);
-           } else if(run == 1) {
-               INMATE_RESULT = "<No records.>";
-               buildCharacterList(INMATE_RESULT,INMATE_KEY);
-            } else{
-                 run ++;
-                crimes_generate(run);
-            } 
-        } 
-        if (request_id == statusRequest) {
-            debug("http_response statusRequest "+body);
-            list inmate_data = llCSV2List(body); 
-            string inmate_number = llList2String(inmate_data, 4);
-         
-            if(inmate_number != "") { 
-                g_iOnline = 1;
-                if(iMenu) {
-                    Other_Database_read(kKey);
-                } 
-                //llSetTexture(COLLAR_GIVER, FACE);
-            } else{            
-                g_iOnline = 0;
-                if(iMenu) {
-                    Other_Database_read(kKey);
-                } 
-            } 
-            iMenu = 0;
-            kKey = NULL_KEY;
-        } 
-    } 
-    
-    touch_start(integer num_detected)
-    {
-        key kKey = llDetectedKey(0);
-        if(user_key == NULL_KEY) // nirmal circumstance. user_key is the current user
+        // find out which of the pending requests this is
+        integer index = llListFindList(databaseRequests, [request_id]);
+        if (index == -1) return; // skip response if this script did not require it
+
+        // if response status code not equal 200(OK)
+        // then remove item with request_id from list and exit
+        if (status != 200)
         {
-            integer i = Authentification(kKey);
-            if(i == 1) {
-                iFailed = 0;
-                debug("touch_start links message 'check'");
-                check_database_status(kKey);
-            } else if(i == -1) {
-                llPlaySound(Sound_Close, fVolum);
-                llInstantMessage(kKey, "An active BG group is required. Having the Welcome Group is not an official BG member group tag.");
-            } else{
-                llPlaySound(Sound_Close, fVolum);
-                llInstantMessage(kKey, "Sorry, an active BG group is required.");
-            } 
-            
-        } else if(user_key != kKey) { 
-            llInstantMessage(kKey, "Sorry, the menu is being used by someone. >.<");
-        } else if(user_key == kKey) {
-            integer i = Authentification(kKey);
-            if(i == 1) {
-                llPlaySound(Sound_Open, fVolum);
-                precommand_clean();
-                user_command_main(user_key);
-            } else if(i == -1) {
-                llPlaySound(Sound_Close, fVolum);
-                llInstantMessage(kKey, "An active BG group is required. Having the Welcoem Group is not an official BG member group tag.");
-            } else{
-                llPlaySound(Sound_Close, fVolum);
-                llInstantMessage(kKey, "Sorry, an active BG group is required.");
-            } 
-        } 
-    } 
-    
-    listen(integer channel, string name, key sID, string msg)
-    {
-        debug("listen ("+msg+")");
-        if(sID == user_key) {
-            if(iMakeInmate == 0 && iSetInmate == 0) {
-                llOwnerSay(msg);
-                UserComand(sID, msg);
-            } else if(iSetInmate > 0) {
-                Database_Save(iSetInmate, msg);
-                iSetInmate = 0;
-                Clean();
-                llSleep(2.0);
-                Other_Database_read(sID);
-            } 
-        } 
-    } 
-    
-    link_message(integer iSender, integer iNum, string sStr, key kID) {
-        debug("link_message iNum:"+(string)iNum+" sStr:"+sStr);
-        // why the FUCK are you sending yourself link messages?
-        if (iNum == 5) {
-        } 
+            sayDebug("DB Error "+(string)status);
+            databaseRequests = llListReplaceList(databaseRequests, [0], index, index);
+            crimeList = llListReplaceList(crimeList, ["uninitialized"], index, index);
+            nameList = llListReplaceList(nameList, ["uninitialized"], index, index);
+            assetNumberList = llListReplaceList(assetNumberList, ["P-00000"], index, index);
+            return;
+        }
+
+        // decode the response which looks like
+        // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+
+        // Fix missing data in the response
+        integer whereTwoCommas = llSubStringIndex(message, ",,");
+        if (whereTwoCommas > 1) {
+            message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
+        }
+        whereTwoCommas = llSubStringIndex(message, ",,");
+        if (whereTwoCommas > 1) {
+            message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
+        }
+        sayDebug("http_response message="+message);
+
+        // extract the individual pieces
+        list returnedStuff = llParseString2List(message, [","], []);
+        string theName = llList2String(returnedStuff, 0);
+        string mysteriousNumber = llList2String(returnedStuff, 1);
+        string theCrime = llList2String(returnedStuff, 2);
+        string avatarKey = llList2String(returnedStuff, 3);
+        string theAssetNumber = llList2String(returnedStuff, 4);
+
+        sayDebug("name:"+theName);
+        sayDebug("number:"+mysteriousNumber);
+        sayDebug("crime:"+theCrime);
+        sayDebug("key:"+avatarKey);
+        sayDebug("assetNumber:"+theAssetNumber);
+
+        assetNumberList = llListReplaceList(assetNumberList, [theAssetNumber], index, index);
+        crimeList = llListReplaceList(crimeList, [theCrime], index, index);
+        nameList = llListReplaceList(nameList, [theName], index, index);
+        sentenceList = llListReplaceList(sentenceList, [mysteriousNumber], index, index);
     }
 
 
-    
-    changed(integer iChange) {
-        if (iChange & CHANGED_OWNER) {
-            llResetScript();
-        } 
-        if (iChange & CHANGED_INVENTORY)         
-        {
-           
-        } 
-        if (iChange & CHANGED_ALLOWED_DROP) 
-        {
-           
-        } 
-    } 
-    
-} 
-
+    timer()
+    {
+        llSetTimerEvent(0);
+        // reset the menu setup
+        llListenRemove(menuListen);
+        menuListen = 0;
+        menuAgentKey = "";
+    }
+}
