@@ -62,7 +62,28 @@ Database_Read(integer g_iSlotLoad) {
     string final_url = URL + URL_READ + AgentKeyWithRole(user_key, g_iSlotLoad) + "";
     debug("Database_Read " + (string)g_iSlotLoad + " " + final_url);
     crimeRequest = llHTTPRequest(final_url, [], "");    
-} 
+}
+
+Other_Database_read(string kID) {
+    // was llMessageLinked 4
+            if((key)kID) {
+                if(kID != NULL_KEY) {
+                  INMATE_RESULT = "";
+                  run = 1;
+                  INMATE_KEY = kID;
+                  INMATE_RESULT = "";
+                  string final_url = URL + URL_READ + (string)INMATE_KEY + "";
+                  debug("link_message URL: " + final_url);
+                  crimesRequest = llHTTPRequest(final_url, [], "");
+                } else{
+                    debug("link_message links message");
+                    llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
+                } 
+            } else{
+                debug("link_message links message");
+                llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
+            } 
+}
 
 check_database_status(key kID) {
             debug("check_database_status");
@@ -224,8 +245,7 @@ default
          
             if(inmate_number != "") {
                 if(iSetInmate > 0) {
-                    debug("http_response links message");
-                    llMessageLinked(LINK_SET, 4, "numbers", user_key);    
+                    Other_Database_read(user_key);   
                 } 
             } else{
                 
@@ -266,13 +286,13 @@ default
             if(inmate_number != "") { 
                 g_iOnline = 1;
                 if(iMenu) {
-                    llMessageLinked(LINK_SET, 4, "numbers", kKey);
+                    Other_Database_read(kKey);
                 } 
                 //llSetTexture(COLLAR_GIVER, FACE);
             } else{            
                 g_iOnline = 0;
                 if(iMenu) {
-                    llMessageLinked(LINK_SET, 4, "numbers", kKey);
+                    Other_Database_read(kKey);
                 } 
             } 
             iMenu = 0;
@@ -328,7 +348,7 @@ default
                 Clean();
                 llSleep(2.0);
                 debug("listen links message");
-                llMessageLinked(LINK_SET, 4, "numbers", sID);    
+                Other_Database_read(sID);
             } 
         } 
     } 
@@ -365,27 +385,8 @@ default
                 } 
                 Generate(kID, "main");
             } 
-        } else if(iNum == 4 && sStr == "numbers") {
-            if((key)kID) {
-                if(kID != NULL_KEY) {
-                  INMATE_RESULT = "";
-                  run = 1;
-                  INMATE_KEY = kID;
-                  INMATE_RESULT = "";
-                  string final_url = URL + URL_READ + (string)INMATE_KEY + "";
-                  debug("link_message URL: " + final_url);
-                  crimesRequest = llHTTPRequest(final_url, [], "");
-                } else{
-                    debug("link_message links message");
-                    llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
-                } 
-            } else{
-                debug("link_message links message");
-                llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
-            } 
-        } else if(iNum == 1 && sStr == "check") {
         } 
-    } 
+    }
     
     changed(integer iChange) {
         if (iChange & CHANGED_OWNER) {
