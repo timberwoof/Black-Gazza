@@ -264,8 +264,7 @@ default
             string inmate_number = llList2String(inmate_data, 4);
          
             if(inmate_number != "") { 
-                debug("http_response links message");
-                llMessageLinked(LINK_SET, 3, "1", "");
+                g_iOnline = 1;
                 if(iMenu) {
                     debug("http_response links message");
                     llMessageLinked(LINK_SET, 2, "1", kKey);
@@ -276,9 +275,7 @@ default
                     debug("http_response links message");
                     llMessageLinked(LINK_SET, 2, "0", kKey);
                 } 
-                debug("http_response links message");
-                llMessageLinked(LINK_SET, 3, "0", "");
-                //llSetTexture(COLLAR_GIVER_OFFLINE, FACE);
+                g_iOnline = 0;
             } 
             iMenu = 0;
             kKey = NULL_KEY;
@@ -347,8 +344,6 @@ default
                 debug("link_message links message");
                 llMessageLinked(LINK_SET, 4, "numbers", kID);
             } 
-        } else if(iNum == 3) {
-            g_iOnline = (integer)sStr;
         } else if(iNum == 5) {
             if((key)kID) {
                 assetNumbersList = ["0", "1", "2", "3", "4", "5", "6"];
