@@ -64,6 +64,16 @@ Database_Read(integer g_iSlotLoad) {
     crimeRequest = llHTTPRequest(final_url, [], "");    
 } 
 
+check_database_status(key kID) {
+            debug("check_database_status");
+            llSetTimerEvent(TIMER);
+            iMenu = 1;
+            kKey = kID;
+            string final_url = URL + URL_READ + "937996d5-654e-4aee-92ef-7375970f1249" + "";
+            debug("link_message URL: " + final_url);
+            statusRequest = llHTTPRequest(final_url, [], "");
+}
+
 crimes_generate(integer iValue) {
     // you little fucker. You could be the end of a loop. 
     if(iValue <= 6) {
@@ -284,7 +294,7 @@ default
             if(i == 1) {
                 iFailed = 0;
                 debug("touch_start links message 'check'");
-                llMessageLinked(LINK_SET, 1, "check", kKey);
+                check_database_status(kKey);
             } else if(i == -1) {
                 llPlaySound(Sound_Close, fVolum);
                 llInstantMessage(kKey, "An active BG group is required. Having the Welcome Group is not an official BG member group tag.");
@@ -387,13 +397,6 @@ default
                 llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
             } 
         } else if(iNum == 1 && sStr == "check") {
-            debug("database presence check");
-            llSetTimerEvent(TIMER);
-            iMenu = 1;
-            kKey = kID;
-            string final_url = URL + URL_READ + "937996d5-654e-4aee-92ef-7375970f1249" + "";
-            debug("link_message URL: " + final_url);
-            statusRequest = llHTTPRequest(final_url, [], "");
         } 
     } 
     
