@@ -136,7 +136,7 @@ buildCharacterList(string sStr, key kID) {
                     assetNumbersList = ["-", "-", "-"];
                 }
                 precommand_clean();
-                UserComand(kID, "main");
+                user_command_main(kID);
             } 
 }
 
@@ -153,55 +153,54 @@ Database_Save(integer iSlot, string sMsg) {
     Clean();
 } 
 
-UserComand(key sID, string msg) {
-    debug("UserComand:" + msg);
-    if(msg == "main") {
-        iFailed = 0;
-        iSetInmate = 0;
-        iMakeInmate = 0;
-        give_key = NULL_KEY;
-        llDialog(sID, sPromt, llList2List(assetNumbersList,1,6), chan);
-    } else if(msg == "crimesetter") {
-        llOwnerSay("crimesetter");
-        if(iSetInmate > 0) {
-            string message = "Crime setter:\n";
+user_command_main(key sID) {
+    debug("user_command_main");
+    iFailed = 0;
+    iSetInmate = 0;
+    iMakeInmate = 0;
+    give_key = NULL_KEY;
+    llDialog(sID, sPromt, llList2List(assetNumbersList,1,6), chan);
+}
+
+user_command_crimesetter(key sID) {
+    debug("user_command_crimesetter");
+    if(iSetInmate > 0) {
+        string message = "Crime setter:\n";
             
-            integer i;
-            for (i = 1; i <= 6; i = i + 1) {
-                if(iSetInmate == i) {
+        integer i;
+        for (i = 1; i <= 6; i = i + 1) {
+            if(iSetInmate == i) {
                 message += "Inmate selected:" + llList2String(assetNumbersList,iSetInmate);
                 message += "\nCrime:" +  llList2String(crimesList,iSetInmate);
-                }
-            }            
-            message += "\nPlease enter new crime:";
-            llTextBox(sID, message , chan);
-        } else if(iMakeInmate > 0) {
-            Database_Save(iMakeInmate, "none");
-            llSleep(2.0);
-            iSetInmate = iMakeInmate;
-            iMakeInmate = 0;
-            Database_Read(iSetInmate);
-        } 
-    } else {
-        for (iSetInmate = 1; iSetInmate <= 6; iSetInmate = iSetInmate + 1) {
-            if (msg == llList2String(assetNumbersList, iSetInmate)) {
-                Clean();
-                debug("iSetInmate="+(string)iSetInmate);
-                precommand_clean();
-                UserComand(sID, "crimesetter");
-                // this means that Generate uses iSetInmate as a hidden variable 
-                // I hate you an awful lot
             }
+        }            
+        message += "\nPlease enter new crime:";
+        llTextBox(sID, message , chan);
+    } else if(iMakeInmate > 0) {
+        Database_Save(iMakeInmate, "none");
+        llSleep(2.0);
+        iSetInmate = iMakeInmate;
+        iMakeInmate = 0;
+        Database_Read(iSetInmate);
+    } 
+}
+
+UserComand(key sID, string msg) {
+    debug("UserComand:" + msg);
+    for (iSetInmate = 1; iSetInmate <= 6; iSetInmate = iSetInmate + 1) {
+        if (msg == llList2String(assetNumbersList, iSetInmate)) {
+            Clean();
+            debug("iSetInmate="+(string)iSetInmate);
+            precommand_clean();
+            user_command_crimesetter(sID);
         }
-        for (iMakeInmate = 1; iMakeInmate <= 6; iMakeInmate = iMakeInmate + 1) {
-            if (msg == (string)iMakeInmate) {
-                Clean();
-                debug("iMakeInmate="+(string)iMakeInmate);
-                precommand_clean();
-                UserComand(sID, "crimesetter");
-                // this means that Generate uses iMakeInmate as a hidden variable 
-                // I hate you an awful lot
-            }
+    }
+    for (iMakeInmate = 1; iMakeInmate <= 6; iMakeInmate = iMakeInmate + 1) {
+        if (msg == (string)iMakeInmate) {
+            Clean();
+            debug("iMakeInmate="+(string)iMakeInmate);
+            precommand_clean();
+            user_command_crimesetter(sID);
         }
     }
 } 
@@ -355,7 +354,7 @@ default
             if(i == 1) {
                 llPlaySound(Sound_Open, fVolum);
                 precommand_clean();
-                UserComand(kKey, "main");
+                user_command_main(user_key);
             } else if(i == -1) {
                 llPlaySound(Sound_Close, fVolum);
                 llInstantMessage(kKey, "An active BG group is required. Having the Welcoem Group is not an official BG member group tag.");
@@ -368,17 +367,16 @@ default
     
     listen(integer channel, string name, key sID, string msg)
     {
+        debug("listen ("+msg+")");
         if(sID == user_key) {
             if(iMakeInmate == 0 && iSetInmate == 0) {
                 llOwnerSay(msg);
                 UserComand(sID, msg);
-            } else
-            if(iSetInmate > 0) {
+            } else if(iSetInmate > 0) {
                 Database_Save(iSetInmate, msg);
                 iSetInmate = 0;
                 Clean();
                 llSleep(2.0);
-                debug("listen links message");
                 Other_Database_read(sID);
             } 
         } 
