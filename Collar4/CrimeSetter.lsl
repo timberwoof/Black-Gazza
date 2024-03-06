@@ -65,6 +65,7 @@ Database_Read(integer g_iSlotLoad) {
 }
 
 Other_Database_read(string kID) {
+    debug("Other_Database_read");
     // was llMessageLinked 4
             if((key)kID) {
                 if(kID != NULL_KEY) {
@@ -76,12 +77,10 @@ Other_Database_read(string kID) {
                   debug("link_message URL: " + final_url);
                   crimesRequest = llHTTPRequest(final_url, [], "");
                 } else{
-                    debug("link_message links message");
-                    llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
+                    buildCharacterList("<ERROR>", kID);
                 } 
             } else{
-                debug("link_message links message");
-                llMessageLinked(LINK_SET, 5, "<ERROR>", kID);
+                buildCharacterList("<ERROR>", kID);
             } 
 }
 
@@ -96,17 +95,50 @@ check_database_status(key kID) {
 }
 
 crimes_generate(integer iValue) {
+    debug("crimes_generate");
     // you little fucker. You could be the end of a loop. 
     if(iValue <= 6) {
         string final_url = URL + URL_READ + AgentKeyWithRole(INMATE_KEY, iValue) + "";
         debug("crimes_generate " + (string)iValue + " " + final_url);
         crimesRequest = llHTTPRequest(final_url, [], "");
     } else{
-        // you little fucker! You're sending yourself messages. 
-        debug("crimes_generate links message");
-        llMessageLinked(LINK_SET, 5, INMATE_RESULT, INMATE_KEY);
+        buildCharacterList(INMATE_RESULT, INMATE_KEY);
     }
 } 
+
+buildCharacterList(string sStr, key kID) {
+    debug("buildCharacterList");
+    // was llMessageLinked 5
+            if((key)kID) {
+                assetNumbersList = ["0", "1", "2", "3", "4", "5", "6"];
+                crimesList = ["", "", "", "", "", "", ""];
+                sPromt = "INMATES:\n";
+                if(sStr == "<No records.>") {  
+                    sPromt += "None, maybe not registered.";
+                } else{
+                    list lParams = llParseString2List(sStr, ["@"], []);
+                    string sNumber;
+                    string sCrime;
+                    
+                    integer i;
+                    for (i = 1; i <= 6; i = i + 1) {
+                        sNumber = llList2String(lParams, (i-1)*2);
+                        sCrime = llList2String(lParams, (i-1)*2+1);
+                        if(~llSubStringIndex(sNumber, "P-6")) {
+                            assetNumbersList = llListReplaceList(assetNumbersList, [sNumber], i, i);
+                            crimesList = llListReplaceList(crimesList, [sCrime], 1, 1);
+                        } 
+                        sPromt += sNumber + " > " + sCrime + "\n";
+                    }
+                } 
+                sPromt = llGetSubString(sPromt, 0, 500);
+                if(llGetListLength(assetNumbersList) <= 0) {
+                    assetNumbersList = ["-", "-", "-"];
+                }
+                precommand_clean();
+                UserComand(kID, "main");
+            } 
+}
 
 Database_Save(integer iSlot, string sMsg) {
     // you little fucker. You could be the end of a loop. 
@@ -155,7 +187,8 @@ UserComand(key sID, string msg) {
             if (msg == llList2String(assetNumbersList, iSetInmate)) {
                 Clean();
                 debug("iSetInmate="+(string)iSetInmate);
-                Generate(sID, "crimesetter");
+                precommand_clean();
+                UserComand(sID, "crimesetter");
                 // this means that Generate uses iSetInmate as a hidden variable 
                 // I hate you an awful lot
             }
@@ -164,7 +197,8 @@ UserComand(key sID, string msg) {
             if (msg == (string)iMakeInmate) {
                 Clean();
                 debug("iMakeInmate="+(string)iMakeInmate);
-                Generate(sID, "crimesetter");
+                precommand_clean();
+                UserComand(sID, "crimesetter");
                 // this means that Generate uses iMakeInmate as a hidden variable 
                 // I hate you an awful lot
             }
@@ -172,16 +206,13 @@ UserComand(key sID, string msg) {
     }
 } 
 
-Generate(key sID, string sStr) {
-    user_key = sID;
+precommand_clean() {
     llListenRemove(listener);
     chan = 100  +  (integer)llFrand(20000);
     listener = llListen(chan, "", "", "");
     skip_expired = 1;
     llSetTimerEvent(60.0);
-    UserComand(user_key, sStr);
-} 
-
+}
 
 
 Clean() {
@@ -271,8 +302,7 @@ default
                 crimes_generate(run);
            } else if(run == 1) {
                INMATE_RESULT = "<No records.>";
-                debug("http_response links message");
-               llMessageLinked(LINK_SET, 5, INMATE_RESULT, INMATE_KEY);
+               buildCharacterList(INMATE_RESULT,INMATE_KEY);
             } else{
                  run ++;
                 crimes_generate(run);
@@ -324,7 +354,8 @@ default
             integer i = Authentification(kKey);
             if(i == 1) {
                 llPlaySound(Sound_Open, fVolum);
-                Generate(kKey, "main");
+                precommand_clean();
+                UserComand(kKey, "main");
             } else if(i == -1) {
                 llPlaySound(Sound_Close, fVolum);
                 llInstantMessage(kKey, "An active BG group is required. Having the Welcoem Group is not an official BG member group tag.");
@@ -357,36 +388,10 @@ default
         debug("link_message iNum:"+(string)iNum+" sStr:"+sStr);
         // why the FUCK are you sending yourself link messages?
         if (iNum == 5) {
-            if((key)kID) {
-                assetNumbersList = ["0", "1", "2", "3", "4", "5", "6"];
-                crimesList = ["", "", "", "", "", "", ""];
-                sPromt = "INMATES:\n";
-                if(sStr == "<No records.>") {  
-                    sPromt += "None, maybe not registered.";
-                } else{
-                    list lParams = llParseString2List(sStr, ["@"], []);
-                    string sNumber;
-                    string sCrime;
-                    
-                    integer i;
-                    for (i = 1; i <= 6; i = i + 1) {
-                        sNumber = llList2String(lParams, (i-1)*2);
-                        sCrime = llList2String(lParams, (i-1)*2+1);
-                        if(~llSubStringIndex(sNumber, "P-6")) {
-                            assetNumbersList = llListReplaceList(assetNumbersList, [sNumber], i, i);
-                            crimesList = llListReplaceList(crimesList, [sCrime], 1, 1);
-                        } 
-                        sPromt += sNumber + " > " + sCrime + "\n";
-                    }
-                } 
-                sPromt = llGetSubString(sPromt, 0, 500);
-                if(llGetListLength(assetNumbersList) <= 0) {
-                    assetNumbersList = ["-", "-", "-"];
-                } 
-                Generate(kID, "main");
-            } 
         } 
     }
+
+
     
     changed(integer iChange) {
         if (iChange & CHANGED_OWNER) {
