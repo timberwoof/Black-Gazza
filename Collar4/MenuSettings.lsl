@@ -4,7 +4,7 @@
 // June 2019
 string version = "2024-12-05";
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = TRUE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -58,10 +58,11 @@ string buttonBlank = " ";
 string buttonSpeech = "Speech";
 string buttonPenalties = "Penalties";
 string buttonSettings = "Settings";
-//string buttonTitler = "Titler";
-//string buttonBattery = "Battery";
 string buttonCharacter = "Character";
 string buttonSetCrime = "Set Crime";
+string buttonSetName = "Set Name";
+//string buttonTitler = "Titler";
+//string buttonBattery = "Battery";
 //string buttonHack = "Hack";
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
@@ -228,14 +229,14 @@ settingsMenu(key avatarKey) {
     integer setThreat = FALSE;
     integer setLock = FALSE;
     integer setPunishments = FALSE;
-    //integer setTimer = FALSE;
-    //integer setAsset = FALSE;
     integer setBadWords = FALSE;
     integer setSpeech = FALSE;
     integer setTitle = FALSE;
-//    integer setBattery = FALSE;
     integer setCharacter = FALSE;
     integer setCrimes = FALSE;
+    //integer setTimer = FALSE;
+    //integer setAsset = FALSE;
+    //integer setBattery = FALSE;
 
     // Add some things depending on who you are.
     // What wearer can change
@@ -245,20 +246,20 @@ settingsMenu(key avatarKey) {
         setMood = TRUE;
         setLock = TRUE;
         setSpeech = TRUE;
-        //setTimer = TRUE;
         setTitle = TRUE;
-        //setBattery = TRUE;
         setClass = TRUE;
         setThreat = TRUE;
         setPunishments = TRUE;
         setCharacter = TRUE;
+        //setTimer = TRUE;
+        //setBattery = TRUE;
 
         // Some things you can only change OOC
         if ((mood == moodOOC) || (mood == moodDND)) {
             sayDebug("settingsMenu: ooc");
             // IC or DnD you change everything
-            //setAsset = TRUE;
             setBadWords = TRUE;
+            //setAsset = TRUE;
         }
         else {
             message = message + "\nSome settings are not available while you are IC.";
@@ -292,8 +293,8 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: heavy-owner");
             setPunishments = FALSE;
             setThreat = FALSE;
-            //setTimer = FALSE;
             setSpeech = FALSE;
+            //setTimer = FALSE;
             //setBattery = FALSE;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         }
@@ -316,14 +317,14 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Class", setClass);
     buttons = buttons + menuButtonActive("Threat", setThreat);
     buttons = buttons + menuButtonActive(RLV, setLock);
-    //buttons = buttons + menuButtonActive("Timer", setTimer);
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
+    buttons = buttons + buttonSetName;
+    buttons = buttons + buttonSetCrime;
+    //buttons = buttons + menuButtonActive("Timer", setTimer);
     //buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
-    buttons = buttons + "blank";
     //buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
-    buttons = buttons + "blank";
 
     if(avatarKey == llGetOwner()) {
         // replace Character button to SetCrimes for guards
@@ -359,15 +360,24 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     else if (message == "Punishment"){
         PunishmentLevelMenu(avatarKey);
     }
+    else if (message == buttonSpeech){
+        speechMenu(avatarKey);
+    }
+    else if (message == buttonCharacter){
+        characterMenu(avatarKey);
+    }
+    else if (message == buttonSetName){
+        characterSetNameTextBox(avatarKey);
+    }
+    else if(message == buttonSetCrime) {
+        characterSetCrimeTextBox(avatarKey);
+    }
     //else if (message == "Asset"){
     //    assetMenu(avatarKey);
     //}
     //else if (message == "Timer"){
     //    llMessageLinked(LINK_THIS, 3000, "TIMER MODE", avatarKey);
     //}
-    else if (message == buttonSpeech){
-        speechMenu(avatarKey);
-    }
     //else if (messageButtonsTrimmed == buttonTitler) {
     //    titlerActive = !titlerActive;
     //    sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
@@ -378,15 +388,8 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     //    sendJSONCheckbox(buttonBattery, "", avatarKey, batteryActive);
     //    settingsMenu(avatarKey);
     //}
-    else if (message == buttonCharacter){
-        characterMenu(avatarKey);
-    }
-    else if(message == buttonSetCrime) {
-        characterSetCrimeTextBox(avatarKey);
-    // Ignore
-    }
     else {
-        sayDebug("doLockMenu ignoring "+message);
+        sayDebug("doSettingsMenu ignoring "+message);
         llPlaySound(blurp, 1.0);
         llSleep(0.2);
     }
@@ -407,8 +410,8 @@ PunishmentLevelMenu(key avatarKey)
     buttons = buttons + menuCheckbox("Objects", allowZapByObject);
     buttons = buttons + buttonBlank;
     buttons = buttons + buttonBlank;
-    //buttons = buttons + menuCheckbox("Vision", allowVision);
     buttons = buttons + buttonSettings;
+    //buttons = buttons + menuCheckbox("Vision", allowVision);
     setUpMenu("Punishments", avatarKey, message, buttons);
 }
 
@@ -560,11 +563,11 @@ speechMenu(key avatarKey)
 
     // assume we can do nothing
     integer doRenamer = FALSE;
-    //integer doGag = TRUE;
     integer doBadWords = FALSE;
     integer doWordList = FALSE;
     integer doDisplayTok = FALSE;
     integer doPenalties = FALSE;
+    //integer doGag = TRUE;
 
     // work out what menu items are available
     if (rlvPresent) {
@@ -655,7 +658,13 @@ characterMenu(key avatarKey) {
 }
 
 characterSetCrimeTextBox(key avatarKey) {
-    sendJSON("Database","setcrimes",avatarKey); // tell database to give the character set Crime TextBox and guard can to change the crime.
+    // tell database to give the character set Crime TextBox
+    sendJSON("Database","setcrime",avatarKey); 
+}
+
+characterSetNameTextBox(key avatarKey) {
+    // tell database to give the character set Crime TextBox
+    sendJSON("Database","setname",avatarKey); 
 }
 
 PenaltyMenu(key avatarKey) {
