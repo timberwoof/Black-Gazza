@@ -13,6 +13,8 @@ string gStausText = "";
 integer giMyOpenListen = 0;
 key gkWarden;
 
+string beepbeepbeepbeep = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
+
 string gInmateToZap = "";
 
 integer giActiveState = 0;
@@ -23,8 +25,8 @@ integer isINACTIVE = 0;
 string logTitle = "Terminal Log";
 string logText = "";
 
-
-key beepSound = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
+integer giFaceMonitor = 1;
+integer giFaceKeyboard = 2;
 
 floatyLog(string newEntry)
 {
@@ -46,17 +48,20 @@ floatyLog(string newEntry)
         logText = llDeleteSubString(logText, 0, chop);
     }
     logText = logTitle + "\n" + logText + newEntry;
-    logText="";
-    llSetText(logText,<0,1,0>,1);//logText
+    //llSetText(logText,<0,1,0>,1);//logText
 }
 
 // register this terminal with the mainframe.
 // send it a bunch of information about where it is. 
 register(string message) {
     integer colon = llSubStringIndex(message, ",");
-    string filter =  llToLower(llGetSubString(message, colon+1, -1));
-    string registrationMessage = gsMyCommandChannel + "," + gsMyDescription + "," + (string)llGetPos() + "," + (string)llGetRot();
-    if (llSubStringIndex( llToLower(registrationMessage), filter) > -1) {
+    string filter = llToLower(llGetSubString(message, colon+1, -1));
+    rotation viewRotation = llEuler2Rot(<0,0,-90>*DEG_TO_RAD); // view rotation relative to desk
+    vector viewOffset = <0.19, -1.16, 0.51>; // when desk is at rotation <0,0,0> and position <0,0,0>, where is the eyepoint? 
+    rotation myRot = llGetRot() * viewRotation; // view rotation in world coordinates
+    vector myPos = llGetPos() + viewOffset * viewRotation * myRot; // viewpoint position in world coordinates
+    string registrationMessage = gsMyCommandChannel + "," + gsMyDescription + "," + (string)myPos + "," + (string)myRot;
+    if (llSubStringIndex(llToLower(registrationMessage), filter) > -1) {
         floatyLog("register:"+registrationMessage);
         llRegionSay(giRegistrationChannel, "register," + registrationMessage);
     }
@@ -79,8 +84,6 @@ string coordinatesToChannel(vector position) {
 // the mainframe is setting the camera position to this terminal. 
 // Make the terminal look alive and identify who's on the mainframe. 
 activate(integer newstate, string newName, key newKey) {
-    integer lensprim = 1;
-    integer lensside = 2;
     gsWardenName = newName;
     giActiveState = newstate;
     gkWarden = newKey;
@@ -89,26 +92,26 @@ activate(integer newstate, string newName, key newKey) {
     vector textColor = <1,0,0>;
     
     if (newstate == isACTIVE) {
-        llPlaySound(beepSound,1.0);
-        llSetLinkPrimitiveParams(lensprim,[PRIM_FULLBRIGHT,lensside,TRUE]);
-        llSetLinkPrimitiveParams(lensprim,[PRIM_GLOW,lensside,0.3]);
+        llPlaySound(beepbeepbeepbeep,1.0);
+        llSetPrimitiveParams([PRIM_FULLBRIGHT,giFaceMonitor,TRUE]);
+        llSetPrimitiveParams([PRIM_GLOW,giFaceMonitor,0.05]);
         statusText = statusText + "   Status:Active   Operator:" + newName;
         textColor = <1.0, 0.75, 0>;
         giMyOpenListen = llListen(0,"","","");
         floatyLog("ACTIVE "+newName);
 
     } else if (newstate == isPRESENT) {
-        llSetLinkPrimitiveParams(lensprim,[PRIM_FULLBRIGHT,lensside,TRUE]);
-        llSetLinkPrimitiveParams(lensprim,[PRIM_GLOW,lensside,0.0]);
+        llSetPrimitiveParams([PRIM_FULLBRIGHT,giFaceMonitor,TRUE]);
+        llSetPrimitiveParams([PRIM_GLOW,giFaceMonitor,0.0]);
         statusText = statusText + "   Status:Present   Operator:" + newName;
         textColor = <0.75, 0.5, 0>;
         llListenRemove(giMyOpenListen);
         giMyOpenListen = 0;
         floatyLog("PRESENT "+newName);
     } else if (newstate == isINACTIVE) {
-        llPlaySound(beepSound,1.0);
-        llSetLinkPrimitiveParams(lensprim,[PRIM_FULLBRIGHT,lensside,FALSE]);
-        llSetLinkPrimitiveParams(lensprim,[PRIM_GLOW,lensside,0.0]);
+        llPlaySound(beepbeepbeepbeep,1.0);
+        llSetPrimitiveParams([PRIM_FULLBRIGHT,giFaceMonitor,FALSE]);
+        llSetPrimitiveParams([PRIM_GLOW,giFaceMonitor,0.0]);
         statusText = statusText + "   Status:Vacant";
         textColor = <0.75, 0.75, 0.75>;
         llListenRemove(giMyOpenListen);
@@ -146,19 +149,19 @@ default
         giRegistrationListen = llListen(giRegistrationChannel, gsSystemName, "", "");
         gsMyCommandChannel = coordinatesToChannel(llGetPos());
         giMyCommandChannel = (integer)gsMyCommandChannel;
-        //register(); // don't register until asked
         giMyCommandListen = llListen(giMyCommandChannel, gsSystemName, "", "");
         activate(giActiveState,"iniitlaized",gkWarden);
     }
 
     touch_start(integer num_detected)
     {
-        //llSay(0,(string)llDetectedLinkNumber(0));
-        llSay(0,"Paging the "+gsSystemName+". Please stand by.");
-        string pageMessage  = "page," + gsMyLocationDesignator + "," + (string)gsMyCommandChannel + "," + llKey2Name(llDetectedKey(0));
-        floatyLog("page:"+pageMessage);
-        llRegionSay(giRegistrationChannel,pageMessage);
-        llInstantMessage(llDetectedKey(0),gStausText);
+        if (giFaceKeyboard = llDetectedTouchFace(0)) {
+            llSay(0,"Paging the "+gsSystemName+". Please stand by.");
+            string pageMessage  = "page," + gsMyLocationDesignator + "," + (string)gsMyCommandChannel + "," + llKey2Name(llDetectedKey(0));
+            floatyLog("page:"+pageMessage);
+            llRegionSay(giRegistrationChannel,pageMessage);
+            llInstantMessage(llDetectedKey(0),gStausText);
+        }
     }
     
     listen(integer channel, string name, key id, string message) {

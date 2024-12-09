@@ -32,6 +32,7 @@ vector RED = <1.0, 0.0, 0.0>;
 vector REDORANGE = <1.0, 0.25, 0.0>;
 vector ORANGE = <1.0, 0.5, 0.0>;
 vector YELLOW = <1.0, 1.0, 0.0>;
+vector DARK_GREEN = <0.0, 0.2, 0.0>;
 vector GREEN = <0.0, 1.0, 0.0>;
 
 // my textures
@@ -64,7 +65,6 @@ integer LOCKDOWN_OFF = 0;
 integer LOCKDOWN_IMMINENT = 1;
 integer LOCKDOWN_ON = 2;
 integer LOCKDOWN_TEMP = 3; // for normally-open door closed fair-game release
-
 
 debug(string message)
 {
@@ -116,7 +116,7 @@ getParameters()
 }
 
 // Colors ****************
-setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState, integer gDoorTimerRunning, integer gDoorClockRunning)
+setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState, integer gDoorTimerRunning, integer gDoorClockRunning, string reservationState )
 // COL door has only one panel to show state.
 // Each door leaf has its own panel 
 // so there are always two linked color or texture calls.
@@ -151,6 +151,15 @@ setColorsAndIcons(integer gPowerState, integer gLockdownState, integer doorState
         llSetLinkTexture(primDoor, texture_locked, FACE_DOOR_CENTER);
         return;
     }
+
+    // set window frames for reservation state
+    vector doorFrameColor = WHITE;    
+    if (reservationState == "FREE") doorFrameColor = WHITE;
+    else if (reservationState == "READY") doorFrameColor = YELLOW;
+    else if (reservationState == "HERE") doorFrameColor = DARK_GREEN;
+    else if (reservationState == "GONE") doorFrameColor = RED;
+    else if (reservationState == "GUEST") doorFrameColor = DARK_BLUE;
+    llSetColor(doorFrameColor, FACE_DOORFRAME);
     
     if (OPEN == doorState) 
     {
@@ -230,7 +239,8 @@ default
             integer doorState = (integer)llJsonGetValue(msgString, ["doorState", "Value"]);
             integer doorTimerRunning = (integer)llJsonGetValue(msgString, ["doorTimerRunning", "Value"]);
             integer doorClockRunning = (integer)llJsonGetValue(msgString, ["doorClockRunning", "Value"]);
-            setColorsAndIcons(powerState, lockdownState, doorState, doorTimerRunning, doorClockRunning);
+            string reservedState = (string)llJsonGetValue(msgString, ["reservedState", "Value"]);
+            setColorsAndIcons(powerState, lockdownState, doorState, doorTimerRunning, doorClockRunning, reservedState);
         } 
         else if (msgInteger == 2010) // checkAuthorization failed
         {

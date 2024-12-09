@@ -10,13 +10,12 @@ list altitudesList = [0, 1155, 1165, 1200, 1210, 1215, 1220, 1225, 1230, 1235, 1
 vector coreLocation = <128,128,0>;
 string gsSystemName = "Central Scrutinizer";
 
-string initialTerminal = "13g18";
+string initialTerminal = "14K0";
 
 
 // all devices that want to register do so on this channel;
 // when the Brain resets, it asks for registrations on this channel
-integer gRegistrationChannel = 7658005;
-integer gLogChannel = 7658010;
+integer gRegistrationChannel = 7659005;
 integer gRegistrationListen;
 
 // If the avatar sitting in Brain Seat talks on this channel, the brain tells them to shut up. 
@@ -36,9 +35,7 @@ integer gActiveTerminalChannel = 0;
 integer gActiveTerminalListen = 0;
 
 integer gACSChannel = 360;
-integer gACSListen = 0;
-list gACSInterferenceAmounts = [0,0,0,0,0,0];
-list gACSInterferenceTypes = ["P","M","S","N","C","Y"];
+integer giACSInterferenceAmount = 0;
 
 // device list is a strided list
 // it contains all registered devices
@@ -54,22 +51,18 @@ integer deviceListStride = 6;
 integer cycleDeviceNumber = 0;
 string cycleDeviceFilter = "";
 
-integer gReportLevel = 2; // detail of information given with debug messages
+integer gReportLevel = 0; // memory monitor start/stop
 integer ERROR = 0;
 integer WARN = 1;
 integer INFO = 2;
 integer DEBUG = 3;
 integer TRACE = 4;
-integer gDebugLevel = 2;
-list debugLevels=["ERROR ","WARN  ","INFO  ","DEBUG ","TRACE "];
-integer gWasDebugLevel = 2;
 
 // *******
 // Utility functions
 
 integer IsInteger(string var){
 // http://wiki.secondlife.com/wiki/Integer
-
     integer i;
     for(i=0;i<llStringLength(var);++i){
         if(!~llListFindList(["1","2","3","4","5","6","7","8","9","0"],[llGetSubString(var,i,i)])){
@@ -79,42 +72,36 @@ integer IsInteger(string var){
     return TRUE;
 }
 
-setDebugLevel(string sDebugLevel) {
-    if(IsInteger(sDebugLevel)) {
-        gDebugLevel =(integer)sDebugLevel;
-        twDebug(INFO,"set debug level to "+(string)gDebugLevel);
-    } else {
-        twDebug(WARN,"unable to set debug level to "+sDebugLevel+": not an integer");
-    }
+twDebug(integer debugLevel, string message)
+{
+    llMessageLinked(LINK_THIS, 900+debugLevel, message, "");
 }
-
-setReportLevel(string sReportLevel) {
-    if(IsInteger(sReportLevel)) {
-        gReportLevel =(integer)sReportLevel;
-        twDebug(INFO,"set report level to "+(string)gReportLevel);
-    } else {
-        twDebug(WARN,"unable to set report level to "+sReportLevel+": not an integer");
-    }
-    if(gReportLevel > 0){
-        llScriptProfiler(PROFILE_SCRIPT_MEMORY);
-    }
-    else{
-        llScriptProfiler(PROFILE_NONE);
-    }
+setDebugLevel(string sDebugLevel)
+{
+    llMessageLinked(LINK_THIS, 998, sDebugLevel, "");
 }
-
-twDebug(integer debugLevel, string message) {
-    message = llList2String(debugLevels,debugLevel) + message;
-    llRegionSay(gLogChannel,message);
-    if(gReportLevel >= 1) 
-        message = message + reportStatus();
-    if((gSitterKey != "") & (debugLevel <= gDebugLevel))
-        llInstantMessage(gSitterKey, message);
-}
-
-
-string reportStatus() {
-    return " — (Free: " +(string)llGetFreeMemory() + " Max: " +(string)llGetSPMaxMemory() + " bytes.)";
+setReportLevel(string sReportLevel) 
+{
+            if(IsInteger(sReportLevel)) {
+                gReportLevel = (integer)sReportLevel;
+                if(gReportLevel > 0)
+                {
+                    twDebug(INFO,"beginning memory monitor");
+                    llScriptProfiler(PROFILE_SCRIPT_MEMORY);
+                }
+                else{
+                    twDebug(INFO,"ending memory monitor");
+                    llScriptProfiler(PROFILE_NONE);
+                    twDebug(INFO, "Memory:" +
+                        " Used: " + (string)llGetUsedMemory() + 
+                        " Free: " + (string)llGetFreeMemory() + 
+                        " Max: " + (string)llGetSPMaxMemory() + 
+                        " Limit: " +  (string)llGetMemoryLimit() + 
+                        " " );
+                }
+            } else {
+                twDebug(WARN,"unable to set report level to "+sReportLevel+": not an integer");
+            }
 }
 
 // Lockdown
@@ -130,8 +117,6 @@ getSetLockdown(string action){
 // "  lockdown { status | lock | release} - get or set lockdown status.\n"
     if(action == "status"){
         llRegionSay(gLockDownChannel,"INQUIRY");
-        llSleep(2);
-        reportLockDown();
     }
     else if(action == "lockdown"){
         twDebug(INFO, "sending lockdown command");
@@ -144,8 +129,6 @@ getSetLockdown(string action){
     else {
         twDebug(INFO, "lockdown command has three options: status, lockdown, release");
         llRegionSay(gLockDownChannel,"INQUIRY");
-        llSleep(2);
-        reportLockDown();
     }
 }
 
@@ -154,14 +137,13 @@ registerDevice(string deviceName, string deviceMessage){
     // registration message from device looks like this:
     // register,1932051327,description,<193.93410, 205.39699, 1327.13428>,<0.00000, 0.00000, 0.00000, 1.00000>
     // parse message into pieces
-    twDebug(INFO,"registerDevice "+deviceName+": "+deviceMessage);
+    twDebug(TRACE,"registerDevice "+deviceName+": "+deviceMessage);
     list deviceParameters = llCSV2List(deviceMessage);
     string sChannel = llList2String(deviceParameters,1);
     if((integer)sChannel == 0){
         twDebug(WARN,"registerDevice "+deviceName+" had channel 0. Not registering it.");
         return;
     }
-    
     
     string deviceDescription = llList2String(deviceParameters,2);
     if (deviceDescription == "Cell") return;
@@ -177,7 +159,7 @@ registerDevice(string deviceName, string deviceMessage){
     // add the item to the list
     addOrupdateDevice(deviceName, (integer)sChannel, locationDesignator, deviceDescription, devicePosition, deviceRotation);
     llRegionSay((integer)sChannel,"designator," + locationDesignator);
-    twDebug(DEBUG,"registered deviceName:" + deviceName + " locationDesignator:" + locationDesignator + " deviceDescription:" + deviceDescription);
+    twDebug(INFO,"registered \"" + deviceName + "\" at " + locationDesignator + "; " + deviceDescription);
 }
 
 updateEyepoint(string deviceName, string deviceMessage){
@@ -343,26 +325,33 @@ Search(list CommandList){
 }
 
 integer SendMessageToOneDevice(string designator, string message) {
+    twDebug(DEBUG,"SendMessageToOneDevice(\""+designator+"\", \""+message+"\")");
     list theDevice = findDeviceByDesignator(designator);
     integer channel = llList2Integer(theDevice,deviceListOffsetChannel);
     if(channel != 0) {
-        twDebug(DEBUG,"sending message "+message+" to "+(string)channel);
+        twDebug(TRACE,"sending message \""+message+"\" to channel "+(string)channel);
         llRegionSay(channel,message);
+    }
+    else
+    {
+        twDebug(ERROR, "SendMessageToOneDevice channel was "+(string)channel);
     }
     return channel;
 }
 
 list findDeviceByDesignator(string designator) {
-    twDebug(DEBUG,"findDeviceByDesignator "+(string)designator);
+    designator = llToLower(designator);
+    twDebug(DEBUG,"findDeviceByDesignator ("+designator+")");
     integer index;
     integer limit = llGetListLength(deviceList);
     list result = [];
     for(index = 0; index < limit; index = index + deviceListStride) {
         string location = llToLower(llList2String(deviceList, index + deviceListOffsetLocation));
-        if(location == llToLower(designator)) {
-            result = llList2List(deviceList,index, index+deviceListStride-1);
+        if(location == designator) {
+            result = llList2List(deviceList, index, index+deviceListStride-1);
         }
     }
+    twDebug(DEBUG,"findDeviceByDesignator returns "+(string)result);
     return result;
 }
 
@@ -376,14 +365,22 @@ integer altitudeToLevel(float altitude) {
     return index;
 }
 
-// convert angle around station axis to a 1-12(hours) segment number
+// convert angle around station axis to a 1-36(ten-degrees) segment number
 integer XYtoSegment(float X, float Y) {
     float deltax = X - coreLocation.x;
     float deltay = Y - coreLocation.y;
-    integer result = llFloor((PI/2 - llAtan2(deltay, deltax)) * 9 / PI) ;
-    if(result < 1) {
-        result = result + 18;
+    integer result = llFloor((-llAtan2(deltay, deltax)) * 18 / PI) + 9 ;
+    // llAtan2 : [-PI, PI]
+    // llAtan2 + PI : [0, 2PI]
+    // (llAtan2 + PI)/PI : [0, 2]
+    // (llAtan2 + PI)/PI * 18 : [0, 36]
+    if(result < 0) {
+        result = result + 36;
     }
+    if (result >= 36){
+        result = result - 36;
+    }
+        
     return result;
 }
 
@@ -391,8 +388,8 @@ integer XYtoSegment(float X, float Y) {
 string XYtoRing(float X, float Y) {
     float deltax = X - coreLocation.x;
     float deltay = Y - coreLocation.y;
-    integer distance = llFloor(llSqrt(deltax * deltax + deltay * deltay)/4);
-    return llGetSubString("abcdefghijklm",distance,distance);
+    integer distance = llFloor(llSqrt(deltax * deltax + deltay * deltay)/3);
+    return llGetSubString("ABCDEFGHIJKLMNOPQRSTUVWXYZ",distance,distance);
 }
 
 // convert device X,Y,Z location to an easier alphanumeric designation. 
@@ -424,135 +421,35 @@ stop_anims(key agent){
     }
 }
 
-// implement the ACS Interference Protocol as a receiver
-//list gACSInterferenceAmounts = [0,0,0,0,0,0]
-//string gACSInterferenceTypes = "PMSNCY";
-
-setACSInterferenceAmount(string stype, integer amount)
-// stype must be a single letter of PMSNCY
-{
-    integer itype = llListFindList(gACSInterferenceTypes,[stype]);
-    gACSInterferenceAmounts = llListReplaceList(gACSInterferenceAmounts, [amount], itype, itype);
-}
-
-integer getACSInterferenceAmount(string stype)
-{
-    if (stype == "")
-    {
-        integer i;
-        integer sum = 0;
-        for(i = 0; i < 6; i++)
-        {
-            sum = sum + llList2Integer(gACSInterferenceAmounts,i);
-        }
-        return sum;
-    }
-    else
-    {
-        integer itype = llListFindList(gACSInterferenceTypes,[stype]);
-        return llList2Integer(gACSInterferenceAmounts, itype);
-    }
-}
-
-setACSInterferenceAmounts(string types, integer duration, integer strength) 
-{
-    twDebug(DEBUG, "ACSInterference: "+types+","+(string)duration+","+(string)strength);
-    // P = Power interference (shuts unit down - cannot be compensated for) 
-    // M = Motor interference (freezes unit) - not applicable
-    // S = Speaker interference (silences unit) - prevents speaking on channel 1
-    // N = Sensory interference (partially blinds unit, hides names) - requires RLV
-    // C = Cognitive interference (makes it hard for unit to think; extra hard to compensate for)
-    // Y = Memory interference (limits unit's memory; also hard to compensate for)
-    integer l = llStringLength(types);
-    if (l == 0)
-    {
-        types = "PMSNCY";
-        l = 6;
-        strength = 0;
-    }
-    integer i;
-    for (i = 0; i < l; i++)
-    {
-        string type = llGetSubString(types, i, i);
-        setACSInterferenceAmount(type, strength);
-    }
-    
-    // power or sensory interference
-    if ((getACSInterferenceAmount("N") > 0) | (getACSInterferenceAmount("P") > 0))
-    {
-        if(havePermissions == 1) 
-        {
-            vector cameraFocus = llGetPos();
-            vector cameraPosition = llGetPos() - <.25,0,0>;
-            llSetCameraParams([
-                CAMERA_ACTIVE, 1, // 1 is active, 0 is inactive
-                CAMERA_BEHINDNESS_ANGLE, 0.0, //(0 to 180) degrees
-                CAMERA_BEHINDNESS_LAG, 0.0, //(0 to 3) seconds
-                CAMERA_DISTANCE, 0.0, //(0.5 to 10) meters
-                CAMERA_FOCUS, cameraFocus, // region relative position
-                CAMERA_FOCUS_LAG, 0.0 , //(0 to 3) seconds
-                CAMERA_FOCUS_LOCKED, TRUE, //(TRUE or FALSE)
-                CAMERA_FOCUS_THRESHOLD, 0.0, //(0 to 4) meters
-                //CAMERA_PITCH,0, //(-45 to 80) degrees
-                CAMERA_POSITION, cameraPosition, // region relative position
-                CAMERA_POSITION_LAG, 0.0, //(0 to 3) seconds
-                CAMERA_POSITION_LOCKED, TRUE, //(TRUE or FALSE)
-                CAMERA_POSITION_THRESHOLD, 0.0, //(0 to 4) meters
-                CAMERA_FOCUS_OFFSET, ZERO_VECTOR // <-10,-10,-10> to <10,10,10> meters
-            ]);
-        }
-    }
-    
-    // speaker interference
-    if (getACSInterferenceAmount("S") > 0)
-    {
-        twDebug(INFO,"Your speaker systems are being interfered with.");
-    }
-    
-    //cognitive interference
-    if (getACSInterferenceAmount("S") > 0)
-    {
-        twDebug(INFO,"Your cognitive systems are being interfered with.");
-        gWasDebugLevel = gDebugLevel;
-        //setDebugLevel((string)ERROR);
-    }
-    else
-    {
-        //setDebugLevel((string)gWasDebugLevel);
-    }
-    
-
-    llSetTimerEvent(duration);
-}
 
 
 initialize() {
+    setDebugLevel("INFO");
     twDebug(INFO,"initializing");
-    setDebugLevel((string)INFO);
+    giACSInterferenceAmount = 0;
+    llMessageLinked(LINK_THIS, 999, "avatar","");
     setReportLevel("0");
     rotation primRotation = llGetRot();
     rotation avrotation = llEuler2Rot(<0, 0, 0> * DEG_TO_RAD);
   
-    //llSetText("Be Black Gazza's AI",<1,1,1>,1);
-    llSetText("",<1,1,1>,1);
     llSetSitText(gsSystemName);
-    llSitTarget(<0.0, 0.0, 0.1> ,  avrotation);
-    gSitterKey = ""; // *** set to "284ba63f-378b-4be6-84d9-10db6ae48b8d" for timberwoof
-    
+    llSitTarget(<0.0, 0.0, 0.02> ,  avrotation);
+    gSitterKey = "";
+    llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
+
     llListenRemove(gLockDownHandle);
     gLockDownHandle = llListen(gLockDownChannel,"",NULL_KEY,"");
     llRegionSay(gLockDownChannel,"INQUIRY");
     
     gRegistrationListen  = llListen(gRegistrationChannel,"","","");
-    llRegionSay(gRegistrationChannel,"REGISTER");
+    llRegionSay(gRegistrationChannel,"REGISTER,default");
     
-    gACSListen = llListen(gACSChannel,"","","");
-
     twDebug(INFO,"Initialization complete; awaiting registration messages.");
 }
 
 // set the sitter's camera to the parameters sent in the list
 activate(string terminalDesignator) {
+    twDebug(DEBUG,"activate ("+terminalDesignator+")");
     // get the new active device
     list theDevice = findDeviceByDesignator(terminalDesignator);
     
@@ -589,12 +486,13 @@ activate(string terminalDesignator) {
             twDebug(WARN,"error: did not have permission to set your camera.");
         }
         // tell every terminal that someone is present
+        llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
         llRegionSay(gRegistrationChannel,"present," + gSitterName + "," +(string)gSitterKey);
         llSleep(0.5);// delay so that the active terminal doesn't get its data wiped out
         // send it the activate command. 
         gActiveTerminalChannel = llList2Integer(theDevice,deviceListOffsetChannel);
         string message = "activate," + gSitterName + "," +(string)gSitterKey;
-        SendMessageToOneDevice(terminalDesignator,message);
+        SendMessageToOneDevice(terminalDesignator, message);
         gsPreviousTerminalDesignator = terminalDesignator;
     } else {
         twDebug(WARN,"Could not find " + terminalDesignator);
@@ -602,6 +500,7 @@ activate(string terminalDesignator) {
 }
 
 deactivate(string terminalDesignator) {
+    twDebug(DEBUG,"deactivate "+terminalDesignator);
     string message = "deactivate," + gSitterName + "," +(string)gSitterKey;
     SendMessageToOneDevice(terminalDesignator,message);
 }
@@ -617,15 +516,14 @@ help() {
     "The Core Computer knows these commands:\n" +
     "  activate <device> - sends  your eyepoint to that terminal.\n" +
     "  cycle - activates all terminals in sequence. You scan the station.\n" +
-    "  cycle <type> - activates all terminals in sequence that have \"type\" in the name. You scan the station.\n" +
+    "  cycle {filter} - sequentially activates registered terminals in sequence that have \"filter\" in the name. You scan the station.\n" +
     "  debug - set debug level: 0-4 = ERROR, WARN, INFO, DEBUG, TRACE.\n" + 
     "  help - lists commands known by the Core Computer.\n" +
     "  lockdown { status | lockdown | release} - get or set lockdown status.\n" +
     "  list - lists terminals you can command.(Slow!)\n" +
-    "  report - set memory report level. 0 = off; 1 = chatty.\n" + 
-    "  reregister - clears device list and asks every device to send registration information.\n" +
-    "  scan - activates all terminals in sequence. You scan the station.\n" +
-    "  scan <type> - activates all terminals in sequence that have \"type\" in the name. You scan the station.\n" +
+    "  report - set memory report level. 1 = start monitoring; 0 = stop monitoring and report\n" + 
+    "  register <filter> - clears device list and asks every device matching <filter> to send registration information.\n" +
+    "  scan {filter} - sequentially activates registered terminals in sequence that have \"filter\" in the name. You scan the station.\n" +
     "  status - shows this script's memory usage. You must set debug to 1 for this to work.\n" +
     "  stop - stops terminal activation cycle. \n" +
     "  zap <name> - zaps the inmate. \n" +
@@ -643,9 +541,44 @@ default{
         initialize();
     }
 
+    changed(integer change) {
+        if(change & CHANGED_LINK) {
+            // Someone sat or stood up ...
+            gSitterKey = llAvatarOnSitTarget();
+            llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
+            if(gSitterKey) {
+                // Sat down
+                llRequestPermissions(gSitterKey, PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA);
+            } else {
+                // Stood up(or maybe crashed!)
+                havePermissions = 0;
+                gSitterKey = llGetPermissionsKey();
+                llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
+                llMessageLinked(LINK_THIS, 1010, "no", "");
+                if(llGetAgentSize(gSitterKey) != ZERO_VECTOR) {
+                    // agent is still in the sim.
+                    if(llGetPermissions() &(PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA)) {
+                        // Only stop anis if permission was granted previously.
+                        stop_anims(gSitterKey);
+                    }
+                }
+                twDebug(INFO,"processing stand up");
+                gSitterName = "nobody";
+                llRegionSay(gRegistrationChannel,"absent,nobody,");
+                llListenRemove(gTalkListen);
+                llListenRemove(gCommandListen);
+                StopTerminalCycle();
+                absent();
+                llResetScript();
+            }
+        }
+    }    
+    
     run_time_permissions(integer permissions){
         if(permissions &(PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA)){
             gSitterKey = llGetPermissionsKey();
+            llMessageLinked(LINK_THIS, 999, "avatar",gSitterKey);
+            llMessageLinked(LINK_THIS, 1011, "yes", "");
             gSitterName = llKey2Name(gSitterKey);
             stop_anims(gSitterKey);
             llStartAnimation("stasis"); 
@@ -667,47 +600,34 @@ default{
         }
     }
 
-    changed(integer change) {
-        if(change & CHANGED_LINK) {
-            // Someone sat or stood up ...
-            gSitterKey = llAvatarOnSitTarget();
-            if(gSitterKey) {
-                // Sat down
-                llRequestPermissions(gSitterKey, PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA);
-            } else {
-                // Stood up(or maybe crashed!)
-                havePermissions = 0;
-                gSitterKey = llGetPermissionsKey();
-                if(llGetAgentSize(gSitterKey) != ZERO_VECTOR) {
-                    // agent is still in the sim.
-                    if(llGetPermissions() &(PERMISSION_TRIGGER_ANIMATION | PERMISSION_CONTROL_CAMERA)) {
-                        // Only stop anis if permission was granted previously.
-                        stop_anims(gSitterKey);
-                    }
-                }
-                twDebug(INFO,"processing stand up");
-                gSitterKey = "";
-                gSitterName = "nobody";
-                llRegionSay(gRegistrationChannel,"absent,nobody,");
-                llListenRemove(gTalkListen);
-                llListenRemove(gCommandListen);
-                StopTerminalCycle();
-                absent();
-                llResetScript();
+    link_message(integer Sender, integer Number, string message, key Key)
+    {
+        if (Number == gACSChannel)
+        {
+            integer newInterferenceLevel = (integer)message;
+            if (newInterferenceLevel != giACSInterferenceAmount)
+            {
+                giACSInterferenceAmount = newInterferenceLevel;
+                if (giACSInterferenceAmount = 0)
+                {
+                    activate(initialTerminal);            
+                }            
             }
         }
-    }    
+    }
+
     
     // command processor
     listen(integer channel, string name, key id, string message) 
     {
-        twDebug(DEBUG,"listen ("+(string)channel +","+ name + ",\"" + message+"\")");
+        twDebug(TRACE,"listen ("+(string)channel +","+ name + ",\"" + message+"\")");
         
         // handle device registrations
         if(gRegistrationChannel == channel) 
         {
             list parameters = llParseString2List(message, [","], []);
             string command = llToLower(llList2String(parameters,0));
+            twDebug(DEBUG,"listen("+(string)channel+", "+name+", "+message+")");
 
             if(command == "register") 
             {
@@ -747,21 +667,7 @@ default{
         
         if((gTalkChannel == channel) &&(gActiveTerminalChannel != 0))
         {
-            // *** kludge to fix a bug in terminals. 
-            // when you fix the terminals, you have to fix this, too. 
-            // twDebug(0,"say," +message);
-            // ACS interference Speaker and Power
-            // Power is all or nothing
-            // Speaker should garble worse with higher integers. 
-            if ((getACSInterferenceAmount("S") > -1) | (getACSInterferenceAmount("P") > -1))
-            {
-                llRegionSay(gActiveTerminalChannel,"say," +"1234"+message); 
-                twDebug(INFO,"\""+message+"\"");
-            }
-            else
-            {
-                twDebug(DEBUG,"Could not send message becaise of ACS interference");
-            }
+            llMessageLinked(LINK_THIS, gTalkChannel, (string)gActiveTerminalChannel+":"+message, "");
         }
         
         // handle commands from the sitter
@@ -771,16 +677,16 @@ default{
             {
                 return;
             }
-            twDebug(INFO,"processing command \""+message+"\"");
             list parameters = llParseString2List(message, [" "], []);
             string command = llToLower(llList2String(parameters,0));
             string parameter = llToLower(llList2String(parameters,1));
+            string parameter2 = llToLower(llList2String(parameters,2));
+            twDebug(INFO,"processing command "+command+" "+parameter+" "+parameter2);
                 
             if(command == "activate") 
             {
                 deactivate(gsPreviousTerminalDesignator);
                 activate(parameter);
-                
             } 
             else if((command == "cycle") |(command == "scan")) 
             {
@@ -789,7 +695,7 @@ default{
             } 
             else if(command == "debug") 
             {
-                setDebugLevel(parameter);
+                setDebugLevel(llToUpper(parameter));
                 
             } 
             else if(command == "report") 
@@ -811,10 +717,6 @@ default{
             {
                 help();
             } 
-            else if(command == "status") 
-            {
-                reportStatus();    
-            } 
             else if(command == "stop") 
             {
                  StopTerminalCycle();    
@@ -823,28 +725,41 @@ default{
             {
                  Search(parameters);    
             } 
-            else if(command == "reregister") 
+            else if(command == "reregister" || command == "register") 
             {
                 deviceList = [];
-                llRegionSay(gRegistrationChannel,"REGISTER");    
+                if (parameter == ""){
+                    parameter = "default";
+                    }
+                llRegionSay(gRegistrationChannel,"REGISTER,"+parameter);    
             } 
             else 
             {
-                // see if the parameter is a designator
-                list device = findDeviceByDesignator(parameter);
+                // see if the command is a designator
+                list device = findDeviceByDesignator(command);
                 if(device != []) 
                 {
                     // we found something, so we have a device.
-                    // Send it the commands unaltered. 
-                    string message = llList2String(parameters,0) + "," + llList2String(parameters,2);
-                    twDebug(DEBUG,"sending message to device "+parameter+": "+message);
-                    SendMessageToOneDevice(parameter, message);
+                    // if command is empty, activate the terminal
+                    if (parameter == "")
+                    {
+                        twDebug(DEBUG,"command handler activating "+command);
+                        deactivate(gsPreviousTerminalDesignator);
+                        activate(command);
+                    }
+                    else 
+                    {
+                        // Send the commands unaltered to the terminal. 
+                        //string message = llList2String(parameters,0) + "," + llList2String(parameters,1) + "," + llList2String(parameters,2);
+                        string message = parameter + "," + parameter2;
+                        twDebug(DEBUG,"command handler sending message \""+message+ "\" to terminal " + command);
+                        SendMessageToOneDevice(command, message);
+                    }
                 }
                 
                 // may be a command to the current terminal
                 else
                 {
-                    twDebug(DEBUG,"sending message to device "+gsPreviousTerminalDesignator+": "+message);
                     SendMessageToOneDevice(gsPreviousTerminalDesignator, message);
                 }
             } 
@@ -865,39 +780,10 @@ default{
             reportLockDown();
         }
         
-        if (gACSChannel == channel) 
-        {
-            twDebug(DEBUG,"incoming interference message: "+message);
-            list ACSCommands = llParseString2List(message, [","], []);
-            string ACS = llList2String(ACSCommands,0);
-            string command = llList2String(ACSCommands,1);
-            string type = llList2String(ACSCommands,2);
-            integer duration = llList2Integer(ACSCommands,3);
-            integer strength = llList2Integer(ACSCommands,4);
-            if ((ACS == "ACS") & (command == "interfere"))
-            {
-                setACSInterferenceAmounts(type, duration, strength);
-            }
-            else
-            {
-                twDebug(DEBUG,"unknown message in ACS interference channel:"+message);
-            }
-        }
-
-        reportStatus();
-        twDebug(DEBUG,"listen (" +(string)channel +","+ name + ",\"" + message+"\") done");
+        twDebug(TRACE,"listen (" +(string)channel +","+ name + ",\"" + message+"\") done");
     }
 
     timer() {
-        if (getACSInterferenceAmount("") != 0)
-        {
-            setACSInterferenceAmounts("PMSNCY",0,0);
-            activate(initialTerminal);            
-        }
-        else
-        {
-            cycleDeviceWithFilter(cycleDeviceFilter);
-        }
-        
+            cycleDeviceWithFilter(cycleDeviceFilter);        
     }    
 }

@@ -1,0 +1,576 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9BD102272610E62600E3B490 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD102262610E62600E3B490 /* AppDelegate.swift */; };
+		9BD102292610E62600E3B490 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD102282610E62600E3B490 /* ViewController.swift */; };
+		9BD1022B2610E62900E3B490 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9BD1022A2610E62900E3B490 /* Assets.xcassets */; };
+		9BD1022E2610E62900E3B490 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9BD1022C2610E62900E3B490 /* Main.storyboard */; };
+		9BD1023A2610E62900E3B490 /* LSLSyntaxHighlightingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD102392610E62900E3B490 /* LSLSyntaxHighlightingTests.swift */; };
+		9BD102452610E62900E3B490 /* LSLSyntaxHighlightingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD102442610E62900E3B490 /* LSLSyntaxHighlightingUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9BD102362610E62900E3B490 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9BD1021B2610E62600E3B490 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9BD102222610E62600E3B490;
+			remoteInfo = LSLSyntaxHighlighting;
+		};
+		9BD102412610E62900E3B490 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9BD1021B2610E62600E3B490 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9BD102222610E62600E3B490;
+			remoteInfo = LSLSyntaxHighlighting;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		9BD102232610E62600E3B490 /* LSLSyntaxHighlighting.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LSLSyntaxHighlighting.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BD102262610E62600E3B490 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9BD102282610E62600E3B490 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		9BD1022A2610E62900E3B490 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9BD1022D2610E62900E3B490 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		9BD1022F2610E62900E3B490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9BD102302610E62900E3B490 /* LSLSyntaxHighlighting.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LSLSyntaxHighlighting.entitlements; sourceTree = "<group>"; };
+		9BD102352610E62900E3B490 /* LSLSyntaxHighlightingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LSLSyntaxHighlightingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BD102392610E62900E3B490 /* LSLSyntaxHighlightingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LSLSyntaxHighlightingTests.swift; sourceTree = "<group>"; };
+		9BD1023B2610E62900E3B490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9BD102402610E62900E3B490 /* LSLSyntaxHighlightingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LSLSyntaxHighlightingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BD102442610E62900E3B490 /* LSLSyntaxHighlightingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LSLSyntaxHighlightingUITests.swift; sourceTree = "<group>"; };
+		9BD102462610E62900E3B490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9BD102202610E62600E3B490 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD102322610E62900E3B490 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD1023D2610E62900E3B490 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9BD1021A2610E62600E3B490 = {
+			isa = PBXGroup;
+			children = (
+				9BD102252610E62600E3B490 /* LSLSyntaxHighlighting */,
+				9BD102382610E62900E3B490 /* LSLSyntaxHighlightingTests */,
+				9BD102432610E62900E3B490 /* LSLSyntaxHighlightingUITests */,
+				9BD102242610E62600E3B490 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9BD102242610E62600E3B490 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9BD102232610E62600E3B490 /* LSLSyntaxHighlighting.app */,
+				9BD102352610E62900E3B490 /* LSLSyntaxHighlightingTests.xctest */,
+				9BD102402610E62900E3B490 /* LSLSyntaxHighlightingUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9BD102252610E62600E3B490 /* LSLSyntaxHighlighting */ = {
+			isa = PBXGroup;
+			children = (
+				9BD102262610E62600E3B490 /* AppDelegate.swift */,
+				9BD102282610E62600E3B490 /* ViewController.swift */,
+				9BD1022A2610E62900E3B490 /* Assets.xcassets */,
+				9BD1022C2610E62900E3B490 /* Main.storyboard */,
+				9BD1022F2610E62900E3B490 /* Info.plist */,
+				9BD102302610E62900E3B490 /* LSLSyntaxHighlighting.entitlements */,
+			);
+			path = LSLSyntaxHighlighting;
+			sourceTree = "<group>";
+		};
+		9BD102382610E62900E3B490 /* LSLSyntaxHighlightingTests */ = {
+			isa = PBXGroup;
+			children = (
+				9BD102392610E62900E3B490 /* LSLSyntaxHighlightingTests.swift */,
+				9BD1023B2610E62900E3B490 /* Info.plist */,
+			);
+			path = LSLSyntaxHighlightingTests;
+			sourceTree = "<group>";
+		};
+		9BD102432610E62900E3B490 /* LSLSyntaxHighlightingUITests */ = {
+			isa = PBXGroup;
+			children = (
+				9BD102442610E62900E3B490 /* LSLSyntaxHighlightingUITests.swift */,
+				9BD102462610E62900E3B490 /* Info.plist */,
+			);
+			path = LSLSyntaxHighlightingUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9BD102222610E62600E3B490 /* LSLSyntaxHighlighting */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9BD102492610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlighting" */;
+			buildPhases = (
+				9BD1021F2610E62600E3B490 /* Sources */,
+				9BD102202610E62600E3B490 /* Frameworks */,
+				9BD102212610E62600E3B490 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LSLSyntaxHighlighting;
+			productName = LSLSyntaxHighlighting;
+			productReference = 9BD102232610E62600E3B490 /* LSLSyntaxHighlighting.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9BD102342610E62900E3B490 /* LSLSyntaxHighlightingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9BD1024C2610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlightingTests" */;
+			buildPhases = (
+				9BD102312610E62900E3B490 /* Sources */,
+				9BD102322610E62900E3B490 /* Frameworks */,
+				9BD102332610E62900E3B490 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9BD102372610E62900E3B490 /* PBXTargetDependency */,
+			);
+			name = LSLSyntaxHighlightingTests;
+			productName = LSLSyntaxHighlightingTests;
+			productReference = 9BD102352610E62900E3B490 /* LSLSyntaxHighlightingTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9BD1023F2610E62900E3B490 /* LSLSyntaxHighlightingUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9BD1024F2610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlightingUITests" */;
+			buildPhases = (
+				9BD1023C2610E62900E3B490 /* Sources */,
+				9BD1023D2610E62900E3B490 /* Frameworks */,
+				9BD1023E2610E62900E3B490 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9BD102422610E62900E3B490 /* PBXTargetDependency */,
+			);
+			name = LSLSyntaxHighlightingUITests;
+			productName = LSLSyntaxHighlightingUITests;
+			productReference = 9BD102402610E62900E3B490 /* LSLSyntaxHighlightingUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9BD1021B2610E62600E3B490 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1010;
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = "Timberwoof Lupindo";
+				TargetAttributes = {
+					9BD102222610E62600E3B490 = {
+						CreatedOnToolsVersion = 10.1;
+					};
+					9BD102342610E62900E3B490 = {
+						CreatedOnToolsVersion = 10.1;
+						TestTargetID = 9BD102222610E62600E3B490;
+					};
+					9BD1023F2610E62900E3B490 = {
+						CreatedOnToolsVersion = 10.1;
+						TestTargetID = 9BD102222610E62600E3B490;
+					};
+				};
+			};
+			buildConfigurationList = 9BD1021E2610E62600E3B490 /* Build configuration list for PBXProject "LSLSyntaxHighlighting" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9BD1021A2610E62600E3B490;
+			productRefGroup = 9BD102242610E62600E3B490 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9BD102222610E62600E3B490 /* LSLSyntaxHighlighting */,
+				9BD102342610E62900E3B490 /* LSLSyntaxHighlightingTests */,
+				9BD1023F2610E62900E3B490 /* LSLSyntaxHighlightingUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9BD102212610E62600E3B490 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BD1022B2610E62900E3B490 /* Assets.xcassets in Resources */,
+				9BD1022E2610E62900E3B490 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD102332610E62900E3B490 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD1023E2610E62900E3B490 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9BD1021F2610E62600E3B490 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BD102292610E62600E3B490 /* ViewController.swift in Sources */,
+				9BD102272610E62600E3B490 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD102312610E62900E3B490 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BD1023A2610E62900E3B490 /* LSLSyntaxHighlightingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9BD1023C2610E62900E3B490 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BD102452610E62900E3B490 /* LSLSyntaxHighlightingUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9BD102372610E62900E3B490 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9BD102222610E62600E3B490 /* LSLSyntaxHighlighting */;
+			targetProxy = 9BD102362610E62900E3B490 /* PBXContainerItemProxy */;
+		};
+		9BD102422610E62900E3B490 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9BD102222610E62600E3B490 /* LSLSyntaxHighlighting */;
+			targetProxy = 9BD102412610E62900E3B490 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		9BD1022C2610E62900E3B490 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9BD1022D2610E62900E3B490 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		9BD102472610E62A00E3B490 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9BD102482610E62A00E3B490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		9BD1024A2610E62A00E3B490 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LSLSyntaxHighlighting/LSLSyntaxHighlighting.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlighting/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlighting;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+			};
+			name = Debug;
+		};
+		9BD1024B2610E62A00E3B490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LSLSyntaxHighlighting/LSLSyntaxHighlighting.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlighting/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlighting;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+			};
+			name = Release;
+		};
+		9BD1024D2610E62A00E3B490 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlightingTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlightingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LSLSyntaxHighlighting.app/Contents/MacOS/LSLSyntaxHighlighting";
+			};
+			name = Debug;
+		};
+		9BD1024E2610E62A00E3B490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlightingTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlightingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LSLSyntaxHighlighting.app/Contents/MacOS/LSLSyntaxHighlighting";
+			};
+			name = Release;
+		};
+		9BD102502610E62A00E3B490 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlightingUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlightingUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TEST_TARGET_NAME = LSLSyntaxHighlighting;
+			};
+			name = Debug;
+		};
+		9BD102512610E62A00E3B490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LSLSyntaxHighlightingUITests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = timberwoof.com.LSLSyntaxHighlightingUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+				TEST_TARGET_NAME = LSLSyntaxHighlighting;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9BD1021E2610E62600E3B490 /* Build configuration list for PBXProject "LSLSyntaxHighlighting" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9BD102472610E62A00E3B490 /* Debug */,
+				9BD102482610E62A00E3B490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9BD102492610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlighting" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9BD1024A2610E62A00E3B490 /* Debug */,
+				9BD1024B2610E62A00E3B490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9BD1024C2610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlightingTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9BD1024D2610E62A00E3B490 /* Debug */,
+				9BD1024E2610E62A00E3B490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9BD1024F2610E62A00E3B490 /* Build configuration list for PBXNativeTarget "LSLSyntaxHighlightingUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9BD102502610E62A00E3B490 /* Debug */,
+				9BD102512610E62A00E3B490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9BD1021B2610E62600E3B490 /* Project object */;
+}

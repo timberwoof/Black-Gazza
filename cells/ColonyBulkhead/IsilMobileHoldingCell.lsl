@@ -24,17 +24,48 @@
 // typical setup: 
 // bump button power lockdown-delay[120] label<.5,.5,1> frame<.5,.5,.5>
 
-// prims
-integer PRIM_FRAME = 1;
+// custom for Isil
+integer FACE_FRAME1 = 0;
 
-integer FACE_PANEL1 = 3; // front weird octagon panel
-integer FACE_PANEL2 = 4; // back weird octagon panel
-// Front is defined as the face you see when the door is on the LEFT
+integer PRIM_PANEL_1 = 2;
+integer FACE_PANEL_1 = 1;
 
-integer PRIM_DOOR = 3;
-integer FACE_DOOR_CENTER = 1; 
+integer PRIM_DOOR_1 = 2;
+integer FACE_DOOR_1 = 0;
+
+vector PANEL_TEXTURE_SCALE = <1.0, 1.0, 0>;
+vector PANEL_TEXTURE_OFFSET = <0.0, 0.0, 0>;
+float PANEL_TEXTURE_ROTATION = 0.0;//-1.0*PI_BY_TWO;
 
 integer PRIM_BOX = 2;
+
+// colors
+vector BLACK = <0,0,0>;
+vector DARK_GRAY = <0.2, 0.2, 0.2>; // door
+vector DARK_BLUE = <0.0, 0.0, 0.2>;
+vector BLUE = <0.0, 0.0, 1.0>; // door
+vector MAGENTA = <1.0, 0.0, 1.0>;
+vector CYAN = <0.0, 1.0, 1.0>;
+vector WHITE = <1.0, 1.0, 1.0>;
+vector RED = <1.0, 0.0, 0.0>; // door
+vector REDORANGE = <1.0, 0.25, 0.0>;
+vector ORANGE = <1.0, 0.5, 0.0>; // door
+vector YELLOW = <1.0, 1.0, 0.0>;
+vector GREEN = <0.0, 1.0, 0.0>; // door
+
+// my textures
+string texture_auto_close = "d04fe5a2-d59e-d92d-3498-a0f4b1279356";
+string texture_lockdown = "622233c6-10b8-0df0-720f-72d6627d5e04";
+string texture_locked = "8e3485b0-3fb0-ef68-2fcb-b88b3ee929df";
+string texture_press_to_open = "f80eb0af-0ecf-06bc-c708-64397285b40b";
+string texture_bump_to_open = "55a465d3-32e6-9de4-54e7-a7168bcc74d2";
+
+// ~Isil~ door textures
+string texture_door_blue = "d5938215-7a13-17df-5451-b375b3ca0c22";
+string texture_door_gray = "3acdf012-1c47-a306-d100-9ff36bbb7a35";
+string texture_door_green = "67c6c7c7-e5e1-08ad-6a2a-ad9c11ba48ac";
+string texture_door_orange = "65fa3524-e513-bee7-3349-ce5ed12f29d7";
+string texture_door_red = "961d2fd3-dad4-28d3-db8b-3c279ea16c81";
 
 // sounds
 string sound_slide = "b3845015-d1d5-060b-6a63-de05d64d5444";
@@ -42,15 +73,20 @@ string sound_granted = "a4a9945e-8f73-58b8-8680-50cd460a3f46";
 //string sound_denied = "d679e663-bba3-9caa-08f7-878f65966194";
 //string sound_lockdown = "2d9b82b0-84be-d6b2-22af-15d30c92ad21";
 
-// Physical Sizes - custom grebe
-float leafXscale = 0.22; // width of leaf compared to main prim
-float leafYscale = 0.4; // thickness of leav compared to main prim
-float leafZscale = 0.8; // height of leav compared to main prim
+// Physical Sizes
+vector LEAF_SCALE = <0.0486, 0.3672, 0.7833>;  // x->y  y->x z_>z
+float CLOSE_FACTOR = 0.0;
+float OPEN_FACTOR = 0.40; // plus or minus
+float ZOFFSET_FACTOR = -0.05;
+float XOFFSET_FACTOR = -.44;
 
 float fwidth;
 float fopen;
 float fclose;
 float fdelta;
+float fZoffset;
+float fXoffset;
+float gSensorRadius = 2.0;
 
 integer ZAP_CHANNEL = -106969;
 integer maintenanceChannel;
@@ -251,7 +287,6 @@ setColorsAndIcons() {
     Dictionary = llJsonSetValue (Dictionary, ["doorState",  "Value"], (string)doorState);
     Dictionary = llJsonSetValue (Dictionary, ["doorTimerRunning",  "Value"], (string)gDoorTimerRunning);
     Dictionary = llJsonSetValue (Dictionary, ["doorClockRunning",  "Value"], (string)gDoorClockRunning);
-    Dictionary = llJsonSetValue (Dictionary, ["reservedState",  "Value"], (string)gReservedState);
     llMessageLinked(LINK_THIS, 2000, Dictionary,"");
 }
 
@@ -392,11 +427,6 @@ ReportStatus() {
     llOwnerSay("door clock running: " + (string)gDoorClockRunning);
     llOwnerSay("door clock end: " + (string)gDoorClockEnd);
     llOwnerSay("door clock passed: " + (string)gDoorClockPassed);
-    llOwnerSay("reservation time remaining: " + (string)gReservationTimeRemaining);
-    llOwnerSay("reservation timer running: " + (string)gReservationTimerIsRunning);
-    llOwnerSay("reserved: " + (string)gReservedState);
-    llOwnerSay("gReservationName: " + (string)gReservationName);
-    llOwnerSay("gReservationPhrase: " + (string)gReservationPhrase);
     llOwnerSay("door: " + (string)doorState);
 }
 
@@ -444,7 +474,6 @@ commandMenu(key whoClicked) {
     {
         header = header + displayDoorTimer();
     }
-    header = header + " " + gReservationPhrase;
     
     list menu = [];
     menu += [];
@@ -453,13 +482,6 @@ commandMenu(key whoClicked) {
     menu += ["Set Timer…"];
     menu += [gDoorClockButton];
     menu += [gTrapButton];
-    
-    if (llSameGroup(whoClicked) || 
-        (llSubStringIndex(gReservationName,llKey2Name(whoClicked)) >= 0) ||
-        (llSubStringIndex(gReservationPhrase,"Not Reserved") >= 0))
-    {
-        menu += [gReserveButton];
-    }
     
     if (llSameGroup(whoClicked))
     {
@@ -499,10 +521,6 @@ commandMenuListen(integer incoming_channel, key incoming_key, string incoming_me
             setCellAlpha(OFF); 
         } else if (incoming_message == menuCheckbox(WINDOW_BUTTON,OFF)) {
             setCellAlpha(ON); 
-        } else if (incoming_message == "Reserve") {
-            reserveCell(incoming_key);
-        } else if (incoming_message == "Unreserve") {
-            unreserveCell(incoming_key);
         } else if (incoming_message == "Set Timer…") {
             llMessageLinked(LINK_THIS, 1000, "TIMER MODE",incoming_key);
         } else if (incoming_message == CLOCK_SET_BUTTON) {
@@ -573,6 +591,10 @@ maintenanceMenuListen(integer incoming_channel, key incoming_key, string message
 integer gDoorTimeRemaining = 0; // seconds remaining on timer
 integer gDoorTimerRunning = 0; // 0 = stopped; 1 = running
 integer gDoorTimeStart = 1800; // seconds it was set to so we can set it again 
+integer gPopulationNum = 0; // number of Prisoners
+string gNamesInCell = ""; // a list of names of peope in the cell
+key gKeyInCell;
+list gPopulationList; // UUIDs of gPrisoners
 
 string secondsToDaysHoursMinutesSeconds(integer secondsRemaining) {
 
@@ -738,22 +760,28 @@ updateDoorClock() {
 
 // Door **********************************
 // Door has obvious state, open and closed, and does not need to announce its state
-open(integer auth, integer override) {
-    info("open("+(string)auth+", "+(string)override+")");
+open(integer auth, integer override)
+{
+    debug("open("+(string)auth+", "+(string)override+")");
     if ( (CLOSED == doorState)  &  (((gPowerState == POWER_ON) & (gLockdownState == LOCKDOWN_OFF) & auth) | override) ) 
     {
-        llPlaySound(sound_slide,1.0);
+        llPlaySound(sound_slide, 1.0);
         float f;
         for (f = fclose; f < fopen; f = f + fdelta) 
         {
-            llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <fXoffset, f, fZoffset>]);
         }
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <fopen, 0.0, 0.0>]);//f
-        setCellTrap(TRAP_SAFE); // reset the trap so it doesn't instantly close again
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <fXoffset, fopen, fZoffset>]);
         doorState = OPEN;
-        gdoorButton = "Close";
     }
 
+    // if normally closed or we're in lockdown,
+    // start a sensor that will close the door when it's clear. 
+    if (!OPTION_NORMALLY_OPEN | gLockdownState == LOCKDOWN_ON) 
+    {
+        debug("open setting sensor radius "+(string)gSensorRadius);
+        llSensorRepeat("", "", AGENT, gSensorRadius, PI_BY_TWO, 1.0);
+    } 
     if (gLockdownState == LOCKDOWN_TEMP)
     {
         debug("open gLockdownState LOCKDOWN_TEMP -> gLockdownState = LOCKDOWN_OFF");
@@ -763,27 +791,19 @@ open(integer auth, integer override) {
     setColorsAndIcons();
 }
 
-close() {
-    info("close");
+close() 
+{
+    debug("close");
     if (OPEN == doorState) 
     {
         llPlaySound(sound_slide,1.0);
         float f;
         for (f = fopen; f >= fclose; f = f - fdelta) 
         {
-            llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <f, 0.0, 0.0>]);//f
+            llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <fXoffset, f, fZoffset>]);
         }
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);//f
-        if (gDoorClockRunning == 1) 
-        {
-            stopDoorTimer();        // no countdown time if the clock is running
-        }
-        else if ((gDoorTimeRemaining > 0) && (gKeyInCell != NULL_KEY)) 
-        {
-            startDoorTimer();      // start the timer
-        }
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <fXoffset, fclose, fZoffset>]);
         doorState = CLOSED;
-        gdoorButton = "Open";
     } 
     
     // if normally open and we're in lockdown,
@@ -831,207 +851,6 @@ setCellTrap(integer newState) {
 }
 
 
-// reservation ********************************
-// Remembers and announces who is occupying a cell.
-// reservation has non-obvious states that need to be announced and displayed
-//   free - cell is not reserved for anyone
-//   ready - cell is ready to be reserved for the first prisoner who walks in
-//   occupied - cell is occupied and reserved for that prisoner
-//   reserved - cell is empty but reserved for someone
-integer gPopulationNum = 0; // number of Prisoners
-list gPopulationList; // UUIDs of gPrisoners
-string gReservedState = "FREE"; // fives tates: FREE, READY, HERE, GONE, GUEST 
-string gReservationName = ""; 
-key gReservationKey = NULL_KEY;
-string gNamesInCell = ""; // a list of names of peope in the cell
-key gKeyInCell = NULL_KEY;
-//integer gSecure = FALSE; //set to true to only answer to group members *** opened to all
-string gReserveButton = "Reserve";
-string gReservationPhrase = "Not Reserved";
-
-unreserveCell(key who) {
-    // initialize the reservation system
-    // if it's not reserved or it's reserved for y ou or it's reserved for me the owner... 
-    if ( (gReservationName == "") || (who == gReservationKey) || (who == llGetOwner()) ){  
-        gReservedState = "FREE";
-        gReserveButton = "Reserve";
-        gReservationPhrase = "Not Reserved";  
-        gReservationName = "";
-        gReservationKey = NULL_KEY;
-        gNamesInCell = "";
-        gPopulationNum = 0;
-        resetReservationTimer();
-        setColorsAndIcons();
-    } else {
-        llInstantMessage(who, "Only " + gReservationName + "or a guard can unreserve this cell."); 
-        llSay(-106969,(string)who); // *** This is not a debug statement
-    }
-}
-
-reserveCell(key who) {
-    // make cell ready for reservation
-    info("reserveCell");
-    gReservedState = "READY";
-    gReservationPhrase = "Ready for Reservation";
-    gReserveButton = "Unreserve";
-    gReservationName = "";
-    gReservationKey = NULL_KEY;
-    setColorsAndIcons();
-    llInstantMessage(who, "This cell is ready for a reservation.");
-}
-
-reserve_sensor() {
-    string prisoner_name = llKey2Name(gKeyInCell);
-    debug("reserve_sensor("+prisoner_name+")  gReservedState:"+gReservedState);
-
-    // depending on what state the system is in, react to someone being in the cell. 
-    if (gReservedState == "FREE") {
-        // someone's here, no reservation
-        gReservedState = "GUEST";
-        gReserveButton = "Reserve";
-        gReservationName = ""; 
-        gReservationPhrase = gNamesInCell;
-        gReservationKey = NULL_KEY; // huh?
-        stopReservationTimer();
-    } else if (gReservedState == "READY") {
-        // ah! A prisoner has arrived! Reserve the cell for him. 
-        info("setting reservation for "+prisoner_name);
-        gReservedState = "HERE";
-        gReserveButton = "Unreserve";
-        gReservationName = prisoner_name;
-        gReservationKey = gKeyInCell;
-        gReservationPhrase = "Reserved for " + gReservationName + " (present)";
-        stopReservationTimer();
-        resetReservationTimer();
-        llInstantMessage(gKeyInCell, "This cell has been reserved for you.");
-    } else if (gReservedState == "GONE") {
-        if (gKeyInCell == gReservationKey) { // (prisoner_name == gReservationName)
-            // prisoner has returned
-            info(prisoner_name+" has retruned.");
-            gReservedState = "HERE"; 
-            gReserveButton = "Unreserve";
-            gReservationPhrase = "Reserved for " + gReservationName + " (present)";
-            stopReservationTimer();
-            resetReservationTimer();
-        } else {
-            // someone else is in the cell
-            if (!llSameGroup(gKeyInCell)) {
-                llSay(0,prisoner_name + "! This cell is reserved for " + gReservationName); 
-                // *** This is not a debug statement
-                llSay(-106969,(string)gKeyInCell); // *** This is not a debug statement
-            }
-        }
-    } else if (gReservedState == "HERE") {
-        // somebody's here; make sure that the prisoner is one of the people in the cell
-        //llSay (0, (string)gPopulationList + " --- " + (string)gReservationKey );
-        integer find = llListFindList(gPopulationList,[gReservationKey]); 
-        //llSay (0, (string)find );
-        if ( find < 0) {
-            gReservedState = "GONE";
-            gReserveButton = "Unreserve";
-            gReservationPhrase = "Reserved for " + gReservationName + " (not present)";
-        }
-    } else if (gReservedState == "GUEST") {
-        ; // we knew about this already: nothing to do
-    } else {
-       info("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
-        gReservedState = "FREE";
-        gReserveButton = "Reserve";
-        gReservationPhrase = "Not Reserved";
-    }
-    setColorsAndIcons();
-}
-
-reserve_no_sensor() {
-    gPopulationNum = 0;
-    gPopulationList = [];
-    gKeyInCell = NULL_KEY;
-    // depending on what state the system is in, react to no one being in the cell. 
-    if (gReservedState == "FREE") {
-        gReservationPhrase = "Not Reserved";
-    } else if (gReservedState == "GUEST") {
-        // no reservation, no one here
-        gReservedState = "FREE";
-        gReserveButton = "Reserve";
-        gReservationPhrase = "Not Reserved";
-        // gSecure = FALSE; //  *** opened to all
-        stopReservationTimer();
-    } else if (gReservedState == "READY") {
-        ; // we knew about this already: nothing to do
-    } else if (gReservedState == "HERE") {
-        // someone was here but he's gone now
-        info("prisoner has disappeared");
-        gReservedState = "GONE";
-        gReserveButton = "Unreserve";
-        gReservationPhrase = "Reserved for " + gReservationName + " (not present)";
-        resetReservationTimer();
-        startReservationTimer();
-    } else if (gReservedState == "GONE") {
-        startReservationTimer();    // make for damn sure
-    } else {
-       info("error: reserve_sensor reports impossible state in cell reservation: " + gReservedState); // debug
-        gReservedState = "FREE";
-        gReserveButton = "Reserve";
-        gReservationPhrase = "Not Reserved";
-    }
-    info("reserve_no_sensor gReservedState:"+gReservedState);
-    setColorsAndIcons();
-}
-
-// cell reservation timer  ********************************
-// This timer controls how long the cell stays reserved for someone.
-// We don't want someone hogging a cell by reserving it and not showing up. 
-// *** needs to be rewritten to alarm-clock model
-// It has non-obvious states that need to be announced and displayed
-integer gReservationTimeRemaining = 0; // seconds remaining on timer
-integer gReservationTimerIsRunning = 0; // 0 = stopped; 1 = running
-integer RESERVATION_TIME = 270000; // seconds it was set to so we can set it again 
-// 180000 = ~ 2 days, too short
-// 270000 = ~ 3 days, just right
-// 360000 = ~ 4 days, too long
-// *** set to 20 for debug; 180,000 for production. That's just over two days. 
-// *** set to 20 for debug; 360,000 for production. That's just over four days. 
-// (180,000 second = 3000 minutes =  50 hours = two days and two hours) 
-
-resetReservationTimer() {
-    // reset the timer to the value previously set for it. init and finish countdown. 
-    gReservationTimeRemaining = RESERVATION_TIME; 
-    gReservationTimerIsRunning = 0; // timer is stopped
-}
-
-startReservationTimer() {
-    // make the timer run. Finsh countdown. 
-    gReservationTimerIsRunning = 1; // timer is running
-    startSensor();
-    llSetTimerEvent(TIMER_INTERVAL);
-}
-
-stopReservationTimer() {
-    // stop the timer. 
-    gReservationTimerIsRunning = 0; // timer is stopped
-}
-
-updateReservationTimer() {
-    // time has run out...
-    if (gReservationTimeRemaining <= 0) {
-        info("updateReservationTimer gReservationTimeRemaining");
-        open(1, 0);
-        resetDoorTimer();
-        stopSensor();
-        unreserveCell(gReservationKey); // gotta be authorized to unreserve it
-        resetReservationTimer();
-    }   
-    // timer's on, no one's in here: count down to expire reservation
-    if (gPopulationNum == 0) {
-        debug("updateReservationTimer gPopulationNum");
-        if (gReservationTimeRemaining > RESERVATION_TIME) {
-            gReservationTimeRemaining = RESERVATION_TIME;
-            }
-        gReservationTimeRemaining -= TIMER_INTERVAL;
-        }
-    }
-    
-    
 // Sensor ***************************************
 // Only run the sensor when we need it.
 // The sensor runs in the attached box prim and sends link messages back. 
@@ -1040,7 +859,7 @@ startSensor() {
 }
 
 stopSensor() {
-    if (gTrapState == TRAP_SAFE && gDoorTimeRemaining <= 0 && gReservationTimeRemaining <= 0) {
+    if (gTrapState == TRAP_SAFE && gDoorTimeRemaining <= 0) {
         llMessageLinked(PRIM_BOX, 3000, "sensor_stop", NULL_KEY);
     }
 }
@@ -1112,22 +931,28 @@ default {
         info("state_entry");
         gPowerState = POWER_OFF;
         
-        // get  the size of the door frame and calculate the sizes of the leaves
-        vector myscale = llGetScale( );
-        vector leafsize;
+        // panel texture scale and offset
+        llSetLinkColor(PRIM_PANEL_1, WHITE, FACE_PANEL_1);
+        llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_TEXTURE, FACE_PANEL_1, texture_locked, PANEL_TEXTURE_SCALE, PANEL_TEXTURE_OFFSET, PANEL_TEXTURE_ROTATION]);
+        llSetLinkPrimitiveParams(PRIM_PANEL_1, [PRIM_GLOW, FACE_PANEL_1, 0.1]);
+
+        setColorsAndIcons();
         
-        // calculate the leaf movements - COL
-        // two sliding leaves
-        leafsize = <myscale.x*leafXscale, myscale.y*leafYscale, myscale.z*leafZscale>; 
-        // special case for double door
-        fwidth = myscale.x;
-        fclose = fwidth * -0.35;
-        fopen = fwidth * -0.14;
-        fdelta = (fopen - fclose) / 10.0;
+        // calculate the leaf movements
+        // get  the size of the door frame and calculate the sizes of the leaves
+        vector frameSize = llGetScale( );
+        // // x->y  y->x z_>z
+        vector leafsize = <frameSize.y * LEAF_SCALE.y, frameSize.x * LEAF_SCALE.x, frameSize.z * LEAF_SCALE.z>; 
+        fwidth = frameSize.x;
+        fclose = fwidth * CLOSE_FACTOR;
+        fopen = fwidth * OPEN_FACTOR;
+        fdelta = .10;
+        fZoffset = frameSize.z * ZOFFSET_FACTOR;
+        fXoffset = frameSize.x * XOFFSET_FACTOR;
         
         // set the initial leaf sizes and positions
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_SIZE,leafsize]);
-        llSetLinkPrimitiveParamsFast(PRIM_DOOR,[PRIM_POS_LOCAL, <fclose, 0.0, 0.0>]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_SIZE,leafsize]);
+        llSetLinkPrimitiveParamsFast(PRIM_DOOR_1,[PRIM_POS_LOCAL, <-fclose, 0.0, fZoffset>]);
 
         // set up power failure listen
         gPowerState = POWER_ON;
@@ -1143,10 +968,8 @@ default {
             gLockdownState = LOCKDOWN_OFF;
         }
         
-        unreserveCell(llGetOwner()); // unreserve cell, dammit
         setCellTrap(TRAP_SAFE);
         resetDoorTimer();
-        resetReservationTimer(); 
         gKeyInCell = NULL_KEY;
         setCellAlpha(ON);
         setColorsAndIcons();
@@ -1159,12 +982,12 @@ default {
     touch_start(integer total_number) {
         debug("touch_start face "+(string)llDetectedLinkNumber(0)+":"+(string)llDetectedTouchFace(0));
         // if it's the door panel, maybe open the door
-        if ((llDetectedLinkNumber(0) == PRIM_DOOR) && (llDetectedTouchFace(0) == FACE_DOOR_CENTER))
+        if ((llDetectedLinkNumber(0) == PRIM_DOOR_1) && (llDetectedTouchFace(0) == FACE_DOOR_1))
         {
-            open(checkAuthorization(llDetectedKey(0)), 0);
+            toggleDoor(checkAuthorization(llDetectedKey(0)), 0);
         }
         // if it's the control panel, maybe give the menu
-        else if((llDetectedLinkNumber(0) == PRIM_FRAME) &&  (llDetectedTouchFace(0) == FACE_PANEL1 || llDetectedTouchFace(0) == FACE_PANEL2))
+        else if((llDetectedLinkNumber(0) == PRIM_PANEL_1) &&  (llDetectedTouchFace(0) == FACE_PANEL_1))
         {
             // guard group, give the menu
             if (llSameGroup(llDetectedKey(0)))
@@ -1196,12 +1019,7 @@ default {
 
     link_message(integer sender_num, integer msgInteger, string msgString, key msgKey) {
         debug("link_message:"+msgString+(string)msgInteger);
-        if ((msgString == "no_sensor") & (gPopulationNum != 0))
-        {
-            // only do this work if someone just left
-            reserve_no_sensor();
-        }
-        else if (msgString == "sensor") {
+        if (msgString == "sensor") {
             // one or more avatars are here
             gPopulationNum = msgInteger;
             gNamesInCell = "";
@@ -1215,8 +1033,7 @@ default {
         else if (msgString == "sensor_done")
         {
             gKeyInCell = msgKey; // first person in list
-            reserve_sensor(); // reserve cell for first prisoner who entered
-            if (gTrapState == TRAP_SET && doorState == OPEN && gReservedState != "GONE") 
+            if (gTrapState == TRAP_SET && doorState == OPEN) 
             {
                 close();
             }
@@ -1261,10 +1078,6 @@ default {
         }
         if (gDoorClockRunning) {
             updateDoorClock(); 
-            timerisNeeded = TRUE;
-        }
-        if (gReservationTimerIsRunning) {
-            updateReservationTimer();
             timerisNeeded = TRUE;
         }
         if (commandListen != 0) {
