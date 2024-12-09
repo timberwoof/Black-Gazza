@@ -8,16 +8,15 @@
 // version: 2024-12-01
 
 // Startup sequence
-// state_entry() calls sendDatabaseQuery()
-// or attach() calls sendDatabaseQuery()
-// sendDatabaseQuery calls llHTTPRequest()
+// state_entry() calls sendDatabaseRead()
+// or attach() calls sendDatabaseRead()
+// sendDatabaseRead calls llHTTPRequest()
 // http_response() handles the request
 // http_response() deletes request from request list and from isEditCrimesList
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = TRUE;
 list databaseQuery;
-list isEditCrimeList;
-string myQueryStatus;
+string READorWrite;
 
 string start_date;
 string unassignedAsset = "P-00000";
@@ -25,14 +24,16 @@ string unassignedAsset = "P-00000";
 string URL_BASE =  "http://sl.blackgazza.com/"; // "http://sl.blackgazza.com/";
 string URL_READ = "read_inmate.cgi?key=";
 string URL_ADD = "add_inmate.cgi?key=";
-key crimeRequest;
-integer gCharacterSlot = 0; // unselected
+integer gCharacterSlot = 1; // unselected
 
-integer menuChannel;
-integer menuListen;
+integer channelMenu;
+integer listenMenu;
 
-integer crimeSetChannel = 0;
-integer crimeSetListen;
+integer channelSetCrime = 0;
+integer listenSetCrime;
+
+integer channelSetName = 0;
+integer listenSetName;
 
 //  Initialize the parameter lists for all 6 characters. 
 // 1-based so 0 is unassigned
@@ -50,8 +51,6 @@ list zapByObjectList = ["","","","","","",""];
 list classList = ["",WHITE,WHITE,WHITE,WHITE,WHITE,WHITE]; 
 list threatList = ["",NONE,NONE,NONE,NONE,NONE,NONE]; 
 list moodList = ["",OOC,OOC,OOC,OOC,OOC,OOC]; 
-
-string tempcrime = "";
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
 
@@ -106,39 +105,39 @@ initializeLists() {
     zapByObjectList = linksetDataReadList("zapByObjectList");
 }
 
-string assetNumber() {
+string assetNumber(integer slot) {
     return llList2String(assetNumberList, gCharacterSlot);
 }
 
-string crime() {
+string crime(integer slot) {
     return llList2String(crimeList, gCharacterSlot);
 }
 
-string name() {
+string name(integer slot) {
     return llList2String(nameList, gCharacterSlot);
 }
 
-string class() {
+string class(integer slot) {
     return llList2String(classList, gCharacterSlot);
 }
 
-string threat() {
+string threat(integer slot) {
     return llList2String(threatList, gCharacterSlot);
 }
 
-string mood() {
+string mood(integer slot) {
     return llList2String(moodList, gCharacterSlot);
 }
 
-string zapLevels() {
+string zapLevels(integer slot) {
    return llList2String(zapLevelsList, gCharacterSlot);
 }
 
-string zapByObject() {
+string zapByObject(integer slot) {
    return llList2String(zapByObjectList, gCharacterSlot);
 }
 
-list setLocalList(string listName, list thelist, string value) {
+list setLocalList(integer slot, string listName, list thelist, string value) {
     // replaces one value in the local list, then updates the linksetData
     sayDebug("setLocalList("+listName+", "+value+")");
     list newList = llListReplaceList(thelist, [value], gCharacterSlot, gCharacterSlot);
@@ -161,34 +160,48 @@ string AgentKeyWithRole(string agentKey, integer slot) {
 
 // fire off a request to the crime database for this wearer.
 // Parameter iSlot determines which character to get.
-sendDatabaseQuery(integer iSlot, string crime) {
+integer sendDatabaseRead(integer iSlot) {
     if (llGetAttached()) {
-        displayCentered("Accessing DB");
-        string URL = URL_BASE; // http://sl.blackgazza.com/
-        if ((crime != "") && (assetNumber() != "") && (assetNumber() != "P-00000")) {
-            URL += URL_ADD; // add_inmate.cgi?key=
-            isEditCrimeList += [TRUE];
-            URL += AgentKeyWithRole((string)llGetOwner(),iSlot);
-            URL += "&sentence=" + llList2String(sentenceList, gCharacterSlot);
-            URL += "&name=" + name();
-            URL += "&crime=" + crime;
-            tempcrime = crime;
-        } else {
-            URL += URL_READ; // read_inmate.cgi?key=
-            isEditCrimeList += [FALSE];
-            URL += AgentKeyWithRole((string)llGetOwner(),iSlot);
-        }
-
-        sayDebug("sendDatabaseQuery URL:"+URL);
+        sayDebug("sendDatabaseRead");
+        displayCentered("Reading DB");
+        READorWrite = "READ";
+        string URL = URL_BASE + URL_READ + AgentKeyWithRole((string)llGetOwner(),iSlot);
+        sayDebug("sendDatabaseRead URL:"+URL);
         databaseQuery += [llHTTPRequest(URL,[],"")]; // append reqest_id for use it later in responder event
-        gCharacterSlot = iSlot;
     } else {
-        sayDebug("sendDatabaseQuery unattached");
-        sendJSON("AssetNumber", assetNumber(), llGetOwner());
-        sendJSON("Crime", crime(), llGetOwner());
-        sendJSON("Name", name(), llGetOwner());
+        sayDebug("sendDatabaseRead unattached");
+        sendJSON("AssetNumber", assetNumber(iSlot), llGetOwner());
+        sendJSON("Crime", crime(iSlot), llGetOwner());
+        sendJSON("Name", name(iSlot), llGetOwner());
     }
+    return iSlot;
 }
+
+// fire off a request to the crime database for this wearer.
+// Parameter iSlot determines which character to get.
+integer sendDatabaseWrite(integer iSlot) {
+    if (llGetAttached()) {
+        sayDebug("sendDatabaseWrite");
+        displayCentered("Writing DB");
+        READorWrite = "WRITE";
+        string URL = URL_BASE; // http://sl.blackgazza.com/
+        URL += URL_ADD; // add_inmate.cgi?key=
+        URL += AgentKeyWithRole((string)llGetOwner(),iSlot);
+        URL += "&sentence=" + llList2String(sentenceList, iSlot);
+        URL += "&name=" + llEscapeURL(name(iSlot));  
+        URL += "&crime=" + llEscapeURL(crime(iSlot)); 
+
+        sayDebug("sendDatabaseWrite URL:"+URL);
+        databaseQuery += [llHTTPRequest(URL,[],"")]; // append reqest_id for use it later in responder event
+    } else {
+        sayDebug("sendDatabaseWrite unattached");
+        sendJSON("AssetNumber", assetNumber(iSlot), llGetOwner());
+        sendJSON("Crime", crime(iSlot), llGetOwner());
+        sendJSON("Name", name(iSlot), llGetOwner());
+    }
+    return iSlot;
+}
+
 
 integer agentIsGuard(key agent)
 {
@@ -224,11 +237,11 @@ setUpMenu(key avatarKey, string message, list buttons)
     buttons = buttons + ["Close"];
 
     sendJSON("DisplayTemp", "menu access", avatarKey);
-    string completeMessage = assetNumber() + " Collar: " + message;
-    menuChannel = -(llFloor(llFrand(10000)+1000));
-    menuListen = llListen(menuChannel, "", avatarKey, "");
+    string completeMessage = assetNumber(gCharacterSlot) + " Collar: " + message;
+    channelMenu = -(llFloor(llFrand(10000)+1000));
+    listenMenu = llListen(channelMenu, "", avatarKey, "");
     llSetTimerEvent(30);
-    llDialog(avatarKey, completeMessage, buttons, menuChannel);
+    llDialog(avatarKey, completeMessage, buttons, channelMenu);
 }
 
 characterMenu() {
@@ -246,12 +259,22 @@ characterMenu() {
 
 setCharacterCrime(key avatarKey)
 {
-    if (avatarKey == llGetOwner() || !agentIsGuard(avatarKey)) return;
-    string message = assetNumber() + "\nCurrent Crime: " + crime() + "\nPlease set new Crime: ";
-    crimeSetChannel = -(llFloor(llFrand(1000)+1000));
-    crimeSetListen = llListen(crimeSetChannel, "", avatarKey, "");
+    sayDebug("setCharacterCrime()");
+    string message = assetNumber(gCharacterSlot) + "\nCurrent Crime: " + crime(gCharacterSlot) + "\nPlease set new Crime: ";
+    channelSetCrime = -(llFloor(llFrand(1000)+1000));
+    listenSetCrime = llListen(channelSetCrime, "", avatarKey, "");
     llSetTimerEvent(30);
-    llTextBox(avatarKey, message, crimeSetChannel);
+    llTextBox(avatarKey, message, channelSetCrime);
+}
+
+setCharacterName(key avatarKey)
+{
+    sayDebug("setCharacterName()");
+    string message = assetNumber(gCharacterSlot) + "\nCurrent Name: " + crime(gCharacterSlot) + "\nPlease set new Name: ";
+    channelSetName = -(llFloor(llFrand(1000)+1000));
+    listenSetName = llListen(channelSetName, "", avatarKey, "");
+    llSetTimerEvent(30);
+    llTextBox(avatarKey, message, channelSetName);
 }
 
 default
@@ -261,9 +284,9 @@ default
         sayDebug("state_entry");
         initializeLists();
         if (gCharacterSlot == 0) {
-            sendDatabaseQuery(1, "");
+            gCharacterSlot = sendDatabaseRead(1);
         } else {
-            sendJSON("AssetNumber", assetNumber(), llGetOwner());
+            sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
         }
         sayDebug("state_entry done");
     }
@@ -273,9 +296,9 @@ default
         sayDebug("attach");
         initializeLists();
         if (gCharacterSlot == 0) {
-            sendDatabaseQuery(1, "");
+            gCharacterSlot = sendDatabaseRead(1);
         } else {
-            sendJSON("AssetNumber", assetNumber(), llGetOwner());
+            sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
         }
         sayDebug("attach done");
     }
@@ -304,38 +327,36 @@ default
             // removes unnecessary request_id from memory to save
             databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
 
-            // also removes unnecessary crime record from memory to save
-            isEditCrimeList = llDeleteSubList(isEditCrimeList, listRequestIndex, listRequestIndex);
-            
             characterMenu();
             return;
         }
 
-        // Response from web server was OK and it was for something we waanted. 
+        displayCentered("DB Status "+(string)status);
+
+        // Response from web server was OK and it was for something we wanted. 
         // 
         // then process response the way crimesetter does
-        if (llList2Integer(isEditCrimeList, listRequestIndex))
+        if (READorWrite == "WRITE")
         {
-            crimeList = setLocalList("crimeList", crimeList, tempcrime);
-            sendJSON("Crime", crime(), llGetOwner());
-
-            // removes unnecessary request_id from memory
+            sayDebug("http_response was for a write. Exiting.");
             databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
-            isEditCrimeList = llDeleteSubList(isEditCrimeList, listRequestIndex, listRequestIndex);
             return;
         }
 
-        // removes unnecessary request_id from memory
+        // READorWrite == "READ"
+        sayDebug("http_response was for a read.");
+        // clear request_id from memory
         databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
-        isEditCrimeList = llDeleteSubList(isEditCrimeList, listRequestIndex, listRequestIndex);
 
-        //displayCentered("DB Status "+(string)status);
+        // default values to be filled in fromt he request
         string assetNumber = "P-00000";
         string theCrime = "Unregistered";
         string theName = llGetOwner();
 
         // decode the response which looks like
-        // Timberwoof Lupindo,0,Piracy; Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+        // Timberwoof Lupindo,0,Piracy;Illegal Transport of Biogenics,284ba63f-378b-4be6-84d9-10db6ae48b8d,P-60361
+        
+        // Handle any empty slots
         integer whereTwoCommas = llSubStringIndex(message, ",,");
         if (whereTwoCommas > 1) {
             message = llInsertString( message, whereTwoCommas, ",Unrecorded," );
@@ -349,30 +370,30 @@ default
         // extract the pieces from this data returned from the database
         list returnedStuff = llParseString2List(message, [","], []);
         theName = llList2String(returnedStuff, 0);
-        string sentence = llList2String(returnedStuff, 1);
+        string theSentence = llList2String(returnedStuff, 1);
         theCrime = llList2String(returnedStuff, 2);
         string avatarKey = llList2String(returnedStuff, 3);
         string theAssetNumber = llList2String(returnedStuff, 4);
 
         // Report the data we got
         sayDebug("name:"+theName);
-        sayDebug("number:"+sentence);
+        sayDebug("number:"+theSentence);
         sayDebug("crime:"+theCrime);
         sayDebug("key:"+avatarKey);
         sayDebug("assetNumber:"+theAssetNumber);
 
         // update our local lists of things and store them in the linkset
-        assetNumberList = setLocalList("assetNumberList", assetNumberList, theAssetNumber);
-        crimeList = setLocalList("crimeList", crimeList, theCrime);
-        nameList = setLocalList("nameList", nameList, theName);
-        sentenceList = setLocalList("sentenceList", sentenceList, sentence);
+        assetNumberList = setLocalList(gCharacterSlot, "assetNumberList", assetNumberList, theAssetNumber);
+        crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, theCrime);
+        sentenceList = setLocalList(gCharacterSlot, "sentenceList", sentenceList, theSentence);
+        //nameList = setLocalList(gCharacterSlot, "nameList", nameList, theName); *** No. The name in the database is wrong.
 
         // fire off the next data request
         if (gCharacterSlot < 6) {
             gCharacterSlot = gCharacterSlot + 1;
-            sendDatabaseQuery(gCharacterSlot, "");
+            sendDatabaseRead(gCharacterSlot);
         } else {
-            gCharacterSlot = 0; // unselected
+            gCharacterSlot = 1; // unselected
 
             sayDebug("httpresponse assetNumberList: "+(string)assetNumberList);
             sayDebug("httpresponse crimeList: "+(string)crimeList);
@@ -386,79 +407,91 @@ default
         //sayDebug("link_message "+json);
         string request = getJSONstring(json, "Database", "");
         if (request != "") sayDebug("link_message("+json+")");
-        if (request == "getupdate") sendDatabaseQuery(gCharacterSlot, "");
-        if (request == "setcharacter") sendDatabaseQuery(1,"");
-        if (request == "setcrimes") setCharacterCrime(id);
+        if (request == "getupdate") gCharacterSlot = sendDatabaseRead(gCharacterSlot);
+        if (request == "setcharacter") sendDatabaseRead(1);
+        if (request == "setcrime") setCharacterCrime(id);
+        if (request == "setname") setCharacterName(id);
 
         string value = llJsonGetValue(json, ["Class"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message Class:"+value);
-            classList = setLocalList("classList", classList, value);
+            classList = setLocalList(gCharacterSlot, "classList", classList, value);
         }
 
         value = llJsonGetValue(json, ["Threat"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message Threat:"+value);
-            threatList = setLocalList("threatList", threatList, value);
+            threatList = setLocalList(gCharacterSlot, "threatList", threatList, value);
         }
 
         value = llJsonGetValue(json, ["Mood"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message Mood:"+value);
-            moodList = setLocalList("moodList", moodList, value);
+            moodList = setLocalList(gCharacterSlot, "moodList", moodList, value);
         }
         
         value = llJsonGetValue(json, ["ZapLevels"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message ZapLevels:"+value);
-            zapLevelsList = setLocalList("zapLevelsList", zapLevelsList, value);
+            zapLevelsList = setLocalList(gCharacterSlot, "zapLevelsList", zapLevelsList, value);
         }
 
         value = llJsonGetValue(json, ["RLV"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message RLV:"+value);
-            moodList = setLocalList("zapByObjectList", zapByObjectList, value);
+            moodList = setLocalList(gCharacterSlot, "zapByObjectList", zapByObjectList, value);
         }
         
     }
 
     listen(integer channel, string name, key id, string text) {
-        if (channel == menuChannel) {
+        if (channel == channelMenu) {
             // character selection menu
-            sayDebug("listen(menuchannel, "+text+")");
+            sayDebug("listen(channelMenu, "+text+")");
             gCharacterSlot = llListFindList(assetNumberList, [text]); // selected
-            sendJSON("AssetNumber", assetNumber(), llGetOwner());
-            sendJSON("Crime", crime(), llGetOwner());
-            sendJSON("Name", name(), llGetOwner());
-            sendJSON("Class", class(), llGetOwner());
-            sendJSON("Threat", threat(), llGetOwner());
-            sendJSON("Mood", mood(), llGetOwner());
-            sendJSON("ZapLevels", zapLevels(), llGetOwner());
-            sendJSON("zapByObject", zapByObject(), llGetOwner());
-            llListenRemove(menuListen);
-            menuChannel = 0;
+            sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
+            sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
+            sendJSON("Name", name(gCharacterSlot), llGetOwner());
+            sendJSON("Class", class(gCharacterSlot), llGetOwner());
+            sendJSON("Threat", threat(gCharacterSlot), llGetOwner());
+            sendJSON("Mood", mood(gCharacterSlot), llGetOwner());
+            sendJSON("ZapLevels", zapLevels(gCharacterSlot), llGetOwner());
+            sendJSON("zapByObject", zapByObject(gCharacterSlot), llGetOwner());
+            llListenRemove(listenMenu);
+            channelMenu = 0;
             llSetTimerEvent(0);
         }
-        else if (channel == crimeSetChannel)
+        else if (channel == channelSetName)
         {
-            sayDebug("listen(crimeSetChannel, "+text+")");
-            llListenRemove(crimeSetListen);
-            crimeSetChannel = 0;
+            sayDebug("listen(channelSetName, "+text+")");
+            llListenRemove(listenSetName);
+            channelSetName = 0;
             llSetTimerEvent(0);
-            if ( (assetNumber() != "") && (assetNumber() != "P-00000") && (id != llGetOwner()) && (agentIsGuard(id)))
-                sendDatabaseQuery(gCharacterSlot, text);
+            nameList = setLocalList(gCharacterSlot, "nameList", nameList, text);
+            gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
+            sendJSON("Name", name(gCharacterSlot), llGetOwner());
+        }
+        else if (channel == channelSetCrime)
+        {
+            sayDebug("listen(channelSetCrime, "+text+")");
+            llListenRemove(listenSetCrime);
+            channelSetCrime = 0;
+            llSetTimerEvent(0);
+            crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, text);
+            gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
+            sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
         }
     }
 
     timer() {
-        if (menuListen != 0) {
-            llListenRemove(menuListen);
-            menuChannel = 0;
+        if (listenMenu != 0) {
+            llListenRemove(listenMenu);
+            channelMenu = 0;
         }
-        if (crimeSetListen != 0)
+        if (listenSetCrime != 0)
         {
-            llListenRemove(crimeSetListen);
-            crimeSetChannel = 0;
+            llListenRemove(listenSetCrime);
+            channelSetCrime = 0;
         }
         llSetTimerEvent(0);
     }
