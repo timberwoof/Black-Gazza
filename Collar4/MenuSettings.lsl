@@ -40,7 +40,7 @@ integer speechPenaltyZap = 0;
 string crime = "Unknown";
 string assetNumber = "P-00000";
 string threat = "Moderate";
-integer batteryActive = FALSE;
+//integer batteryActive = FALSE;
 integer badWordsActive = FALSE;
 integer titlerActive = TRUE;
 
@@ -59,7 +59,7 @@ string buttonSpeech = "Speech";
 string buttonPenalties = "Penalties";
 string buttonSettings = "Settings";
 string buttonTitler = "Titler";
-string buttonBattery = "Battery";
+//string buttonBattery = "Battery";
 string buttonCharacter = "Character";
 string buttonSetCrime = "Set Crime";
 //string buttonHack = "Hack";
@@ -233,7 +233,7 @@ settingsMenu(key avatarKey) {
     integer setBadWords = FALSE;
     integer setSpeech = FALSE;
     integer setTitle = FALSE;
-    integer setBattery = FALSE;
+//    integer setBattery = FALSE;
     integer setCharacter = FALSE;
     integer setCrimes = FALSE;
 
@@ -247,7 +247,7 @@ settingsMenu(key avatarKey) {
         setSpeech = TRUE;
         //setTimer = TRUE;
         setTitle = TRUE;
-        setBattery = TRUE;
+        //setBattery = TRUE;
         setClass = TRUE;
         setThreat = TRUE;
         setPunishments = TRUE;
@@ -294,7 +294,7 @@ settingsMenu(key avatarKey) {
             setThreat = FALSE;
             //setTimer = FALSE;
             setSpeech = FALSE;
-            setBattery = FALSE;
+            //setBattery = FALSE;
             message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
         }
         else if(agentIsGuard(avatarKey))
@@ -321,7 +321,8 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
     buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
-    buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
+    //buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
+    buttons = buttons + "blank";
 
     if(avatarKey == llGetOwner()) {
         // replace Character button to SetCrimes for guards
@@ -371,11 +372,11 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
         sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
         settingsMenu(avatarKey);
     }
-    else if (messageButtonsTrimmed == buttonBattery) {
-        batteryActive = !batteryActive;
-        sendJSONCheckbox(buttonBattery, "", avatarKey, batteryActive);
-        settingsMenu(avatarKey);
-    }
+    //else if (messageButtonsTrimmed == buttonBattery) {
+    //    batteryActive = !batteryActive;
+    //    sendJSONCheckbox(buttonBattery, "", avatarKey, batteryActive);
+    //    settingsMenu(avatarKey);
+    //}
     else if (message == buttonCharacter){
         characterMenu(avatarKey);
     }
@@ -802,9 +803,9 @@ default
             badWordsActive = FALSE;
             DisplayTokActive = FALSE;
         }
-        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
-            batteryActive = TRUE;
-        }
+        //if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+        //    batteryActive = TRUE;
+        //}
 
         if(getJSONstring(json, "Menu", "") == buttonSettings)
         {
