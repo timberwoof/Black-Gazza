@@ -42,7 +42,7 @@ string assetNumber = "P-00000";
 string threat = "Moderate";
 //integer batteryActive = FALSE;
 integer badWordsActive = FALSE;
-integer titlerActive = TRUE;
+//integer titlerActive = TRUE;
 
 string menuMain = "Main";
 string moodDND = "DnD";
@@ -58,7 +58,7 @@ string buttonBlank = " ";
 string buttonSpeech = "Speech";
 string buttonPenalties = "Penalties";
 string buttonSettings = "Settings";
-string buttonTitler = "Titler";
+//string buttonTitler = "Titler";
 //string buttonBattery = "Battery";
 string buttonCharacter = "Character";
 string buttonSetCrime = "Set Crime";
@@ -320,7 +320,8 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
-    buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
+    //buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
+    buttons = buttons + "blank";
     //buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
     buttons = buttons + "blank";
 
@@ -367,11 +368,11 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     else if (message == buttonSpeech){
         speechMenu(avatarKey);
     }
-    else if (messageButtonsTrimmed == buttonTitler) {
-        titlerActive = !titlerActive;
-        sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
-        settingsMenu(avatarKey);
-    }
+    //else if (messageButtonsTrimmed == buttonTitler) {
+    //    titlerActive = !titlerActive;
+    //    sendJSONCheckbox(buttonTitler, "", avatarKey, titlerActive);
+    //    settingsMenu(avatarKey);
+    //}
     //else if (messageButtonsTrimmed == buttonBattery) {
     //    batteryActive = !batteryActive;
     //    sendJSONCheckbox(buttonBattery, "", avatarKey, batteryActive);
