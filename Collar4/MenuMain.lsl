@@ -22,6 +22,10 @@ integer allowZapHigh = TRUE;
 integer allowZapByObject = TRUE;
 integer allowVision = TRUE;
 
+string assetNumber = "P-00000";
+string name;
+string crime = "Unknown";
+string threat = "Moderate";
 string mood;
 string class = "white";
 list classes = ["white", "pink", "red", "orange", "green", "blue", "black"];
@@ -35,9 +39,6 @@ integer renamerActive = FALSE;
 integer DisplayTokActive = FALSE;
 string RelayLockState = "Off"; // what the relay told us
 
-string crime = "Unknown";
-string assetNumber = "P-00000";
-string threat = "Moderate";
 string batteryGraph = "";
 
 string menuMain = "Main";
@@ -48,15 +49,15 @@ string moodLockup = "Lockup";
 string buttonBlank = " ";
 string buttonInfo = "Info";
 string buttonSettings = "Settings";
-//string buttonHack = "Hack";
 string buttonPunish = "Punish";
 string buttonLeash = "Leash";
 string buttonForceSit = "ForceSit";
 string buttonSafeword = "Safeword";
 string buttonRelease = "Release";
+//string buttonHack = "Hack";
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
-key blurp = "d5567c52-b78d-f78f-bcb1-605701b3af24";
+key soundBlurp = "d5567c52-b78d-f78f-bcb1-605701b3af24";
 
 // Utilities *******
 
@@ -183,11 +184,11 @@ list menuButtonActive(string title, integer onOff)
     return [button];
 }
 
-integer getLinkWithName(string name) {
+integer getLinkWithName(string linkName) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
     for (; i < x; ++i)
-        if (llGetLinkName(i) == name)
+        if (llGetLinkName(i) == linkName)
             return i; // Found it! Exit loop early with result
     return -1; // No prim with that name, return -1.
 }
@@ -298,7 +299,7 @@ doMainMenu(key avatarKey, string message) {
     else if (message == buttonRelease){
         sendJSON(RLV, lockLevelOff, avatarKey);
     } else {
-        llPlaySound(blurp, 1.0);
+        llPlaySound(soundBlurp, 1.0);
         llSleep(0.2);
     }
 }
@@ -323,7 +324,7 @@ string class2Description(string class) {
 giveInfo(key avatarKey){
     // Prepare text of collar settings for the information menu
     string message = "Prisoner Information \n" +
-    "\nNumber: " + assetNumber + "\n";
+    "\nNumber: " + assetNumber + " (" + name + ")\n";
     if (agentIsGuard(avatarKey) || avatarKey == llGetOwner()) {
         string ZapLevels = "";
         ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
@@ -524,7 +525,7 @@ default
         }
         else {
             sayDebug("ERROR: did not process menuIdentifier "+menuIdentifier);
-            llPlaySound(blurp, 0.2);
+            llPlaySound(soundBlurp, 0.2);
             llSleep(1);
         }
     }
@@ -533,6 +534,7 @@ default
         // We listen in on link status messages and pick the ones we're interested in
         //sayDebug("link_message json "+json);
         assetNumber = getJSONstring(json, "AssetNumber", assetNumber);
+        name = getJSONstring(json, "Name", name);
         crime = getJSONstring(json, "Crime", crime);
         class = getJSONstring(json, "Class", class);
         threat = getJSONstring(json, "Threat", threat);
