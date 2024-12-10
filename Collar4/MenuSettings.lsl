@@ -29,8 +29,8 @@ integer canBeDangerous = 1;
 integer canBeExtreme = 1;
 
 string RLV = "RLV";
-string lockLevel;
-string lockLevelOff = "Off";
+string RLVlevel;
+string RLVlevelOff = "Off";
 integer rlvPresent = FALSE;
 integer renamerActive = FALSE;
 integer DisplayTokActive = FALSE;
@@ -239,7 +239,7 @@ settingsMenu(key avatarKey) {
         "Threat: " + threat;
 
     // 1. Assume nothing is allowed
-    integer setLock = FALSE;
+    integer xsetRLVLevel = FALSE;
     integer setPunishments = FALSE;
     integer setBadWords = FALSE;
     integer setSpeech = FALSE;
@@ -252,13 +252,16 @@ settingsMenu(key avatarKey) {
     // Add some things depending on who you are.
     // What wearer can change
     if (avatarKey == llGetOwner()) {
-        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
-            // hardcore and heavy mean things
-            message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
+        if (RLVlevel == "Hardcore") {
+            xsetRLVLevel = FALSE;
+            message = message + "\nSome settings are not available while your lock level is Hardcore.";
+        } else if (RLVlevel == "Heavy") {
+            xsetRLVLevel = TRUE;
+            message = message + "\nSome settings are not available while your lock level is Heavy.";
         } else {
             // otherwise the wearer can cange some things
             sayDebug("settingsMenu: normal-owner");
-            setLock = TRUE;
+            xsetRLVLevel = TRUE;
             setPunishments = TRUE;
             setBadWords = TRUE;
             setSpeech = TRUE;
@@ -276,11 +279,11 @@ settingsMenu(key avatarKey) {
         setCharacter = FALSE;
         setThreat = TRUE;
         setPunishments = TRUE;
-        if (lockLevel == "Hardcore") {
-            // Hardcore means guard reset your locklevel. 
-            setLock = TRUE;
+        if (RLVlevel == "Hardcore") {
+            // Hardcore means guard reset your RLVlevel. 
+            xsetRLVLevel = TRUE;
         }
-        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+        if ((RLVlevel == "Hardcore" || RLVlevel == "Heavy")) {
             // hardcore and heavy mean things
             sayDebug("settingsMenu: heavy-owner");
             setSpeech = TRUE;
@@ -292,7 +295,7 @@ settingsMenu(key avatarKey) {
     list buttons = [];
     buttons = buttons + menuButtonActive("Class", setClass);
     buttons = buttons + menuButtonActive("Threat", setThreat);
-    buttons = buttons + menuButtonActive(RLV, setLock);
+    buttons = buttons + menuButtonActive(RLV, xsetRLVLevel);
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
     buttons = buttons + "Mood";
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
@@ -368,7 +371,7 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
     else {
         sayDebug("doSettingsMenu ignoring "+message);
         llPlaySound(blurp, 1.0);
-        llSleep(0.2);
+        llSleep(0.5);
     }
 
 }
@@ -533,7 +536,7 @@ threatMenu(key avatarKey) {
 speechMenu(key avatarKey)
 {
     integer itsMe = avatarKey == llGetOwner();
-    integer locked = lockLevel != lockLevelOff;
+    integer locked = RLVlevel != RLVlevelOff;
 
     string message = buttonSpeech + "\n";
     list buttons = [];
@@ -578,7 +581,7 @@ speechMenu(key avatarKey)
         if(agentIsGuard(avatarKey))
         {
             doWordList = TRUE;
-            if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+            if ((RLVlevel == "Hardcore" || RLVlevel == "Heavy")) {
                 doBadWords = TRUE;
                 doDisplayTok = TRUE;
                 doPenalties = TRUE;
@@ -593,7 +596,7 @@ speechMenu(key avatarKey)
 
     }
 
-    if (lockLevel == "Heavy" | lockLevel == "Hardcore") {
+    if (RLVlevel == "Heavy" | RLVlevel == "Hardcore") {
         doRenamer = FALSE;
     }
 
@@ -674,7 +677,7 @@ default
         sayDebug("state_entry");
         menuAgentKey = "";
         mood = moodOOC;
-        lockLevel = lockLevelOff;
+        RLVlevel = RLVlevelOff;
         renamerActive = FALSE;
     }
 
@@ -780,7 +783,7 @@ default
         class = getJSONstring(json, "Class", class);
         threat = getJSONstring(json, "Threat", threat);
         mood = getJSONstring(json, "Mood", mood);
-        lockLevel = getJSONstring(json, "LockLevel", lockLevel);
+        RLVlevel = getJSONstring(json, "RLVlevel", RLVlevel);
         renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
         badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
@@ -790,7 +793,7 @@ default
             badWordsActive = FALSE;
             DisplayTokActive = FALSE;
         }
-        //if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+        //if ((RLVlevel == "Hardcore" || RLVlevel == "Heavy")) {
         //    batteryActive = TRUE;
         //}
 
