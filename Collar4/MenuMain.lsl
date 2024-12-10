@@ -230,6 +230,7 @@ mainMenu(key avatarKey) {
             message = message + "\nSafeword is not needed when RLV level is "+lockLevel+".";
         }
         message = message + "\nIncident Reports are only available to Guards.";
+        message = message + "\nRelease command is only available to Guards.";
     } else if (agentIsGuard(avatarKey)) {
         if ((mood == moodDND) | (mood == moodOOC)) {
             message = message + "\nWearer mood is DND or OOC.";
@@ -240,6 +241,11 @@ mainMenu(key avatarKey) {
             doLeash = TRUE;
             doIncidents = TRUE;
         }
+        message = message + "\nWearer lockLevel is "+lockLevel;
+        if (lockLevel == "Hardcore") {
+            doRelease = TRUE;
+        }
+
     } else {
         message = message + "\nNonmembers can't fuck with the collar.";
     }
@@ -249,14 +255,6 @@ mainMenu(key avatarKey) {
         doForceSit = FALSE;
         doLeash = FALSE;
         message = message + "\nForceSit and Leash are available ony when RLV is present and on.";
-    }
-
-    // Collar functions controlled by locklevel: Safeword and Release
-    if (agentIsGuard(avatarKey) && (avatarKey != llGetOwner())) { // lockLevel == "Hardcore" && 
-        // This combination prevents someone in hardcore from changin to guard to set themselves free. 
-        doRelease = TRUE;
-    } else {
-        message = message + "\nRelease command is only available to Guards.";
     }
 
     list buttons = [];
