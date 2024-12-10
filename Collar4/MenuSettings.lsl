@@ -4,7 +4,7 @@
 // June 2019
 string version = "2024-12-05";
 
-integer OPTION_DEBUG = TRUE;
+integer OPTION_DEBUG = FALSE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -233,7 +233,8 @@ settingsMenu(key avatarKey) {
     integer setSpeech = FALSE;
     integer setTitle = FALSE;
     integer setCharacter = FALSE;
-    integer setCrimes = FALSE;
+    integer setName = FALSE;
+    integer setCrime = FALSE;
     //integer setTimer = FALSE;
     //integer setAsset = FALSE;
     //integer setBattery = FALSE;
@@ -251,6 +252,8 @@ settingsMenu(key avatarKey) {
         setThreat = TRUE;
         setPunishments = TRUE;
         setCharacter = TRUE;
+        setName = TRUE;
+        setCrime = TRUE;
         //setTimer = TRUE;
         //setBattery = TRUE;
 
@@ -272,7 +275,6 @@ settingsMenu(key avatarKey) {
         sayDebug("settingsMenu: guard");
         setThreat = TRUE;
         setSpeech = TRUE;
-        setCrimes = TRUE;
 
         // some things guard can change only OOC
         if (mood == moodOOC) {
@@ -280,7 +282,7 @@ settingsMenu(key avatarKey) {
             // OOC, guards can change some things
             // DnD means Do Not Disturb
             setClass = TRUE;
-            setCrimes = FALSE;
+            //setCrime = FALSE;
         }
         else {
             message = message + "\nSome settings are not available while you are OOC.";
@@ -320,8 +322,8 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
     buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
-    buttons = buttons + buttonSetName;
-    buttons = buttons + buttonSetCrime;
+    buttons = buttons + menuButtonActive(buttonSetName, setName);
+    buttons = buttons + menuButtonActive(buttonSetCrime, setCrime);
     //buttons = buttons + menuButtonActive("Timer", setTimer);
     //buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
     //buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
@@ -331,7 +333,7 @@ settingsMenu(key avatarKey) {
         buttons = buttons + menuButtonActive(buttonCharacter, setCharacter);
     } else {
          // it's available for only guards group in IC mood collar
-        buttons += menuButtonActive(buttonSetCrime, setCrimes);
+        buttons += menuButtonActive(buttonSetCrime, setCrime);
     }
 
     setUpMenu(buttonSettings, avatarKey, message, buttons);
