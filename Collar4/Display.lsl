@@ -84,7 +84,7 @@ string fontID = "fc55ee0b-62b5-667c-043d-46d822249ee0";
 // only lists that are needed in a lot of places are kept here.
 // Other lists are dedined only where they are needed, in an effort to save space.
 list moodNames = ["OOC", "Lockup", "Submissive", "Versatile", "Dominant", "Nonsexual", "Story", "DnD"];
-list moodColors = [LIGHT_GRAY, WHITE, GREEN, YELLOW, ORANGE, CYAN, PURPLE, BLACK];
+list moodColors = [LIGHT_GRAY, WHITE, GREEN, YELLOW, ORANGE, CYAN, PURPLE, LIGHT_GRAY];
 
 list threatLevels = ["None", "Moderate", "Dangerous", "Extreme"];
 list threatColors = [GREEN, YELLOW, ORANGE, RED];
@@ -192,7 +192,7 @@ displayTitler() {
     integer classIndex = llListFindList(classNames, [class]);
     string description = "Class " + class + ": " + llList2String(classNamesLong, classIndex);
     string title = assetNumber+" ("+name+")" + "\n" + description + "\nCrime: " + crime + "\nThreat: " + threat + "\nMood: " + mood ;
-    if (mood == "DND") {
+    if (mood == "DnD") {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);
     } else {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, title, moodColor, titlerActive]);
