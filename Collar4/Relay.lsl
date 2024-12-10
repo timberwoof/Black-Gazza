@@ -25,10 +25,12 @@
 integer OPTION_DEBUG = FALSE;
 
 integer relayChannel = -1812221819;
+integer relayChanelHandle = 0;
 string version = "1030";
 string implversion = "Dominatech Relay 2.0";
 
 integer backChannel; // for @getsitid
+integer backChannelHandle;
 key sitting;
 
 list objects;
@@ -50,7 +52,7 @@ list pendingCommands;
 
 // variables for the dialog that asks wearer permission for RLV control
 integer permChannel;
-integer permListener;
+integer permChannelHandle;
 integer permClose; // timer
 
 sayDebug(string message)
@@ -207,8 +209,10 @@ integer allowCommand(key id, string cmd)
 }
 
 setUpListens() {
-    llListen(relayChannel, "", NULL_KEY, "");
-    llListen(backChannel = 16777216 + (integer)llFrand(16777216.0), "", llGetOwner(), "");
+    llListenRemove(relayChanelHandle);
+    relayChanelHandle = llListen(relayChannel, "", NULL_KEY, "");
+    llListenRemove(backChannelHandle);
+    backChannelHandle = llListen(backChannel = 16777216 + (integer)llFrand(16777216.0), "", llGetOwner(), "");
     llSetTimerEvent(5.0);
 }
 
@@ -274,8 +278,8 @@ default
                                 string object = llKey2Name(id);
                                 string ownedby = llKey2Name(llGetOwnerKey(id));
                                 if (ownedby) object += " (owned by " + ownedby + ")";
-                                if (! permListener)
-                                    permListener = llListen(permChannel = -16777216 - (integer)llFrand(16777216.0), "", llGetOwner(), "");
+                                if (! permChannelHandle)
+                                    permChannelHandle = llListen(permChannel = -16777216 - (integer)llFrand(16777216.0), "", llGetOwner(), "");
                                 llDialog(llGetOwner(), "The object " + object
                                     + " is attempting to use your Restrained Life Viewer relay.  Do you wish to allow it?", buttons, permChannel);
                                 permClose = llGetUnixTime() + 60;
@@ -434,21 +438,21 @@ default
             }
         }
 
-        if (permListener)
+        if (permChannelHandle)
         {
             if (llGetUnixTime() >= permClose)
             {
                 pendingObjects = [];
                 pendingCommands = [];
-                llListenRemove(permListener);
-                permListener = 0;
+                llListenRemove(permChannelHandle);
+                permChannelHandle = 0;
             }
         }
     }
 
     link_message(integer src, integer num, string json, key id)
     {
-        string relayCommand = getJSONstring(json, "relayCommand", "");
+        string relayCommand = getJSONstring(json, "RelayCommand", "");
         if (relayCommand == RelayON)
         {
             sayDebug("link_message msg:"+json);
@@ -466,14 +470,14 @@ default
             sayDebug("link_message msg:"+json);
             operatingState = RelayASK;
             setUpListens();
-            if (permListener)
+            if (permChannelHandle)
             {
                 allowedObjects = [];
                 rejectedObjects = [];
                 pendingObjects = [];
                 pendingCommands = [];
-                llListenRemove(permListener);
-                permListener = 0;
+                llListenRemove(permChannelHandle);
+                permChannelHandle = 0;
             }
             sendJSON("RelayLockState", operatingState, id);
         }
