@@ -563,6 +563,7 @@ default
                 crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, text);
                 sendDatabaseWrite(gCharacterSlot);
                 sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
+                llOwnerSay(name+" set your crime to "+text);
             } else {
                 llInstantMessage(id, "The submitted crime was blank. The crime was not updated.");
             }
