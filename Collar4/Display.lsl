@@ -495,9 +495,6 @@ default
         if (value != JSON_INVALID) {
             assetNumber = value;
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
-            if (assetNumber != "P-00000") {
-                setCollarName();
-            }
             displayCentered(assetNumber);
             displayTitler();
         }
