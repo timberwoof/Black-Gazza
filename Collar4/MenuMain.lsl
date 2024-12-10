@@ -213,7 +213,7 @@ mainMenu(key avatarKey) {
     integer doLeash = FALSE;
     integer doSafeword = FALSE;
     integer doRelease = FALSE;
-    integer doIncidents = TRUE; // **** Set to FALSE for production
+    integer doIncidents = FALSE; // **** Set to FALSE for production
 
     // Collar functions controlled by Mood: punish, force sit, leash, speech
     if (mood == moodDND | mood == moodLockup) {
@@ -250,11 +250,11 @@ mainMenu(key avatarKey) {
     }
 
     // Collar functions controlled by locklevel: Safeword and Release
-    if (agentIsGuard(avatarKey)) { // lockLevel == "Hardcore" && 
+    if (agentIsGuard(avatarKey) && (avatarKey != llGetOwner())) { // lockLevel == "Hardcore" && 
         doRelease = TRUE;
         doIncidents = TRUE;
     } else {
-        message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
+        message = message + "\nRelease command is available to a Guard.";
     }
 
     if (avatarKey == llGetOwner() && lockLevel != "Hardcore" && lockLevel != lockLevelOff) {
