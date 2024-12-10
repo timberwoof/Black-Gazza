@@ -14,7 +14,7 @@
 // http_response() handles the request
 // http_response() deletes request from request list and from isEditCrimesList
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = TRUE;
 list databaseQuery;
 string READorWrite;
 
@@ -24,7 +24,7 @@ string unassignedAsset = "P-00000";
 string URL_BASE =  "http://sl.blackgazza.com/"; // "http://sl.blackgazza.com/";
 string URL_READ = "read_inmate.cgi?key=";
 string URL_ADD = "add_inmate.cgi?key=";
-integer gCharacterSlot = 1; // unselected
+integer gCharacterSlot = 1; 
 
 integer channelMenu;
 integer listenMenu;
@@ -46,18 +46,19 @@ string WHITE = "white";
 string NONE = "None";
 string OOC = "OOC";
 
-list assetNumberList = ["P-00000","P-00000","P-00000","P-00000","P-00000","P-00000","P-00000"]; 
-list crimeList = ["",UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
-list nameList = ["",UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
-list sentenceList = ["0","0","0","0","0","0","0"]; // it is not used in this collar but i decided to keep it
-list zapLevelsList = ["","","","","","",""]; 
-list zapByObjectList = ["","","","","","",""]; 
-list classList = ["",WHITE,WHITE,WHITE,WHITE,WHITE,WHITE]; 
-list threatList = ["",NONE,NONE,NONE,NONE,NONE,NONE]; 
-list moodList = ["",OOC,OOC,OOC,OOC,OOC,OOC]; 
+// The indexes are 0 in these lists but +1 in the additional characters
+list assetNumberList = ["P-00000","P-00000","P-00000","P-00000","P-00000","P-00000"]; 
+list crimeList = [UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
+list nameList = [UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
+list sentenceList = ["0","0","0","0","0","0"]; // it is not used in this collar but i decided to keep it
+list zapLevelsList = ["","","","","",""]; 
+list zapByObjectList = ["","","","","",""]; 
+list classList = [WHITE,WHITE,WHITE,WHITE,WHITE,WHITE]; 
+list threatList = [NONE,NONE,NONE,NONE,NONE,NONE]; 
+list moodList = [OOC,OOC,OOC,OOC,OOC,OOC]; 
 
-list incidentDatesList = ["","","","","","",""]; // 7 json bobs of incident dates
-list incidentsList = ["","","","","","",""]; // 7 json blobs of incidents
+list incidentDatesList = ["","","","","",""]; // 7 json bobs of incident dates
+list incidentsList = ["","","","","",""]; // 7 json blobs of incidents
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
 
@@ -85,12 +86,13 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
 
 list linksetDataReadList(string theKey) {
     string json = llLinksetDataRead(theKey);
-    list result = llJson2List(json);
+    list result = llList2List(llJson2List(json), 0, 5); // Never read more than 6 items.
     sayDebug("linksetDataReadList("+theKey+") = "+json);
     return result;
 }
 
 linksetDataWriteList(string theKey, list theList) {
+    theList = llList2List(theList, 0, 5); // Never write more than 6 items.  
     string json = llList2Json(JSON_ARRAY, theList);
     integer result = llLinksetDataWrite(theKey, json);
     list resultStrings = ["ok", "too large", "empty key", "protected key", "key not found", "not updated"];
@@ -115,75 +117,96 @@ initializeLists() {
     incidentsList = linksetDataReadList("incidentsList");
 }
 
+backupList(string prefix, string thekey, list theList, string suffix) {
+    string jsonlist = llList2Json(JSON_ARRAY, theList);
+    string jsonobject = llList2Json(JSON_OBJECT, [thekey, jsonlist]);
+    string jsonblob = prefix + jsonobject + suffix;
+    llInstantMessage(llGetOwner(),jsonblob);
+}
+
+backup(key id) {
+    llInstantMessage(llGetOwner(), "Copy the following text and paste it into a notecard.");
+    llInstantMessage(llGetOwner(), "Then delete the timestamp, your asset number, and your name.");
+    backupList("{\"BGLCON\":[", "assetNumberList", assetNumberList, ",");
+    backupList("", "crimeList", crimeList, ",");
+    backupList("", "nameList", nameList, ",");
+    backupList("", "sentenceList", sentenceList, ",");
+    backupList("", "classList", classList, ",");
+    backupList("", "moodList", moodList, ",");
+    backupList("", "threatList", threatList, ",");
+    backupList("", "zapLevelsList", zapLevelsList, ",");
+    backupList("", "zapByObjectList", zapByObjectList, ",");
+    backupList("", "incidentDatesList", incidentDatesList, ",");
+    backupList("", "incidentsList", incidentsList, "]}");
+}
+
 string assetNumber(integer slot) {
-    return llList2String(assetNumberList, slot);
+    return llList2String(assetNumberList, slot-1);
 }
 
 string crime(integer slot) {
-    return llList2String(crimeList, slot);
+    return llList2String(crimeList, slot-1);
 }
 
 string name(integer slot) {
-    return llList2String(nameList, slot);
+    return llList2String(nameList, slot-1);
 }
 
 string class(integer slot) {
-    return llList2String(classList, slot);
+    return llList2String(classList, slot-1);
 }
 
 string threat(integer slot) {
-    return llList2String(threatList, slot);
+    return llList2String(threatList, slot-1);
 }
 
 string mood(integer slot) {
-    return llList2String(moodList, slot);
+    return llList2String(moodList, slot-1);
 }
 
 string zapLevels(integer slot) {
-   return llList2String(zapLevelsList, slot);
+   return llList2String(zapLevelsList, slot-1);
 }
 
 string zapByObject(integer slot) {
-   return llList2String(zapByObjectList, slot);
+   return llList2String(zapByObjectList, slot-1);
 }
 
 list incidentDates(integer slot) {
-    return llJson2List(llList2String(incidentDatesList, slot));
+    return llJson2List(llList2String(incidentDatesList, slot-1));
 }
 
 list incidents(integer slot) {
-    return llJson2List(llList2String(incidentsList, slot));
+    return llJson2List(llList2String(incidentsList, slot-1));
 }
 
 list setLocalList(integer slot, string listName, list thelist, string value) {
     // replaces one value in the local list, then updates the linksetData
     sayDebug("setLocalList("+listName+", "+value+")");
-    list newList = llListReplaceList(thelist, [value], gCharacterSlot, gCharacterSlot);
+    list newList = llListReplaceList(thelist, [value], slot-1, slot-1);
     linksetDataWriteList(listName, newList);
     return newList;
 }
 
 // convert agent key to database key
-string AgentKeyWithRole(string agentKey, integer slot) {
-// if the slot number is 2 or greater,
-// sticks the character key into the agent UUID
-    string result = agentKey;
+string getDatabaseKey(integer slot) {
+// If the slot number is 2 or greater, it sticks the character key into the agent UUID.
+// Otherwise it leaves the UUID alone. 
+    string agentKey = (string)llGetOwner();
     if (slot > 1) {
-        string after = llGetSubString(agentKey, 0, 22);
-        string before = llGetSubString(agentKey, 24, -1);
-        result = after + (string)slot + before;
+        agentKey = llGetSubString(agentKey, 0, 22) + (string)slot + llGetSubString(agentKey, 24, -1);
     }
-    return result;
+    return agentKey;
 }
 
 // fire off a request to the crime database for this wearer.
 // Parameter iSlot determines which character to get.
-integer sendDatabaseRead(integer iSlot) {
+sendDatabaseRead(integer iSlot) {
     if (llGetAttached()) {
         sayDebug("sendDatabaseRead");
         DisplayTemp("Reading DB");
         READorWrite = "READ";
-        string URL = URL_BASE + URL_READ + AgentKeyWithRole((string)llGetOwner(),iSlot);
+        string URL = URL_BASE + URL_READ + getDatabaseKey(iSlot);
         sayDebug("sendDatabaseRead URL:"+URL);
         databaseQuery += [llHTTPRequest(URL,[],"")]; // append reqest_id for use it later in responder event
     } else {
@@ -192,19 +215,18 @@ integer sendDatabaseRead(integer iSlot) {
         sendJSON("Crime", crime(iSlot), llGetOwner());
         sendJSON("Name", name(iSlot), llGetOwner());
     }
-    return iSlot;
 }
 
 // fire off a request to the crime database for this wearer.
 // Parameter iSlot determines which character to get.
-integer sendDatabaseWrite(integer iSlot) {
+sendDatabaseWrite(integer iSlot) {
     if (llGetAttached()) {
         sayDebug("sendDatabaseWrite");
         DisplayTemp("Writing DB");
         READorWrite = "WRITE";
         string URL = URL_BASE; // http://sl.blackgazza.com/
         URL += URL_ADD; // add_inmate.cgi?key=
-        URL += AgentKeyWithRole((string)llGetOwner(),iSlot);
+        URL += getDatabaseKey(iSlot);
         URL += "&sentence=" + llList2String(sentenceList, iSlot);
         URL += "&name=" + llEscapeURL(name(iSlot));  
         URL += "&crime=" + llEscapeURL(crime(iSlot)); 
@@ -217,7 +239,6 @@ integer sendDatabaseWrite(integer iSlot) {
         sendJSON("Crime", crime(iSlot), llGetOwner());
         sendJSON("Name", name(iSlot), llGetOwner());
     }
-    return iSlot;
 }
 
 integer agentIsGuard(key agent)
@@ -275,11 +296,10 @@ setUpMenu(string id, key avatarKey, string message, list buttons)
 characterMenu() {
     sayDebug("characterMenu()");
     list buttons = [];
-    integer i = 0;
-    for (i=1; i<7; i = i + 1) {
-        string assetNumber = llList2String(assetNumberList, i);  
-        if (assetNumber != "") {
-            buttons = buttons + [assetNumber];
+    integer i = 1;
+    for (i=1; i<=6; i = i + 1) {
+        if (assetNumber(i) != "") {
+            buttons = buttons + [assetNumber(i)];
         }
     }
     setUpMenu("Character", llGetOwner(), "Choose your Asset Number", buttons);
@@ -328,7 +348,8 @@ default
         sayDebug("state_entry");
         initializeLists();
         if (gCharacterSlot == 0) {
-            gCharacterSlot = sendDatabaseRead(1);
+            gCharacterSlot = 1;
+            sendDatabaseRead(gCharacterSlot);
         } else {
             sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
         }
@@ -341,7 +362,8 @@ default
         sayDebug("attach");
         initializeLists();
         if (gCharacterSlot == 0) {
-            gCharacterSlot = sendDatabaseRead(1);
+            gCharacterSlot = 1;
+            sendDatabaseRead(gCharacterSlot);
         } else {
             sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
         }
@@ -360,16 +382,15 @@ default
         // IF this response is for something we didn't ask for, quit safely. 
         if (listRequestIndex == -1) 
         {
-            DisplayTemp("DBERR UREQ");
+            DisplayTemp("DBERR UNREQ");
             return; // skip response if this script did not require it
         }
-
-        DisplayTemp("DBSTAT "+(string)status);
 
         // If response status code not ok (not 200)
         // then remove item with request_id from list and exit without changing any data. 
         if (status != 200)
         {
+            DisplayTemp("DBSTAT"+(string)status);
 
             // removes unnecessary request_id from memory to save
             databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
@@ -438,7 +459,7 @@ default
             gCharacterSlot = gCharacterSlot + 1;
             sendDatabaseRead(gCharacterSlot);
         } else {
-            gCharacterSlot = 1; // unselected
+            gCharacterSlot = 1; // this was in error
 
             sayDebug("httpresponse assetNumberList: "+(string)assetNumberList);
             sayDebug("httpresponse crimeList: "+(string)crimeList);
@@ -452,11 +473,12 @@ default
         //sayDebug("link_message "+json);
         string request = getJSONstring(json, "Database", "");
         if (request != "") sayDebug("link_message("+json+")");
-        if (request == "getupdate") gCharacterSlot = sendDatabaseRead(gCharacterSlot);
+        if (request == "getupdate") sendDatabaseRead(gCharacterSlot);
         if (request == "setcharacter") sendDatabaseRead(1);
         if (request == "setcrime") setCharacterCrime(id);
         if (request == "setname") setCharacterName(id);
         if (request == "incidents") incidentsMenu(id);
+        if (request == "Backup") backup(id);
 
         string value = llJsonGetValue(json, ["Class"]);
         if (value != JSON_INVALID) {
@@ -496,7 +518,11 @@ default
             if (menuID == "Character") {
                 // character selection menu
                 sayDebug("listen(channelMenu, menuID, "+text+")");
-                gCharacterSlot = llListFindList(assetNumberList, [text]); // selected
+                gCharacterSlot = llListFindList(assetNumberList, [text]) + 1;
+                if (gCharacterSlot < 1) {
+                    // this is an error. Fix it benignly..
+                    gCharacterSlot = 1;
+                }
                 sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
                 sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
                 sendJSON("Name", name(gCharacterSlot), llGetOwner());
@@ -531,7 +557,7 @@ default
             channelSetName = 0;
             llSetTimerEvent(0);
             nameList = setLocalList(gCharacterSlot, "nameList", nameList, text);
-            gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
+            sendDatabaseWrite(gCharacterSlot);
             sendJSON("Name", name(gCharacterSlot), llGetOwner());
         }
         else if (channel == channelSetCrime) {
@@ -540,7 +566,7 @@ default
             channelSetCrime = 0;
             llSetTimerEvent(0);
             crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, text);
-            gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
+            sendDatabaseWrite(gCharacterSlot);
             sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
         }
         else if (channel == channelEnterIncident) {
