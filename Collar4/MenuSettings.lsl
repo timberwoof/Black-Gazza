@@ -22,6 +22,7 @@ string zapJsonList = ""; // for link data transfers
 string mood;
 string class = "white";
 list classes = ["white", "pink", "red", "orange", "green", "blue", "black"];
+list classesLong = ["Unassigned Transfer", "Sexual Deviant", "Mechanic", "General Population", "Medical Experiment", "Violent or Hopeless", "Mental"];
 integer canBeNone = 1;
 integer canBeModerate = 1;
 integer canBeDangerous = 1;
@@ -215,118 +216,89 @@ integer getLinkWithName(string name) {
 // Settings Menus and Handlers ************************
 // Sets Collar State: Mood, Threat, Lock, Zap levels
 
+string class2Description(string class) {
+    return llList2String(classes, llListFindList(classes, [class])) + "=" +
+        llList2String(classesLong, llListFindList(classes, [class]));
+}
 settingsMenu(key avatarKey) {
     // What this menu can present depends on a number of things:
     // who you are - self or guard
     // IC/OOC mood - OOC, DnD or other
     // RLV lock level - Off, Light, Medium, Heavy, Lardcore
 
-    string message = buttonSettings;
+    string ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
+    menuCheckbox("Medium", allowZapMed) +  "  " +
+    menuCheckbox("High", allowZapHigh) + "  " +
+    menuCheckbox("Objects", allowZapByObject);
+
+    string message = buttonSettings + "\n" +
+        "Crime: " + crime + "\n" +
+        "Shock: " + ZapLevels + "\n" +
+        "Mood: " + mood + "\n" + 
+        "Class: "+class2Description(class)+"\n" +
+        "Threat: " + threat;
 
     // 1. Assume nothing is allowed
-    integer setClass = FALSE;
-    integer setMood = FALSE;
-    integer setThreat = FALSE;
     integer setLock = FALSE;
     integer setPunishments = FALSE;
     integer setBadWords = FALSE;
     integer setSpeech = FALSE;
-    integer setTitle = FALSE;
     integer setCharacter = FALSE;
     integer setName = FALSE;
     integer setCrime = FALSE;
-    //integer setTimer = FALSE;
-    //integer setAsset = FALSE;
-    //integer setBattery = FALSE;
+    integer setClass = FALSE;
+    integer setThreat = FALSE;
 
     // Add some things depending on who you are.
     // What wearer can change
     if (avatarKey == llGetOwner()) {
-        // some things you can always cange
-        sayDebug("settingsMenu: wearer");
-        setMood = TRUE;
-        setLock = TRUE;
-        setSpeech = TRUE;
-        setTitle = TRUE;
-        setClass = TRUE;
-        setThreat = TRUE;
-        setPunishments = TRUE;
-        setCharacter = TRUE;
-        setName = TRUE;
-        setCrime = TRUE;
-        //setTimer = TRUE;
-        //setBattery = TRUE;
-
-        // Some things you can only change OOC
-        if ((mood == moodOOC) || (mood == moodDND)) {
-            sayDebug("settingsMenu: ooc");
-            // IC or DnD you change everything
+        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+            // hardcore and heavy mean things
+            message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
+        } else {
+            // otherwise the wearer can cange some things
+            sayDebug("settingsMenu: normal-owner");
+            setLock = TRUE;
+            setPunishments = TRUE;
             setBadWords = TRUE;
-            //setAsset = TRUE;
-        }
-        else {
-            message = message + "\nSome settings are not available while you are IC.";
+            setSpeech = TRUE;
+            setCharacter = TRUE;
+            setName = TRUE;
+            setCrime = TRUE;
+            setClass = TRUE;
+            setThreat = TRUE;
         }
     }
+    
     // What a guard can change
     else if(agentIsGuard(avatarKey))
     { // (avatarKey != llGetOwner())
-        // guard can always set some things
-        sayDebug("settingsMenu: guard");
+        setCharacter = FALSE;
         setThreat = TRUE;
-        setSpeech = TRUE;
-
-        // some things guard can change only OOC
-        if (mood == moodOOC) {
-            sayDebug("settingsMenu: ooc");
-            // OOC, guards can change some things
-            // DnD means Do Not Disturb
-            setClass = TRUE;
-            //setCrime = FALSE;
+        setPunishments = TRUE;
+        if (lockLevel == "Hardcore") {
+            // Hardcore means guard reset your locklevel. 
+            setLock = TRUE;
         }
-        else {
-            message = message + "\nSome settings are not available while you are OOC.";
-        }
-    }
-
-    // Lock level changes some privileges
-    if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
-        if (avatarKey == llGetOwner()) {
+        if ((lockLevel == "Hardcore" || lockLevel == "Heavy")) {
+            // hardcore and heavy mean things
             sayDebug("settingsMenu: heavy-owner");
-            setPunishments = FALSE;
-            setThreat = FALSE;
-            setSpeech = FALSE;
-            //setTimer = FALSE;
-            //setBattery = FALSE;
-            message = message + "\nSome settings are not available while your lock level is Heavy or Hardcore.";
+            setSpeech = TRUE;
+            setBadWords = TRUE;
+            setCharacter = TRUE;
         }
-        else if(agentIsGuard(avatarKey))
-        {
-
-            sayDebug("settingsMenu: heavy-guard");
-            setPunishments = TRUE;
-            setThreat = TRUE;
-            //setTimer = TRUE;
-        }
-    }
-
-    if ((lockLevel == "Hardcore") && (avatarKey == llGetOwner())) {
-        setLock = FALSE;
     }
 
     list buttons = [];
-    //buttons = buttons + menuButtonActive("Asset", setAsset);
     buttons = buttons + menuButtonActive("Class", setClass);
     buttons = buttons + menuButtonActive("Threat", setThreat);
     buttons = buttons + menuButtonActive(RLV, setLock);
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
-    buttons = buttons + menuButtonActive("Mood", setMood);
+    buttons = buttons + "Mood";
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
     buttons = buttons + menuButtonActive(buttonSetName, setName);
     buttons = buttons + menuButtonActive(buttonSetCrime, setCrime);
-    //buttons = buttons + menuButtonActive("Timer", setTimer);
-    //buttons = buttons + menuButtonActive(menuCheckbox(buttonTitler, titlerActive), setTitle);
-    //buttons = buttons + menuButtonActive(menuCheckbox(buttonBattery, batteryActive), setBattery);
+    buttons = buttons + "Backup";
 
     if(avatarKey == llGetOwner()) {
         // replace Character button to SetCrimes for guards
@@ -352,6 +324,9 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
             llOwnerSay("RLV was off nor not detected. Attempting to register with RLV.");
             sendJSON(RLV, "Register", avatarKey);
         }
+    }
+    else if (message == "Backup"){
+        sendJSON("Database", "Backup", avatarKey);
     }
     else if (message == "Class"){
         classMenu(avatarKey);
