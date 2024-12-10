@@ -54,6 +54,7 @@ string buttonLeash = "Leash";
 string buttonForceSit = "ForceSit";
 string buttonSafeword = "Safeword";
 string buttonRelease = "Release";
+string buttonIncidents = "Incidents";
 //string buttonHack = "Hack";
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
@@ -212,6 +213,7 @@ mainMenu(key avatarKey) {
     integer doLeash = FALSE;
     integer doSafeword = FALSE;
     integer doRelease = FALSE;
+    integer doIncidents = TRUE; // **** Set to FALSE for production
 
     // Collar functions controlled by Mood: punish, force sit, leash, speech
     if (mood == moodDND | mood == moodLockup) {
@@ -250,6 +252,7 @@ mainMenu(key avatarKey) {
     // Collar functions controlled by locklevel: Safeword and Release
     if (lockLevel == "Hardcore" && agentIsGuard(avatarKey)) {
         doRelease = TRUE;
+        doIncidents = TRUE;
     } else {
         message = message + "\nRelease command is available to a Guard when prisoner is in RLV Hardcore mode.";
     }
@@ -263,7 +266,7 @@ mainMenu(key avatarKey) {
     list buttons = [];
     buttons = buttons + menuButtonActive(buttonSafeword, doSafeword);
     buttons = buttons + menuButtonActive(buttonRelease, doRelease);
-    buttons = buttons + buttonBlank;
+    buttons = buttons + menuButtonActive(buttonIncidents, doIncidents);;
     buttons = buttons + menuButtonActive(buttonPunish, doPunish);
     buttons = buttons + menuButtonActive(buttonLeash, doLeash);
     buttons = buttons + menuButtonActive(buttonForceSit, doForceSit);
@@ -298,6 +301,9 @@ doMainMenu(key avatarKey, string message) {
     }
     else if (message == buttonRelease){
         sendJSON(RLV, lockLevelOff, avatarKey);
+    }
+    else if (message == buttonIncidents) {
+        sendJSON("Database", "incidents", avatarKey);
     } else {
         llPlaySound(soundBlurp, 1.0);
         llSleep(0.2);
