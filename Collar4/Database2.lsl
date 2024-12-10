@@ -347,13 +347,7 @@ default
     {
         sayDebug("state_entry");
         initializeLists();
-        if (gCharacterSlot == 0) {
-            gCharacterSlot = 1;
-            sendDatabaseRead(gCharacterSlot);
-        } else {
-            sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
-        }
-        
+        sendDatabaseRead(gCharacterSlot);
         sayDebug("state_entry done");
     }
 
@@ -361,13 +355,7 @@ default
     {
         sayDebug("attach");
         initializeLists();
-        if (gCharacterSlot == 0) {
-            gCharacterSlot = 1;
-            sendDatabaseRead(gCharacterSlot);
-        } else {
-            sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
-        }
-        
+        sendDatabaseRead(gCharacterSlot);        
         sayDebug("attach done");
     }
 
@@ -518,7 +506,7 @@ default
         if (channel == channelMenu) {
             if (menuID == "Character") {
                 // character selection menu
-                sayDebug("listen(channelMenu, menuID, "+text+")");
+                sayDebug("listen(channel, "+menuID+", "+text+")");
                 gCharacterSlot = llListFindList(assetNumberList, [text]) + 1;
                 if (gCharacterSlot < 1) {
                     // this is an error. Fix it benignly..
