@@ -220,12 +220,16 @@ mainMenu(key avatarKey) {
         doPunish = TRUE;
         doForceSit = TRUE;
         doLeash = TRUE;
-        if (lockLevel != lockLevelOff && lockLevel != "Hardcore") {
+        if (lockLevel == "Hardcore") {
+            message = message + "\nYou are in RLV Hardcore. Safeword is not available. You asked for this.";
+            doSafeword = FALSE;
+        } else if (lockLevel == "Heavy") {
             doSafeword = TRUE;
-            message = message + "\nSafeword is not availavle to you in RLV level Hardcore.";
         } else {
-            message = message + "\nSafeword is needed only in RLV levels Medium and Heavy.";
+            doSafeword = FALSE;
+            message = message + "\nSafeword is not needed when RLV level is "+lockLevel+".";
         }
+        message = message + "\nIncident Reports are only available to Guards.";
     } else if (agentIsGuard(avatarKey)) {
         if ((mood == moodDND) | (mood == moodOOC)) {
             message = message + "\nWearer mood is DND or OOC.";
@@ -252,7 +256,7 @@ mainMenu(key avatarKey) {
         // This combination prevents someone in hardcore from changin to guard to set themselves free. 
         doRelease = TRUE;
     } else {
-        message = message + "\nRelease command is only available to a Guard.";
+        message = message + "\nRelease command is only available to Guards.";
     }
 
     list buttons = [];
@@ -298,7 +302,7 @@ doMainMenu(key avatarKey, string message) {
         sendJSON("Database", "incidents", avatarKey);
     } else {
         llPlaySound(soundBlurp, 1.0);
-        llSleep(0.2);
+        llSleep(0.5);
     }
 }
 
@@ -523,8 +527,8 @@ default
         }
         else {
             sayDebug("ERROR: did not process menuIdentifier "+menuIdentifier);
-            llPlaySound(soundBlurp, 0.2);
-            llSleep(1);
+            llPlaySound(soundBlurp, 1.0);
+            llSleep(0.5);
         }
     }
 
