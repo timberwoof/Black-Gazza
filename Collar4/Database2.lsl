@@ -181,7 +181,7 @@ string AgentKeyWithRole(string agentKey, integer slot) {
 integer sendDatabaseRead(integer iSlot) {
     if (llGetAttached()) {
         sayDebug("sendDatabaseRead");
-        displayCentered("Reading DB");
+        DisplayTemp("Reading DB");
         READorWrite = "READ";
         string URL = URL_BASE + URL_READ + AgentKeyWithRole((string)llGetOwner(),iSlot);
         sayDebug("sendDatabaseRead URL:"+URL);
@@ -200,7 +200,7 @@ integer sendDatabaseRead(integer iSlot) {
 integer sendDatabaseWrite(integer iSlot) {
     if (llGetAttached()) {
         sayDebug("sendDatabaseWrite");
-        displayCentered("Writing DB");
+        DisplayTemp("Writing DB");
         READorWrite = "WRITE";
         string URL = URL_BASE; // http://sl.blackgazza.com/
         URL += URL_ADD; // add_inmate.cgi?key=
@@ -232,13 +232,18 @@ integer agentIsGuard(key agent)
     return FALSE;
 }
 
-displayCentered(string message) {
+DisplayCentered(string message) {
     string json = llList2Json(JSON_OBJECT, ["Display", message]);
     llMessageLinked(LINK_THIS, 0, json, "");
 }
 
 DisplayScroll(string message) {
     string json = llList2Json(JSON_OBJECT, ["DisplayScroll", message]);
+    llMessageLinked(LINK_THIS, 0, json, "");
+}
+
+DisplayTemp(string message) {
+    string json = llList2Json(JSON_OBJECT, ["DisplayTemp", message]);
     llMessageLinked(LINK_THIS, 0, json, "");
 }
 
@@ -259,7 +264,7 @@ setUpMenu(string id, key avatarKey, string message, list buttons)
     buttons = buttons + ["Main"];
     buttons = buttons + ["Close"];
 
-    sendJSON("DisplayTemp", "menu access", avatarKey);
+    DisplayTemp("menu access");
     string completeMessage = assetNumber(gCharacterSlot) + " Collar: " + message;
     channelMenu = -(llFloor(llFrand(10000)+1000));
     listenMenu = llListen(channelMenu, "", avatarKey, "");
@@ -355,15 +360,16 @@ default
         // IF this response is for something we didn't ask for, quit safely. 
         if (listRequestIndex == -1) 
         {
-            displayCentered("DBERR UREQ");
+            DisplayTemp("DBERR UREQ");
             return; // skip response if this script did not require it
         }
+
+        DisplayTemp("DBSTAT "+(string)status);
 
         // If response status code not ok (not 200)
         // then remove item with request_id from list and exit without changing any data. 
         if (status != 200)
         {
-            displayCentered("DBERR STAT"+(string)status);
 
             // removes unnecessary request_id from memory to save
             databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
@@ -371,8 +377,6 @@ default
             characterMenu();
             return;
         }
-
-        displayCentered("DB Status "+(string)status);
 
         // Response from web server was OK and it was for something we wanted. 
         // 
@@ -504,8 +508,8 @@ default
                 llListenRemove(listenMenu);
                 channelMenu = 0;
                 llSetTimerEvent(0);
-            }
-            if (menuID = "Incident") {
+            } 
+            else if (menuID == "Incident") {
                 sayDebug("listen(channelMenu, Incident, "+text+")");
                 if (text == "Enter") {
                     enterIncidenteReport(id);
@@ -517,12 +521,11 @@ default
                     string incidentText = "Incident "+text+": "+incident;
                     sayDebug(incidentText);
                     llInstantMessage(id, incidentText);
-                    sendJSON("displayScroll", incidentText, id);
+                    // sendJSON("displayScroll", incidentText, id); *** this doesn't work yet
                 }
             }
         }
-        else if (channel == channelSetName)
-        {
+        else if (channel == channelSetName) {
             sayDebug("listen(channelSetName, "+text+")");
             llListenRemove(listenSetName);
             channelSetName = 0;
@@ -531,8 +534,7 @@ default
             gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
             sendJSON("Name", name(gCharacterSlot), llGetOwner());
         }
-        else if (channel == channelSetCrime)
-        {
+        else if (channel == channelSetCrime) {
             sayDebug("listen(channelSetCrime, "+text+")");
             llListenRemove(listenSetCrime);
             channelSetCrime = 0;
@@ -541,8 +543,7 @@ default
             gCharacterSlot = sendDatabaseWrite(gCharacterSlot);
             sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
         }
-        else if (channel == channelEnterIncident)
-        {
+        else if (channel == channelEnterIncident) {
             sayDebug("listen(channelEnterIncident, "+text+")");
             llListenRemove(listenEnterIncident);
             channelEnterIncident = 0;
@@ -585,8 +586,7 @@ default
             llListenRemove(listenMenu);
             channelMenu = 0;
         }
-        if (listenSetCrime != 0)
-        {
+        if (listenSetCrime != 0) {
             llListenRemove(listenSetCrime);
             channelSetCrime = 0;
         }
