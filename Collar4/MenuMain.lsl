@@ -250,7 +250,7 @@ mainMenu(key avatarKey) {
     }
 
     // Collar functions controlled by locklevel: Safeword and Release
-    if (lockLevel == "Hardcore" && agentIsGuard(avatarKey)) {
+    if (agentIsGuard(avatarKey)) { // lockLevel == "Hardcore" && 
         doRelease = TRUE;
         doIncidents = TRUE;
     } else {
