@@ -233,7 +233,12 @@ integer agentIsGuard(key agent)
 }
 
 displayCentered(string message) {
-    string json = llList2Json(JSON_OBJECT, ["Display",message]);
+    string json = llList2Json(JSON_OBJECT, ["Display", message]);
+    llMessageLinked(LINK_THIS, 0, json, "");
+}
+
+DisplayScroll(string message) {
+    string json = llList2Json(JSON_OBJECT, ["DisplayScroll", message]);
     llMessageLinked(LINK_THIS, 0, json, "");
 }
 
@@ -278,7 +283,7 @@ characterMenu() {
 incidentsMenu(key avatarKey) {
     sayDebug("incidentsMenu()");    
     list buttons = ["Enter"] + llList2List(incidentDates(gCharacterSlot), 0, 5);
-    setUpMenu("Incident", llGetOwner(), "Read or Enter Incident Report", buttons);
+    setUpMenu("Incident", avatarKey, "Read or Enter Incident Report", buttons);
 }
 
 setCharacterCrime(key avatarKey)
@@ -509,8 +514,10 @@ default
                     list incidents = incidents(gCharacterSlot);
                     integer index = llListFindList(dates, [text]);
                     string incident = llList2String(incidents, index);
-                    sayDebug("Incident "+text+": "+incident);
-                    llInstantMessage(id, "Incident " + text + ": " + incident);
+                    string incidentText = "Incident "+text+": "+incident;
+                    sayDebug(incidentText);
+                    llInstantMessage(id, incidentText);
+                    sendJSON("displayScroll", incidentText, id);
                 }
             }
         }
