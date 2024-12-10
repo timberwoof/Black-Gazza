@@ -414,10 +414,8 @@ setclass(string class) {
 }
 
 setCollarName() {
-    list namesList = llParseString2List(name, [" "], [""]);
-    string firstName = llList2String(namesList, 0);
-    string newCollarName = assetNumber+" ("+firstName+")";
-    if (llGetObjectName() != newCollarName && llGetAttached() != 0) {
+    string newCollarName = assetNumber+" ("+name+")";
+    if (llGetObjectName() != name && llGetAttached() != 0) {
         llOwnerSay("This collar will now rename itself to \""+newCollarName+"\"");
         llSetObjectName(newCollarName);
     }
