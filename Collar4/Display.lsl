@@ -2,13 +2,20 @@
 // Display script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2023-03-28";
+string version = "2023-09-29";
 
 // This script handles all display elements of Black Gazza Collar 4.
 // • alphanumeric display
 // • blinky lights
 // • battery display
 // • floaty text
+
+// This script requires some prims to have specific names:
+// Titler
+// BG_CollarV4_LightsMesh
+// powerDisplay
+// powerHoseNozzle
+// leashPoint
 
 integer OPTION_DEBUG = FALSE;
 
@@ -90,6 +97,7 @@ list classPaddingColors = [GRAY, DARK_MAGENTA, DARK_RED, DARK_ORANGE, DARK_GREEN
 string mood = "OOC";
 vector moodColor;
 
+string name;
 string class;
 string classLong;
 vector classColor;
@@ -127,16 +135,16 @@ sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
 }
     
-integer getLinkWithName(string name) {
+integer getLinkWithName(string linkName) {
     integer i = llGetLinkNumber() != 0;   // Start at zero (single prim) or 1 (two or more prims)
     integer x = llGetNumberOfPrims() + i; // [0, 1) or [1, llGetNumberOfPrims()]
     integer result = -1;
     for (; i < x; ++i)
-        if (llGetLinkName(i) == name) {
+        if (llGetLinkName(i) == linkName) {
             result = i; // Found it! Exit loop early with result
         }
-    sayDebug("getLinkWithName("+name+") returns "+(string)result);
-    return result; // No prim with that name, return -1.
+    sayDebug("getLinkWithName("+linkName+") returns "+(string)result);
+    return result; // No prim with that linkName, return -1.
 }
 
 tone(string number) {
@@ -341,11 +349,11 @@ integer uuidToInteger(key uuid)
 }
 
 // get a value from color stored in the blinky and send it to the link
-string blinkyColorToMeaning(integer face, list colors, list names, string jsonTag){
+string blinkyColorToMeaning(integer face, list colors, list stateNames, string jsonTag){
     list colorList = llGetLinkPrimitiveParams(LinkBlinky, [PRIM_COLOR, face]);
     vector theColor = llList2Vector(colorList,0);
     integer index = llListFindList(colors, [theColor]);
-    string stateName = llList2String(names, index);
+    string stateName = llList2String(stateNames, index);
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonTag, stateName]), "");
     return stateName;
 }
@@ -405,13 +413,24 @@ setclass(string class) {
     displayTitler();
 }
 
+setCollarName() {
+    list namesList = llParseString2List(name, [" "], [""]);
+    string firstName = llList2String(namesList, 0);
+    string newCollarName = assetNumber+" ("+firstName+")";
+    if (llGetObjectName() != newCollarName && llGetAttached() != 0) {
+        llOwnerSay("This collar will now rename itself to \""+newCollarName+"\"");
+        llSetObjectName(newCollarName);
+    }
+}
+
+
 // try to recover some settings based on colors of faces
 attachStartup(key theAvatar) {
     sayDebug("attachStartup");
     avatar = theAvatar;
-    mood = blinkyColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "mood");
-    class = blinkyColorToMeaning(FaceBlinkyClass, classColors, classNames, "class");
-    threat = blinkyColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "threat");
+    mood = blinkyColorToMeaning(FaceBlinkyMood, moodColors, moodNames, "Mood");
+    class = blinkyColorToMeaning(FaceBlinkyClass, classColors, classNames, "Class");
+    threat = blinkyColorToMeaning(FaceBlinkyThreat, threatColors, threatLevels, "Threat");
 }
 
 default
@@ -472,9 +491,28 @@ default
 
     link_message( integer sender_num, integer num, string json, key id ){
         sayDebug("link_message "+json);
+        
+        // Prisoner Asset Number
+        string value = llJsonGetValue(json, ["AssetNumber"]);
+        if (value != JSON_INVALID) {
+            assetNumber = value;
+            sayDebug("set and display assetNumber \""+assetNumber+"\"");
+            if (assetNumber != "P-00000") {
+                setCollarName();
+            }
+            displayCentered(assetNumber);
+            displayTitler();
+        }
+
+        value = llJsonGetValue(json, ["Name"]);
+        if (value != JSON_INVALID) {
+            name = value;
+            sayDebug("set and display name \""+name+"\"");
+            setCollarName();
+        }
 
         // IC/OOC Mood sets frame color, text color, and Blinky1
-        string value = llJsonGetValue(json, ["mood"]);
+        value = llJsonGetValue(json, ["Mood"]);
         if (value != JSON_INVALID) {
             mood = value;
             integer moodi = llListFindList(moodNames, [mood]);
@@ -485,7 +523,7 @@ default
         }
 
         // Prisoner Class sets text color and blinky 3
-        value = llJsonGetValue(json, ["class"]);
+        value = llJsonGetValue(json, ["Class"]);
         if (value != JSON_INVALID) {
             class = value;
             setclass(class);
@@ -493,7 +531,7 @@ default
         }
 
         // Lock level sets blinky 2
-        value = llJsonGetValue(json, ["lockLevel"]);
+        value = llJsonGetValue(json, ["LockLevel"]);
         if (value != JSON_INVALID) {
             list lockLevels = ["Safeword", "Off", "Light", "Medium", "Heavy", "Hardcore"];
             list lockColors = [GREEN, BLACK, GREEN, YELLOW, ORANGE, RED];
@@ -506,7 +544,7 @@ default
         }
 
         // Threat level sets blinky 4
-        value = llJsonGetValue(json, ["threat"]);
+        value = llJsonGetValue(json, ["Threat"]);
         if (value != JSON_INVALID) {
             threat = value;
             integer threati = llListFindList(threatLevels, [threat]);
@@ -517,36 +555,16 @@ default
         }
 
         // Battery Level Report
-        value = llJsonGetValue(json, ["batteryPercent"]);
+        value = llJsonGetValue(json, ["BatteryPercent"]);
         if (value != JSON_INVALID) {
             batteryPercent = (integer)value;
             displayBattery(batteryPercent);
         }
         
         // Prisoner Crime
-        value = llJsonGetValue(json, ["crime"]);
+        value = llJsonGetValue(json, ["Crime"]);
         if (value != JSON_INVALID) {
             crime = value;
-            displayTitler();
-        }
-
-        // Prisoner Asset Number
-        value = llJsonGetValue(json, ["assetNumber"]);
-        if (value != JSON_INVALID) {
-            assetNumber = value;
-            string firstName = "Unassigned";
-            sayDebug("set and display assetNumber \""+assetNumber+"\"");
-            if (assetNumber != "P-00000") {
-                string ownerName = llGetDisplayName(llGetOwner());
-                list namesList = llParseString2List(ownerName, [" "], [""]);
-                firstName = llList2String(namesList, 0);
-                string newCollarName = assetNumber+" ("+firstName+")";
-                if (llGetObjectName() != newCollarName && llGetAttached() != 0) {
-                    llOwnerSay("This collar will now rename itself to \""+newCollarName+"\"");
-                    llSetObjectName(newCollarName);
-                }
-            }
-            displayCentered(assetNumber);
             displayTitler();
         }
 
@@ -555,6 +573,13 @@ default
         if (value != JSON_INVALID) {
             sayDebug("Display "+value);
             displayCentered(value);
+        }
+        
+        // display a message
+        value = llJsonGetValue(json, ["DisplayScroll"]);
+        if (value != JSON_INVALID) {
+            sayDebug("Display "+value);
+            displayScroll(value);
         }
         
         // temporarily display a message
@@ -591,7 +616,7 @@ default
         sayDebug("timer()");
         if (TIMER_REDISPLAY > 0) {
             if (assetNumber == unassignedAsset) {
-                sendJSON("database", "getupdate", llGetOwner());
+                sendJSON("Database", "getupdate", llGetOwner());
             }
             sayDebug("set and display assetNumber \""+assetNumber+"\"");
             displayCentered(assetNumber);
