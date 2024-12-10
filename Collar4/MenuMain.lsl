@@ -213,54 +213,46 @@ mainMenu(key avatarKey) {
     integer doLeash = FALSE;
     integer doSafeword = FALSE;
     integer doRelease = FALSE;
-    integer doIncidents = FALSE; // **** Set to FALSE for production
+    integer doIncidents = FALSE;
 
-    // Collar functions controlled by Mood: punish, force sit, leash, speech
-    if (mood == moodDND | mood == moodLockup) {
-        if (avatarKey == llGetOwner()) {
-            doPunish = TRUE;
-            doForceSit = TRUE;
-            doLeash = TRUE;
-        }
-    } else if (mood == moodOOC) {
-            // everyone can do everything (but you better ask)
-            doPunish = TRUE;
-            doForceSit = TRUE;
-            doLeash = TRUE;
-    } else { // mood == anything else
-        if (avatarKey == llGetOwner()) {
-            // wearer can't do anything
-        } else if (agentIsGuard(avatarKey)) {
-            // Guards can do anything
-            doPunish = TRUE;
-            doForceSit = TRUE;
-            doLeash = TRUE;
+    if (avatarKey == llGetOwner()) {
+        // wearer can do anything any time
+        doPunish = TRUE;
+        doForceSit = TRUE;
+        doLeash = TRUE;
+        if (lockLevel != lockLevelOff && lockLevel != "Hardcore") {
+            doSafeword = TRUE;
+            message = message + "\nSafeword is not availavle to you in RLV level Hardcore.";
         } else {
-            // other prisoners can leash and force sit
+            message = message + "\nSafeword is needed only in RLV levels Medium and Heavy.";
+        }
+    } else if (agentIsGuard(avatarKey)) {
+        if ((mood == moodDND) | (mood == moodOOC)) {
+            message = message + "\nWearer mood is DND or OOC.";
+        } else {
+             // guard can do everything (but you better ask)
+            doPunish = TRUE;
             doForceSit = TRUE;
             doLeash = TRUE;
+            doIncidents = TRUE;
         }
+    } else {
+        message = message + "\nNonmembers can't fuck with the collar.";
     }
 
     // Collar functions overridden by lack of RLV
     if (!rlvPresent) {
         doForceSit = FALSE;
         doLeash = FALSE;
-        message = message + "\nSome functions are available ony when RLV is present.";
+        message = message + "\nForceSit and Leash are available ony when RLV is present and on.";
     }
 
     // Collar functions controlled by locklevel: Safeword and Release
     if (agentIsGuard(avatarKey) && (avatarKey != llGetOwner())) { // lockLevel == "Hardcore" && 
+        // This combination prevents someone in hardcore from changin to guard to set themselves free. 
         doRelease = TRUE;
-        doIncidents = TRUE;
     } else {
-        message = message + "\nRelease command is available to a Guard.";
-    }
-
-    if (avatarKey == llGetOwner() && lockLevel != "Hardcore" && lockLevel != lockLevelOff) {
-        doSafeword = TRUE;
-    } else {
-        message = message + "\nSafeword is availavle to the Prisoner in RLV levels Medium and Heavy.";
+        message = message + "\nRelease command is only available to a Guard.";
     }
 
     list buttons = [];
