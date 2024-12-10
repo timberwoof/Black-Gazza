@@ -62,6 +62,7 @@ string buttonSettings = "Settings";
 string buttonCharacter = "Character";
 string buttonSetCrime = "Set Crime";
 string buttonSetName = "Set Name";
+string buttonBackup = "Backup";
 //string buttonTitler = "Titler";
 //string buttonBattery = "Battery";
 //string buttonHack = "Hack";
@@ -248,6 +249,8 @@ settingsMenu(key avatarKey) {
     integer setCrime = FALSE;
     integer setClass = FALSE;
     integer setThreat = FALSE;
+    integer setMood = FALSE;
+    integer doBackup = FALSE;
 
     // Add some things depending on who you are.
     // What wearer can change
@@ -270,6 +273,8 @@ settingsMenu(key avatarKey) {
             setCrime = TRUE;
             setClass = TRUE;
             setThreat = TRUE;
+            setMood = TRUE;
+            doBackup = TRUE;
         }
     }
     
@@ -277,6 +282,8 @@ settingsMenu(key avatarKey) {
     else if(agentIsGuard(avatarKey))
     { // (avatarKey != llGetOwner())
         setCharacter = FALSE;
+        setCrime = TRUE;
+        setClass = TRUE;
         setThreat = TRUE;
         setPunishments = TRUE;
         if (RLVlevel == "Hardcore") {
@@ -297,19 +304,12 @@ settingsMenu(key avatarKey) {
     buttons = buttons + menuButtonActive("Threat", setThreat);
     buttons = buttons + menuButtonActive(RLV, xsetRLVLevel);
     buttons = buttons + menuButtonActive("Punishment", setPunishments);
-    buttons = buttons + "Mood";
+    buttons = buttons + menuButtonActive("Mood", setMood);
     buttons = buttons + menuButtonActive(buttonSpeech, setSpeech);
     buttons = buttons + menuButtonActive(buttonSetName, setName);
     buttons = buttons + menuButtonActive(buttonSetCrime, setCrime);
-    buttons = buttons + "Backup";
-
-    if(avatarKey == llGetOwner()) {
-        // replace Character button to SetCrimes for guards
-        buttons = buttons + menuButtonActive(buttonCharacter, setCharacter);
-    } else {
-         // it's available for only guards group in IC mood collar
-        buttons += menuButtonActive(buttonSetCrime, setCrime);
-    }
+    buttons = buttons + menuButtonActive(buttonBackup,doBackup);
+    buttons = buttons + menuButtonActive(buttonCharacter, setCharacter);
 
     setUpMenu(buttonSettings, avatarKey, message, buttons);
 }
@@ -328,8 +328,8 @@ doSettingsMenu(key avatarKey, string message, string messageButtonsTrimmed) {
             sendJSON(RLV, "Register", avatarKey);
         }
     }
-    else if (message == "Backup"){
-        sendJSON("Database", "Backup", avatarKey);
+    else if (message == buttonBackup){
+        sendJSON("Database", buttonBackup, avatarKey);
     }
     else if (message == "Class"){
         classMenu(avatarKey);
@@ -397,16 +397,15 @@ PunishmentLevelMenu(key avatarKey)
 
 doSetPunishmentLevels(key avatarKey, string message)
 {
-    if (avatarKey == llGetOwner())
+    if ((avatarKey == llGetOwner()) | agentIsGuard(avatarKey))
     {
-        sayDebug("wearer sets allowable zap level: "+message);
+        sayDebug("set allowable zap level: "+message);
         sayDebug("doSetPunishmentLevels zapJsonList before: "+(string)[allowZapLow, allowZapMed, allowZapHigh]);
         if (message == "") {
             allowZapLow = TRUE;
             allowZapMed = TRUE;
             allowZapHigh = TRUE;
             allowZapByObject = TRUE;
-            //allowVision = TRUE;
         }
         else if (message == "Zap Low") {
             allowZapLow = !allowZapLow;
@@ -416,8 +415,6 @@ doSetPunishmentLevels(key avatarKey, string message)
             allowZapHigh = !allowZapHigh;
         } else if (message == "Objects") {
             allowZapByObject = !allowZapByObject;
-        //} else if (message == "Vision") {
-        //    allowVision = !allowVision;
         }
         // If the wearer turns them all off, then high gets set.
         if (!(allowZapLow || allowZapMed || allowZapHigh)){
@@ -426,8 +423,12 @@ doSetPunishmentLevels(key avatarKey, string message)
         zapJsonList = llList2Json(JSON_ARRAY, [allowZapLow, allowZapMed, allowZapHigh]);
         sayDebug("doSetPunishmentLevels zapJsonList after: "+(string)[allowZapLow, allowZapMed, allowZapHigh]);
         sendJSON("ZapLevels", zapJsonList, avatarKey);
+        string ZapLevels = menuCheckbox("Low", allowZapLow) + "  " +
+        menuCheckbox("Medium", allowZapMed) +  "  " +
+        menuCheckbox("High", allowZapHigh) + "  " +
+        menuCheckbox("Objects", allowZapByObject);
+        llOwnerSay(llKey2Name(avatarKey)+" set your punishment levels to "+ZapLevels);
         sendJSONCheckbox("RLV", "ZapByObject", avatarKey, allowZapByObject);
-        //sendJSONinteger("AllowVision", allowVision, avatarKey);
     }
 }
 
@@ -744,6 +745,7 @@ default
             sayDebug("listen: Class:"+messageButtonsTrimmed);
             class = messageButtonsTrimmed;
             sendJSON("Class", class, avatarKey);
+            llOwnerSay(name+" updated your class to "+class);
             settingsMenu(avatarKey);
         }
         // Mood
@@ -768,6 +770,7 @@ default
             sayDebug("listen: threat:"+messageButtonsTrimmed);
             threat = messageButtonsTrimmed;
             sendJSON("Threat", threat, avatarKey);
+            llOwnerSay(name+" updated your threat level to to "+threat);
             settingsMenu(avatarKey);
         }
         else {
