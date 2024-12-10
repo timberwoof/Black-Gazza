@@ -14,7 +14,7 @@
 // http_response() handles the request
 // http_response() deletes request from request list and from isEditCrimesList
 
-integer OPTION_DEBUG = TRUE;
+integer OPTION_DEBUG = FALSE;
 list databaseQuery;
 string READorWrite;
 
@@ -507,7 +507,7 @@ default
         value = llJsonGetValue(json, ["RLV"]);
         if (value != JSON_INVALID) {
             sayDebug("link_message RLV:"+value);
-            moodList = setLocalList(gCharacterSlot, "zapByObjectList", zapByObjectList, value);
+            zapByObjectList = setLocalList(gCharacterSlot, "zapByObjectList", zapByObjectList, value);
         }
         
     }
