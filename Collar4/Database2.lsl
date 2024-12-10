@@ -513,6 +513,7 @@ default
     }
 
     listen(integer channel, string name, key id, string text) {
+        text = llStringTrim(text, STRING_TRIM);
         sayDebug("listen("+text+")");
         if (channel == channelMenu) {
             if (menuID == "Character") {
@@ -536,6 +537,7 @@ default
                 llSetTimerEvent(0);
             } 
             else if (menuID == "Incident") {
+                // retrieve an incident report
                 sayDebug("listen(channelMenu, Incident, "+text+")");
                 if (text == "Enter") {
                     enterIncidenteReport(id);
@@ -547,7 +549,6 @@ default
                     string incidentText = "Incident "+text+": "+incident;
                     sayDebug(incidentText);
                     llInstantMessage(id, incidentText);
-                    // sendJSON("displayScroll", incidentText, id); *** this doesn't work yet
                 }
             }
         }
@@ -556,54 +557,67 @@ default
             llListenRemove(listenSetName);
             channelSetName = 0;
             llSetTimerEvent(0);
-            nameList = setLocalList(gCharacterSlot, "nameList", nameList, text);
-            sendDatabaseWrite(gCharacterSlot);
-            sendJSON("Name", name(gCharacterSlot), llGetOwner());
+            if (text != "") {
+                nameList = setLocalList(gCharacterSlot, "nameList", nameList, text);
+                sendDatabaseWrite(gCharacterSlot);
+                sendJSON("Name", name(gCharacterSlot), llGetOwner());
+            } else {
+                llInstantMessage(id, "The submitted name was blank. The name was not updated.");
+            }
+
         }
         else if (channel == channelSetCrime) {
             sayDebug("listen(channelSetCrime, "+text+")");
             llListenRemove(listenSetCrime);
             channelSetCrime = 0;
             llSetTimerEvent(0);
-            crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, text);
-            sendDatabaseWrite(gCharacterSlot);
-            sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
+            if (text != "") {
+                crimeList = setLocalList(gCharacterSlot, "crimeList", crimeList, text);
+                sendDatabaseWrite(gCharacterSlot);
+                sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
+            } else {
+                llInstantMessage(id, "The submitted crime was blank. The crime was not updated.");
+            }
         }
         else if (channel == channelEnterIncident) {
             sayDebug("listen(channelEnterIncident, "+text+")");
             llListenRemove(listenEnterIncident);
             channelEnterIncident = 0;
             llSetTimerEvent(0);
-            list dates = llList2List(incidentDates(gCharacterSlot), 0, 5);
-            list incidents = llList2List(incidents(gCharacterSlot), 0, 5);
-            sayDebug("dates:"+(string)dates);
-            sayDebug("incidents:"+(string)incidents);
-            integer count = llGetListLength(dates);
-            if (count > 6) {
-                // don't let the list grow too big: delete the last one
-                sayDebug("deleting last incident report");
-                dates == llDeleteSubList(dates, count-1, count-1);
-                incidents == llDeleteSubList(incidents, count-1, count-1);
+            if (text != "") {
+                list dates = llList2List(incidentDates(gCharacterSlot), 0, 5);
+                list incidents = llList2List(incidents(gCharacterSlot), 0, 5);
+                sayDebug("dates:"+(string)dates);
+                sayDebug("incidents:"+(string)incidents);
+                integer count = llGetListLength(dates);
+                if (count > 6) {
+                    // don't let the list grow too big: delete the last one
+                    sayDebug("deleting last incident report");
+                    dates == llDeleteSubList(dates, count-1, count-1);
+                    incidents == llDeleteSubList(incidents, count-1, count-1);
+                }
+            
+                // Male a timestamp for this incident report
+                list timestamp =llParseString2List(llGetTimestamp(),["-",":","."],["T"]);
+                // YYYY-MM-DDThh:mm:ss.ff..fZ
+                string MM = llList2String(timestamp, 1);
+                string DD = llList2String(timestamp, 2);
+                string hh = llList2String(timestamp, 4);
+                string mm = llList2String(timestamp, 5);
+                string ss = llList2String(timestamp, 6);
+                string theDate = MM+DD+hh+mm+ss;
+            
+                dates = [theDate] + dates;
+                incidents = [text] + incidents;
+                setLocalList(gCharacterSlot, "incidentDatesList", incidentDatesList, llList2Json(JSON_ARRAY, dates));
+                setLocalList(gCharacterSlot, "incidentsList", incidentsList, llList2Json(JSON_ARRAY, incidents));
+                incidentDatesList = linksetDataReadList("incidentDatesList");
+                incidentsList = linksetDataReadList("incidentsList");
+                sayDebug("The incident "+theDate+": "+text+" has been recorded.");
+                llInstantMessage(id, "The incident "+theDate+": \""+text+"\" has been recorded.");
+            } else {
+                llInstantMessage(id, "The submitted incident report was blank. The report was not recorded.");
             }
-            
-            // Male a timestamp for this incident report
-            list timestamp =llParseString2List(llGetTimestamp(),["-",":","."],["T"]);
-            // YYYY-MM-DDThh:mm:ss.ff..fZ
-            string MM = llList2String(timestamp, 1);
-            string DD = llList2String(timestamp, 2);
-            string hh = llList2String(timestamp, 4);
-            string mm = llList2String(timestamp, 5);
-            string ss = llList2String(timestamp, 6);
-            string theDate = MM+DD+hh+mm+ss;
-            
-            dates = [theDate] + dates;
-            incidents = [text] + incidents;
-            setLocalList(gCharacterSlot, "incidentDatesList", incidentDatesList, llList2Json(JSON_ARRAY, dates));
-            setLocalList(gCharacterSlot, "incidentsList", incidentsList, llList2Json(JSON_ARRAY, incidents));
-            incidentDatesList = linksetDataReadList("incidentDatesList");
-            incidentsList = linksetDataReadList("incidentsList");
-            sayDebug("The incident "+theDate+": "+text+" has been recorded.");
-            llInstantMessage(id, "The incident "+theDate+": \""+text+"\" has been recorded.");
         }
     }
 
