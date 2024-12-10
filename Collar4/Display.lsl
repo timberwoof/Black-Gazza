@@ -191,7 +191,7 @@ displayTitler() {
     moodColor = llList2Vector(moodColors, moodIndex);
     integer classIndex = llListFindList(classNames, [class]);
     string description = "Class " + class + ": " + llList2String(classNamesLong, classIndex);
-    string title = assetNumber + "\n" + description + "\nCrime: " + crime + "\nThreat: " + threat + "\nMood: " + mood ;
+    string title = assetNumber+" ("+name+")" + "\n" + description + "\nCrime: " + crime + "\nThreat: " + threat + "\nMood: " + mood ;
     if (mood == "DND") {
         llSetLinkPrimitiveParamsFast(linkTitler, [PRIM_TEXT, "Please Do Not Distrub", WHITE, 1.0]);
     } else {
