@@ -21,6 +21,8 @@
 // single variable operatingState to keep three operating states
 // more sophisticated startup behavior
 // communicates to otehr modules with json
+//
+// Timberwoof Lupindo added ecplicit llLlistenRemove calls. 
 
 integer OPTION_DEBUG = FALSE;
 
