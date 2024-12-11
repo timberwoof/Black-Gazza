@@ -57,8 +57,8 @@ list classList = [WHITE,WHITE,WHITE,WHITE,WHITE,WHITE];
 list threatList = [NONE,NONE,NONE,NONE,NONE,NONE]; 
 list moodList = [OOC,OOC,OOC,OOC,OOC,OOC]; 
 
-list incidentDatesList = ["","","","","",""]; // 7 json bobs of incident dates
-list incidentsList = ["","","","","",""]; // 7 json blobs of incidents
+list incidentNumbersList = ["","","","","",""]; // 7 json lists of incident incidentNumbers
+list incidentReportsList = ["","","","","",""]; // 7 json lists of incidents
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
 
@@ -113,8 +113,8 @@ initializeLists() {
     threatList = linksetDataReadList("threatList");
     zapLevelsList = linksetDataReadList("zapLevelsList");
     zapByObjectList = linksetDataReadList("zapByObjectList");
-    incidentDatesList = linksetDataReadList("incidentDatesList");
-    incidentsList = linksetDataReadList("incidentsList");
+    incidentNumbersList = linksetDataReadList("incidentNumbersList");
+    incidentReportsList = linksetDataReadList("incidentReportsList");
 }
 
 backupList(string prefix, string thekey, list theList, string suffix) {
@@ -126,7 +126,7 @@ backupList(string prefix, string thekey, list theList, string suffix) {
 
 backup(key id) {
     llInstantMessage(llGetOwner(), "Copy the following text and paste it into a notecard.");
-    llInstantMessage(llGetOwner(), "Then delete the timestamp, your asset number, and your name.");
+    llInstantMessage(llGetOwner(), "Delete the timestamp, your asset number, and your name from each line."); 
     backupList("{\"BGLCON\":[", "assetNumberList", assetNumberList, ",");
     backupList("", "crimeList", crimeList, ",");
     backupList("", "nameList", nameList, ",");
@@ -136,8 +136,9 @@ backup(key id) {
     backupList("", "threatList", threatList, ",");
     backupList("", "zapLevelsList", zapLevelsList, ",");
     backupList("", "zapByObjectList", zapByObjectList, ",");
-    backupList("", "incidentDatesList", incidentDatesList, ",");
-    backupList("", "incidentsList", incidentsList, "]}");
+    //backupList("", "incidentNumbersList", incidentNumbersList, ",");
+    //backupList("", "incidentReportsList", incidentReportsList, "]}");
+    llInstantMessage(llGetOwner(), "End of Backup Report"); 
 }
 
 string assetNumber(integer slot) {
@@ -172,17 +173,17 @@ string zapByObject(integer slot) {
    return llList2String(zapByObjectList, slot-1);
 }
 
-list incidentDates(integer slot) {
-    return llJson2List(llList2String(incidentDatesList, slot-1));
+list incidentNumbers(integer slot) {
+    return llJson2List(llList2String(incidentNumbersList, slot-1));
 }
 
-list incidents(integer slot) {
-    return llJson2List(llList2String(incidentsList, slot-1));
+list incidentReports(integer slot) {
+    return llJson2List(llList2String(incidentReportsList, slot-1));
 }
 
 list setLocalList(integer slot, string listName, list thelist, string value) {
     // replaces one value in the local list, then updates the linksetData
-    sayDebug("setLocalList("+listName+", "+value+")");
+    sayDebug("setLocalList("+(string)slot+", "+listName+", "+value+")");
     list newList = llListReplaceList(thelist, [value], slot-1, slot-1);
     linksetDataWriteList(listName, newList);
     return newList;
@@ -282,7 +283,7 @@ setUpMenu(string id, key avatarKey, string message, list buttons)
     sayDebug("setUpMenu");
     menuID = id;
 
-    buttons = buttons + ["Main"];
+    //buttons = buttons + ["Main"];
     buttons = buttons + ["Close"];
 
     DisplayTemp("menu access");
@@ -305,12 +306,6 @@ characterMenu() {
     setUpMenu("Character", llGetOwner(), "Choose your Asset Number", buttons);
 }
 
-incidentsMenu(key avatarKey) {
-    sayDebug("incidentsMenu()");    
-    list buttons = ["Enter"] + llList2List(incidentDates(gCharacterSlot), 0, 5);
-    setUpMenu("Incident", avatarKey, "Read or Enter Incident Report", buttons);
-}
-
 setCharacterCrime(key avatarKey)
 {
     sayDebug("setCharacterCrime()");
@@ -331,14 +326,73 @@ setCharacterName(key avatarKey)
     llTextBox(avatarKey, message, channelSetName);
 }
 
-enterIncidenteReport(key avatarKey) {
-    sayDebug("enterIncidenteReport()");
+incidentReportsMenu(key avatarKey) {
+    // Present list of incident reports and "Enter"
+    sayDebug("incidentReportsMenu()");
+    list incNumList = incidentNumbers(gCharacterSlot);
+    list buttons = [];
+    integer i;
+    for (i = 0; i < llGetListLength(incNumList); i = i + 1) {
+        string IncidentNumberButton = "increp-" + (string)llList2Integer(incNumList, i);
+        buttons = buttons + [IncidentNumberButton];
+    }
+    buttons = buttons + ["Enter"];
+    setUpMenu("Incident", avatarKey, "Read or Enter Incident Report", buttons);
+    // next call is retrieveIncidentReport
+    // or enterIncidentReportDialog and recordIncidentReport
+}
+
+retrieveIncidentReport(key avatarKey, string text) {
+    // send an incident report to the guard
+    sayDebug("retrieveIncidentReport("+text+")");
+    // text is in the form incid-6
+    string incidentNumber = llStringTrim(llGetSubString(text, 7, 10),STRING_TRIM);
+    integer index = llListFindList(incidentNumbers(gCharacterSlot), [(integer)incidentNumber]);
+    string incidentReport = llList2String(incidentReports(gCharacterSlot), index);
+    llInstantMessage(avatarKey, text+": "+incidentReport);
+}
+
+enterIncidentReportDialog(key avatarKey) {
+    // Present dialog to enter one incident report
+    sayDebug("enterIncidentReportDialog()");
     string message = "Enter Incident Report for asset " + assetNumber(gCharacterSlot) + "(" + name(gCharacterSlot) + ")";
     channelEnterIncident = -(llFloor(llFrand(1000)+1000));
     listenEnterIncident = llListen(channelEnterIncident, "", avatarKey, "");
     llSetTimerEvent(30);
-    sayDebug("enterIncidenteReport() textbox("+message+","+(string)channelEnterIncident+")");
     llTextBox(avatarKey, message, channelEnterIncident);
+    // next call is recordIncidentReport
+}
+
+recordIncidentReport(key avatarKey, string text) {
+    // Handle incoming incident report
+    sayDebug("recordIncidentReport("+text+")");
+    list incNumList = llList2List(incidentNumbers(gCharacterSlot), 0, 5);
+    list incReportList = llList2List(incidentReports(gCharacterSlot), 0, 5);
+
+    // get the next number for an incident
+    integer i = 0;
+    integer max = 0;
+    for (i = 0; i < llGetListLength(incNumList); i = i + 1) {
+        integer aNumber = llList2Integer(incNumList, i);
+        if (aNumber > max) {
+            max = aNumber;
+        }
+    }
+    integer newNumber = max + 1;
+    
+    // add the incident number to the list of incident numbers
+    incNumList = [newNumber] + incNumList;
+    incNumList =  llList2List(incNumList, 0, 5);
+    incidentNumbersList = linksetDataReadList("incidentNumbersList");
+    incidentNumbersList = setLocalList(gCharacterSlot, "incidentNumbersList", incidentNumbersList, llList2Json(JSON_ARRAY, incNumList));
+
+    // add the incident text to the list of incidentReports\
+    string reportText = llGetDate() + " by " + llKey2Name(avatarKey) +": " + text;
+    incReportList =  llList2List([reportText] + incReportList, 0, 5);
+    incidentReportsList = linksetDataReadList("incidentReportsList");
+    incidentReportsList = setLocalList(gCharacterSlot, "incidentReportsList", incidentReportsList, llList2Json(JSON_ARRAY, incReportList));
+                
+    llInstantMessage(avatarKey, "The incident "+(string)newNumber+": \""+reportText+"\" has been recorded.");
 }
 
 default
@@ -465,7 +519,7 @@ default
         if (request == "setcharacter") sendDatabaseRead(1);
         if (request == "setcrime") setCharacterCrime(id);
         if (request == "setname") setCharacterName(id);
-        if (request == "incidents") incidentsMenu(id);
+        if (request == "incidents") incidentReportsMenu(id);
         if (request == "Backup") backup(id);
 
         string value = llJsonGetValue(json, ["Class"]);
@@ -503,7 +557,10 @@ default
     listen(integer channel, string name, key id, string text) {
         text = llStringTrim(text, STRING_TRIM);
         sayDebug("listen("+text+")");
+        llSetTimerEvent(0);
         if (channel == channelMenu) {
+            llListenRemove(listenMenu);
+            channelMenu = 0;
             if (menuID == "Character") {
                 // character selection menu
                 sayDebug("listen(channel, "+menuID+", "+text+")");
@@ -520,23 +577,16 @@ default
                 sendJSON("Mood", mood(gCharacterSlot), llGetOwner());
                 sendJSON("ZapLevels", zapLevels(gCharacterSlot), llGetOwner());
                 sendJSON("zapByObject", zapByObject(gCharacterSlot), llGetOwner());
-                llListenRemove(listenMenu);
-                channelMenu = 0;
-                llSetTimerEvent(0);
             } 
             else if (menuID == "Incident") {
                 // retrieve an incident report
                 sayDebug("listen(channelMenu, Incident, "+text+")");
                 if (text == "Enter") {
-                    enterIncidenteReport(id);
+                    enterIncidentReportDialog(id);
+                } else if (text == "Close") {
+                    // nothing
                 } else {
-                    list dates = incidentDates(gCharacterSlot);
-                    list incidents = incidents(gCharacterSlot);
-                    integer index = llListFindList(dates, [text]);
-                    string incident = llList2String(incidents, index);
-                    string incidentText = "Incident "+text+": "+incident;
-                    sayDebug(incidentText);
-                    llInstantMessage(id, incidentText);
+                    retrieveIncidentReport(id, text);
                 }
             }
         }
@@ -544,7 +594,6 @@ default
             sayDebug("listen(channelSetName, "+text+")");
             llListenRemove(listenSetName);
             channelSetName = 0;
-            llSetTimerEvent(0);
             if (text != "") {
                 nameList = setLocalList(gCharacterSlot, "nameList", nameList, text);
                 sendDatabaseWrite(gCharacterSlot);
@@ -572,38 +621,8 @@ default
             sayDebug("listen(channelEnterIncident, "+text+")");
             llListenRemove(listenEnterIncident);
             channelEnterIncident = 0;
-            llSetTimerEvent(0);
             if (text != "") {
-                list dates = llList2List(incidentDates(gCharacterSlot), 0, 5);
-                list incidents = llList2List(incidents(gCharacterSlot), 0, 5);
-                sayDebug("dates:"+(string)dates);
-                sayDebug("incidents:"+(string)incidents);
-                integer count = llGetListLength(dates);
-                if (count > 6) {
-                    // don't let the list grow too big: delete the last one
-                    sayDebug("deleting last incident report");
-                    dates == llDeleteSubList(dates, count-1, count-1);
-                    incidents == llDeleteSubList(incidents, count-1, count-1);
-                }
-            
-                // Male a timestamp for this incident report
-                list timestamp =llParseString2List(llGetTimestamp(),["-",":","."],["T"]);
-                // YYYY-MM-DDThh:mm:ss.ff..fZ
-                string MM = llList2String(timestamp, 1);
-                string DD = llList2String(timestamp, 2);
-                string hh = llList2String(timestamp, 4);
-                string mm = llList2String(timestamp, 5);
-                string ss = llList2String(timestamp, 6);
-                string theDate = MM+DD+hh+mm+ss;
-            
-                dates = [theDate] + dates;
-                incidents = [text] + incidents;
-                setLocalList(gCharacterSlot, "incidentDatesList", incidentDatesList, llList2Json(JSON_ARRAY, dates));
-                setLocalList(gCharacterSlot, "incidentsList", incidentsList, llList2Json(JSON_ARRAY, incidents));
-                incidentDatesList = linksetDataReadList("incidentDatesList");
-                incidentsList = linksetDataReadList("incidentsList");
-                sayDebug("The incident "+theDate+": "+text+" has been recorded.");
-                llInstantMessage(id, "The incident "+theDate+": \""+text+"\" has been recorded.");
+                recordIncidentReport(id, text);
             } else {
                 llInstantMessage(id, "The submitted incident report was blank. The report was not recorded.");
             }
@@ -618,6 +637,14 @@ default
         if (listenSetCrime != 0) {
             llListenRemove(listenSetCrime);
             channelSetCrime = 0;
+        }
+        if (listenSetName != 0) {
+            llListenRemove(listenSetName);
+            channelSetName = 0;
+        }
+        if (listenEnterIncident != 0) {
+            llListenRemove(listenEnterIncident);
+            channelEnterIncident = 0;
         }
         llSetTimerEvent(0);
     }
