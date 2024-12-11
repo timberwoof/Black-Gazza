@@ -4,7 +4,7 @@
 // June 2019
 string version = "2024-12-08";
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = TRUE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -207,7 +207,7 @@ mainMenu(key avatarKey) {
         return;
     }
 
-    // assume some things are not available
+    // assume nothing is available
     integer doPunish = FALSE;
     integer doForceSit = FALSE;
     integer doLeash = FALSE;
@@ -217,15 +217,18 @@ mainMenu(key avatarKey) {
 
     if (avatarKey == llGetOwner()) {
         // wearer can do anything any time
-        doPunish = TRUE;
-        doForceSit = TRUE;
-        doLeash = TRUE;
         if (lockLevel == "Hardcore") {
+            sayDebug("mainMenu owner Hardcore");
             message = message + "\nYou are in RLV Hardcore. Safeword is not available. You asked for this.";
             doSafeword = FALSE;
         } else if (lockLevel == "Heavy") {
+            sayDebug("mainMenu owner Heavy");
             doSafeword = TRUE;
-        } else {
+        } else { // locklevel is anything else
+            sayDebug("mainMenu owner else");
+            doPunish = TRUE;
+            doForceSit = TRUE;
+            doLeash = TRUE;
             doSafeword = FALSE;
             message = message + "\nSafeword is not needed when RLV level is "+lockLevel+".";
         }
@@ -233,9 +236,11 @@ mainMenu(key avatarKey) {
         message = message + "\nRelease command is only available to Guards.";
     } else if (agentIsGuard(avatarKey)) {
         if ((mood == moodDND) | (mood == moodOOC)) {
+            sayDebug("mainMenu guard DND pr OOC");
             message = message + "\nWearer mood is DND or OOC.";
         } else {
              // guard can do everything (but you better ask)
+            sayDebug("mainMenu guard other mood");
             doPunish = TRUE;
             doForceSit = TRUE;
             doLeash = TRUE;
@@ -243,15 +248,16 @@ mainMenu(key avatarKey) {
         }
         message = message + "\nWearer lockLevel is "+lockLevel;
         if (lockLevel == "Hardcore") {
+            sayDebug("mainMenu guard hardcore");
             doRelease = TRUE;
         }
-
     } else {
+        sayDebug("mainMenu nonmember");
         message = message + "\nNonmembers can't fuck with the collar.";
     }
 
     // Collar functions overridden by lack of RLV
-    if (!rlvPresent) {
+    if (!rlvPresent | (lockLevel == "Off")){
         doForceSit = FALSE;
         doLeash = FALSE;
         message = message + "\nForceSit and Leash are available ony when RLV is present and on.";
@@ -349,11 +355,11 @@ giveInfo(key avatarKey){
     message = message + "\nOOC Information:\n";
     message = message + "Version: " + version + "\n";
     message = message + "Mood: " + mood + "\n";
-    message = message + "RLV Relay: " + RelayLockState + "\n";
+    message = message + "RLV Relay is " + RelayLockState + "\n";
     if (rlvPresent) {
-        message = message + "RLV Active: " + lockLevel + "\n";
+        message = message + "RLV Active. lockLevel:" + lockLevel + "\n";
     } else {
-        message = message + "RLV not detected.\n";
+        message = message + "RLV not detected. lockLevel: " + lockLevel + "\n";
     }
 
     if (OPTION_DEBUG) {
