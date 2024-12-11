@@ -4,7 +4,7 @@
 // June 2019
 string version = "2024-12-05";
 
-integer OPTION_DEBUG = FALSE;
+integer OPTION_DEBUG = TRUE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
@@ -249,12 +249,13 @@ settingsMenu(key avatarKey) {
     integer setCrime = FALSE;
     integer setClass = FALSE;
     integer setThreat = FALSE;
-    integer setMood = FALSE;
     integer doBackup = FALSE;
+    integer setMood = FALSE;
 
     // Add some things depending on who you are.
     // What wearer can change
     if (avatarKey == llGetOwner()) {
+        sayDebug("settingsMenu Owner " + RLVlevel);
         if (RLVlevel == "Hardcore") {
             xsetRLVLevel = FALSE;
             message = message + "\nSome settings are not available while your lock level is Hardcore.";
@@ -279,15 +280,15 @@ settingsMenu(key avatarKey) {
     }
     
     // What a guard can change
-    else if(agentIsGuard(avatarKey))
-    { // (avatarKey != llGetOwner())
-        setCharacter = FALSE;
+    else if(agentIsGuard(avatarKey) & avatarKey != llGetOwner())
+    {
+        sayDebug("settingsMenu Guard " + RLVlevel);
         setCrime = TRUE;
         setClass = TRUE;
         setThreat = TRUE;
         setPunishments = TRUE;
         if (RLVlevel == "Hardcore") {
-            // Hardcore means guard reset your RLVlevel. 
+            // Hardcore means guard can reset your RLVlevel. 
             xsetRLVLevel = TRUE;
         }
         if ((RLVlevel == "Hardcore" || RLVlevel == "Heavy")) {
@@ -295,7 +296,6 @@ settingsMenu(key avatarKey) {
             sayDebug("settingsMenu: heavy-owner");
             setSpeech = TRUE;
             setBadWords = TRUE;
-            setCharacter = TRUE;
         }
     }
 
@@ -786,7 +786,7 @@ default
         class = getJSONstring(json, "Class", class);
         threat = getJSONstring(json, "Threat", threat);
         mood = getJSONstring(json, "Mood", mood);
-        RLVlevel = getJSONstring(json, "RLVlevel", RLVlevel);
+        RLVlevel = getJSONstring(json, "LockLevel", RLVlevel);
         renamerActive = getJSONinteger(json, "renamerActive", renamerActive);
         badWordsActive = getJSONinteger(json, "badWordsActive", badWordsActive);
         DisplayTokActive = getJSONinteger(json, "DisplayTokActive", DisplayTokActive);
@@ -796,9 +796,6 @@ default
             badWordsActive = FALSE;
             DisplayTokActive = FALSE;
         }
-        //if ((RLVlevel == "Hardcore" || RLVlevel == "Heavy")) {
-        //    batteryActive = TRUE;
-        //}
 
         if(getJSONstring(json, "Menu", "") == buttonSettings)
         {
