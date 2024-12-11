@@ -5,7 +5,7 @@
 // Database.lsl
 // All interactions with the external database
 // Timberwoof Lupindo
-// version: 2024-12-01
+// version: 2024-12-11
 
 // Startup sequence
 // state_entry() calls sendDatabaseRead()
