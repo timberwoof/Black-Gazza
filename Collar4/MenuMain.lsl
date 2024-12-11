@@ -213,7 +213,7 @@ mainMenu(key avatarKey) {
     integer doLeash = FALSE;
     integer doSafeword = FALSE;
     integer doRelease = FALSE;
-    integer doIncidents = TRUE; // ****
+    integer doIncidents = FALSE;
 
     if (avatarKey == llGetOwner()) {
         // wearer can do anything any time
