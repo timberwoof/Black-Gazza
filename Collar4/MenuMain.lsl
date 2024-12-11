@@ -4,7 +4,7 @@
 // June 2019
 string version = "2024-12-11";
 
-integer OPTION_DEBUG = TRUE;
+integer OPTION_DEBUG = FALSE;
 
 integer menuChannel = 0;
 integer menuListen = 0;
