@@ -258,7 +258,7 @@ sendDatabaseAdd(integer iSlot) {
         sayDebug("sendDatabaseAdd URL:"+URL);
         databaseQuery += [llHTTPRequest(URL,[],"")]; // append reqest_id for use it later in responder event
         llOwnerSay("Sending Database Request to add new character.");
-        llOwnerSay("Give it a moment, then set the new character's new name ad stuff.");
+        llOwnerSay("Give it a moment, then set the new character's new name and stuff.");
     } else {
         sayDebug("sendDatabaseAdd unattached");
         sendJSON("AssetNumber", assetNumber(iSlot), llGetOwner());
@@ -483,7 +483,7 @@ default
         // clear request_id from memory
         databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
 
-        // default values to be filled in fromt he request
+        // default values to be filled in from the request
         string assetNumber = unassignedAsset;
         string theCrime = "Unregistered";
         string theName = llGetOwner();
