@@ -47,7 +47,7 @@ string NONE = "None";
 string OOC = "OOC";
 
 // The indexes are 0 in these lists but +1 in the additional characters
-list assetNumberList = ["P-00000","P-00000","P-00000","P-00000","P-00000","P-00000"]; 
+list assetNumberList = [unassignedAsset,unassignedAsset,unassignedAsset,unassignedAsset,unassignedAsset,unassignedAsset]; 
 list crimeList = [UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
 list nameList = [UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED,UNRECORDED]; 
 list sentenceList = ["0","0","0","0","0","0"]; // it is not used in this collar but i decided to keep it
@@ -242,6 +242,31 @@ sendDatabaseWrite(integer iSlot) {
     }
 }
 
+//Fire off request to add this new inmate record
+// Parameter iSlot determines which character to get.
+// llHTTPRequest(URL+"add_inmate.cgi?key="+(string)id+"&name="+name+"&number=P-foobar",[],"");
+sendDatabaseAdd(integer iSlot) {
+    if (llGetAttached()) {
+        sayDebug("sendDatabaseAdd");
+        DisplayTemp("Adding DB");
+        READorWrite = "WRITE";
+        string URL = URL_BASE; // http://sl.blackgazza.com/
+        URL += URL_ADD; // add_inmate.cgi?key=
+        URL += getDatabaseKey(iSlot);
+        URL += "&name="+llGetUsername(llGetOwner());
+        URL += "&number=P-foobar";
+        sayDebug("sendDatabaseAdd URL:"+URL);
+        databaseQuery += [llHTTPRequest(URL,[],"")]; // append reqest_id for use it later in responder event
+        llOwnerSay("Sending Database Request to add new character.");
+        llOwnerSay("Give it a moment, then set the new character's new name ad stuff.");
+    } else {
+        sayDebug("sendDatabaseAdd unattached");
+        sendJSON("AssetNumber", assetNumber(iSlot), llGetOwner());
+        sendJSON("Crime", crime(iSlot), llGetOwner());
+        sendJSON("Name", name(iSlot), llGetOwner());
+    }
+}
+
 integer agentIsGuard(key agent)
 {
     list attachList = llGetAttachedList(agent);
@@ -301,6 +326,8 @@ characterMenu() {
     for (i=1; i<=6; i = i + 1) {
         if (assetNumber(i) != "") {
             buttons = buttons + [assetNumber(i)];
+        } else {
+            buttons = buttons + "Add New";
         }
     }
     setUpMenu("Character", llGetOwner(), "Choose your Asset Number", buttons);
@@ -457,7 +484,7 @@ default
         databaseQuery = llDeleteSubList(databaseQuery, listRequestIndex, listRequestIndex);
 
         // default values to be filled in fromt he request
-        string assetNumber = "P-00000";
+        string assetNumber = unassignedAsset;
         string theCrime = "Unregistered";
         string theName = llGetOwner();
 
@@ -516,7 +543,10 @@ default
         string request = getJSONstring(json, "Database", "");
         if (request != "") sayDebug("link_message("+json+")");
         if (request == "getupdate") sendDatabaseRead(gCharacterSlot);
-        if (request == "setcharacter") sendDatabaseRead(1);
+        if (request == "setcharacter") {
+            gCharacterSlot = 1;
+            sendDatabaseRead(gCharacterSlot);
+        }
         if (request == "setcrime") setCharacterCrime(id);
         if (request == "setname") setCharacterName(id);
         if (request == "incidents") incidentReportsMenu(id);
@@ -564,19 +594,25 @@ default
             if (menuID == "Character") {
                 // character selection menu
                 sayDebug("listen(channel, "+menuID+", "+text+")");
-                gCharacterSlot = llListFindList(assetNumberList, [text]) + 1;
-                if (gCharacterSlot < 1) {
-                    // this is an error. Fix it benignly..
-                    gCharacterSlot = 1;
+                if (text == "Add New") {
+                    // set new character slot number
+                    gCharacterSlot = llListFindList(assetNumberList, [unassignedAsset]) + 1;
+                    // Poke a new record into the database.
+                    sendDatabaseAdd(gCharacterSlot);
+                } else {
+                    gCharacterSlot = llListFindList(assetNumberList, [text]) + 1;
+                    if (gCharacterSlot < 1) {
+                        gCharacterSlot = 1; // fix this error benignly
+                    }
+                    sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
+                    sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
+                    sendJSON("Name", name(gCharacterSlot), llGetOwner());
+                    sendJSON("Class", class(gCharacterSlot), llGetOwner());
+                    sendJSON("Threat", threat(gCharacterSlot), llGetOwner());
+                    sendJSON("Mood", mood(gCharacterSlot), llGetOwner());
+                    sendJSON("ZapLevels", zapLevels(gCharacterSlot), llGetOwner());
+                    sendJSON("zapByObject", zapByObject(gCharacterSlot), llGetOwner());
                 }
-                sendJSON("AssetNumber", assetNumber(gCharacterSlot), llGetOwner());
-                sendJSON("Crime", crime(gCharacterSlot), llGetOwner());
-                sendJSON("Name", name(gCharacterSlot), llGetOwner());
-                sendJSON("Class", class(gCharacterSlot), llGetOwner());
-                sendJSON("Threat", threat(gCharacterSlot), llGetOwner());
-                sendJSON("Mood", mood(gCharacterSlot), llGetOwner());
-                sendJSON("ZapLevels", zapLevels(gCharacterSlot), llGetOwner());
-                sendJSON("zapByObject", zapByObject(gCharacterSlot), llGetOwner());
             } 
             else if (menuID == "Incident") {
                 // retrieve an incident report
