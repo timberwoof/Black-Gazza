@@ -1,11 +1,10 @@
 // Responder.lsl
 // Script for Black Gazza Collar 4
 // Timberwoof Lupindo, February 2020
-// version: 2023-03-08
+// version: 2023-04-15
 
 integer responderChannel;
 integer responderListen;
-string lockLevel;
 
 integer OPTION_DEBUG = FALSE;
 
@@ -16,7 +15,7 @@ sayDebug(string message)
         llOwnerSay("Responder: "+message);
     }
 }
-    
+
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -25,7 +24,7 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     }
     return result;
 }
-    
+
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -47,7 +46,7 @@ integer uuidToInteger(key uuid)
     string last2 = llGetSubString(last,6,12);
     list lasts = [last1, last2];
     uuidparts = llListReplaceList(uuidparts, lasts, 4, 4);
-    
+
     integer sum = 0;
     integer i = 0;
     // take each uuid part
@@ -70,17 +69,19 @@ integer uuidToInteger(key uuid)
     return sum;
 }
 
-string Role = "inmate";
+string role = "inmate";
 string assetNumber;
 string mood;
 string class;
 string crime;
 string threat;
-string locklevel;
+string lockLevel;
 string zaplevels;
 integer batteryPercent;
+string battery;
 
-list symbols = ["role", "assetNumber", "mood", "class", "crime", "threat", "lockLevel", "batteryPercent", "ZapLevels"];
+// Symbols according to Responder Protocol.
+list symbols = ["role", "assetNumber", "mood", "class", "crime", "threat", "lockLevel", "Battery", "batteryPercent", "ZapLevels"];
 list values;
 
 
@@ -91,20 +92,21 @@ default
         responderChannel = uuidToInteger(llGetOwner());
         responderListen = llListen(responderChannel,"", "", "");
     }
-    
+
     link_message(integer sender_num, integer num, string json, key id)
     {
     // We listen in on link status messages and pick the ones we're interested in
         sayDebug("link_message json "+json);
-        assetNumber = getJSONstring(json, "assetNumber", assetNumber);
-        crime = getJSONstring(json, "crime", crime);
-        class = getJSONstring(json, "class", class);
-        threat = getJSONstring(json, "threat", threat);
-        mood = getJSONstring(json, "mood", mood);
-        locklevel = getJSONstring(json, "locklevel", locklevel);
-        batteryPercent = getJSONinteger(json, "batteryPercent", batteryPercent);
+        assetNumber = getJSONstring(json, "AssetNumber", assetNumber);
+        crime = getJSONstring(json, "Crime", crime);
+        class = getJSONstring(json, "Class", class);
+        threat = getJSONstring(json, "Threat", threat);
+        mood = getJSONstring(json, "Mood", mood);
+        lockLevel = getJSONstring(json, "LockLevel", lockLevel);
+        battery = getJSONstring(json, "Battery", battery);
+        batteryPercent = getJSONinteger(json, "BatteryPercent", batteryPercent);
         zaplevels = getJSONstring(json, "ZapLevels", zaplevels);
-        values = [Role, assetNumber, mood, class, crime, threat, locklevel, batteryPercent, zaplevels];
+        values = [role, assetNumber, mood, class, crime, threat, lockLevel, batteryPercent, zaplevels];
     }
 
     listen(integer channel, string name, key id, string json)
@@ -112,7 +114,7 @@ default
         sayDebug("listen channel:"+(string)channel+" name:"+name+" json:"+json);
         string value = getJSONstring(json, "request", "");
         // {"request":["Mood","Class","LockLevel"]}
-        if ((batteryPercent > 4) && (value != "")) {
+        if ((battery == "OFF") || ((batteryPercent > 4) && (value != ""))) {
             sayDebug("listen request value: "+value);
             list requests = llJson2List(value);
             integer i;
@@ -132,6 +134,8 @@ default
             string jsonresponse = llList2Json(JSON_OBJECT, ["response", jsonlist]); // {"response":[{"Mood":"OOC"},{"Class":"blue"},{"LockLevel":"Off"}]}
             sayDebug("jsonresponse:"+jsonresponse);
             llWhisper(responderChannel, jsonresponse);
+        } else {
+            sayDebug("batteryPercent < 4 or value = ''");
         }
 
         if (name == "L-CON Battery Charger") {
