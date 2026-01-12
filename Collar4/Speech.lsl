@@ -2,7 +2,7 @@
 // Speech script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // March 2020
-// version: 2023-03-08
+// version: 2023-04-15
 
 // Handles all speech-related functions for the collar
 // Renamer - Gag - Bad Words
@@ -53,7 +53,7 @@ sendJSONinteger(string jsonKey, integer value, key avatarKey){
 sendJSON(string jsonKey, string value, key avatarKey){
     llMessageLinked(LINK_THIS, 0, llList2Json(JSON_OBJECT, [jsonKey, value]), avatarKey);
 }
-    
+
 string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     string result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -62,7 +62,7 @@ string getJSONstring(string jsonValue, string jsonKey, string valueNow){
     }
     return result;
 }
-    
+
 integer getJSONinteger(string jsonValue, string jsonKey, integer valueNow){
     integer result = valueNow;
     string value = llJsonGetValue(jsonValue, [jsonKey]);
@@ -79,13 +79,13 @@ processSpeech(string speech, key avatarKey){
         listWordsSpoken = llParseString2List(llToLower(speech),
             [" "], [",", ".", ";", ":", "!", "?", "'", "\""]);
     }
-        
+
     // parse the speech for bad words
     if(badWordsActive) {
         sayDebug("processSpeech badWordsActive");
         integer countBadWords = 0;
         integer i;
-        
+
         for (i = 0; i < llGetListLength(listWordsSpoken); i++) {
             string aWord = llList2String(listWordsSpoken, i);
             integer where = llListFindList(badWords, [aWord]);
@@ -94,11 +94,11 @@ processSpeech(string speech, key avatarKey){
             }
         }
         sayDebug("detected "+(string)countBadWords+" bad words");
-        
+
         if (countBadWords > 0) {
             // inform Display
             sendJSONinteger("badWordCount", countBadWords, avatarKey);
-            
+
             if (speechPenaltyBuzz) {
                 numTimesToBuzz = countBadWords;
                 llSetTimerEvent(3); // start the buzz cycle
@@ -109,7 +109,7 @@ processSpeech(string speech, key avatarKey){
             }
         }
     }
-    
+
     if(DisplayTokActive) {
         sayDebug("processSpeech DisplayTokActive(\""+speech+"\")");
         stringWordsSpoken = "";
@@ -117,7 +117,7 @@ processSpeech(string speech, key avatarKey){
     } else {
         llSay(0,speech);
     }
-    
+
 }
 
 sendRLVRestrictCommand(string why) {
@@ -168,7 +168,7 @@ default
         if (speechCommand != "") {
             sayDebug("link_message:"+speechCommand);
         }
-                
+
         if (speechCommand == "WordList") {
             string badWordString = llDumpList2String(badWords,", ");
             string message = "The bad word list is\n"+badWordString+"\n\n"+
@@ -184,7 +184,6 @@ default
         }
         if (speechCommand == "RenamerON") {
             if (rlvPresent) {
-                //sendRLVReleaseCommand("link_message RenamerON"); // why ws this here?
                 sendRLVRestrictCommand("link_message RenamerON");
             } else {
                 sayDebug("link_message got RenamerON command but rlvPresent = 0");
@@ -199,7 +198,7 @@ default
         } else if (speechCommand == "DisplayTokON") {
             DisplayTokActive = TRUE;
         }
-        
+
         string penaltyCommand = getJSONstring(json, "Penalties", "");
         if (penaltyCommand == "DisplayON") {
             speechPenaltyDisplay = TRUE;
@@ -224,7 +223,7 @@ default
         }
 
         batteryLevel = getJSONinteger(json, "batteryLevel", batteryLevel);
-        
+
         // handle a change in rlvPresent
         string value = llJsonGetValue(json, ["rlvPresent"]);
         if (value != JSON_INVALID) {
@@ -235,19 +234,19 @@ default
             }
         }
     }
-    
+
     listen(integer channel, string name, key avatarKey, string message){
         sayDebug("listen("+(string)channel+", '"+message+"')");
         // handle player's redirected speech
         if (channel == renameSpeechChannel && name == llKey2Name(llGetOwner()) && avatarKey == llGetOwner()) {
             processSpeech(message, avatarKey);
         }
-        
+
         // handle player's emotes
         if (channel == renameEmoteChannel && name == llKey2Name(llGetOwner()) && avatarKey == llGetOwner()) {
             llSay(0,message);
         }
-            
+
         // handle the bad word list dialog
         if (channel == textboxChannel) {
             sayDebug("listen "+message);
@@ -283,7 +282,7 @@ default
             }
         }
     }
-        
+
     timer() {
         if (speechPenaltyZap & numTimesToZap > 0) {
             sendJSON("RLV", "Zap Low", llGetOwner());
