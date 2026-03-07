@@ -134,6 +134,8 @@ setUpMenu(string identifier, key avatarKey, string message, list buttons)
     menuIdentifier = identifier;
     menuAgentKey = avatarKey; // remember who clicked
     string completeMessage = assetNumber + " " + message;
+    completeMessage = llGetSubString(completeMessage, 0, 500);
+
     menuChannel = -(llFloor(llFrand(10000)+1000));
     menuListen = llListen(menuChannel, "", avatarKey, "");
     llSetTimerEvent(30);
@@ -380,7 +382,6 @@ giveInfo(key avatarKey){
         }
     }
 
-    message = llGetSubString(message, 0, 511);
     setUpMenu(buttonInfo, avatarKey, message, buttons);
 }
 
