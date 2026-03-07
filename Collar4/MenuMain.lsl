@@ -2,7 +2,7 @@
 // Menu script for Black Gazza Collar 4
 // Timberwoof Lupindo
 // June 2019
-string version = "2024-12-11";
+string version = "2026-03-05";
 
 integer OPTION_DEBUG = FALSE;
 
@@ -49,13 +49,14 @@ string moodLockup = "Lockup";
 string buttonBlank = " ";
 string buttonInfo = "Info";
 string buttonSettings = "Settings";
+string buttonDocuments = "Documents";
 string buttonPunish = "Punish";
 string buttonLeash = "Leash";
 string buttonForceSit = "ForceSit";
 string buttonSafeword = "Safeword";
 string buttonRelease = "Release";
 string buttonIncidents = "Incidents";
-//string buttonHack = "Hack";
+string buttonHack = "Hack";
 
 key guardGroupKey = "b3947eb2-4151-bd6d-8c63-da967677bc69";
 key soundBlurp = "d5567c52-b78d-f78f-bcb1-605701b3af24";
@@ -273,8 +274,9 @@ mainMenu(key avatarKey) {
     buttons = buttons + menuButtonActive(buttonLeash, doLeash);
     buttons = buttons + menuButtonActive(buttonForceSit, doForceSit);
     buttons = buttons + buttonSettings;
+    buttons = buttons + buttonDocuments;
     buttons = buttons + buttonInfo;
-
+    buttons = buttons + buttonHack;
     setUpMenu(menuMain, avatarKey, message, buttons);
 }
 
@@ -286,9 +288,12 @@ doMainMenu(key avatarKey, string message) {
     else if (message == buttonSettings){
         sendJSON("Menu", buttonSettings, avatarKey);
     }
-    //else if (message == buttonHack){
-    //    hackMenu(avatarKey);
-    //}
+    else if (message == buttonDocuments){
+        documentsMenu(avatarKey);
+    }
+    else if (message == buttonHack){
+        hackMenu(avatarKey);
+    }
     else if (message == buttonPunish){
         punishMenu(avatarKey);
     }
@@ -310,6 +315,12 @@ doMainMenu(key avatarKey, string message) {
         llPlaySound(soundBlurp, 1.0);
         llSleep(0.5);
     }
+}
+
+hackMenu(key avatarKey) {
+    string message = "Hack";
+    list buttons = ["Error", "Warn", "Info", "Debug", "Trace"];
+    setUpMenu(buttonHack, avatarKey, message, buttons);
 }
 
 punishMenu(key avatarKey)
@@ -368,10 +379,20 @@ giveInfo(key avatarKey){
         message = message + "Used Memory: " + (string)llGetUsedMemory() + ".\n";
     }
 
+    list buttons = [];
+    setUpMenu(buttonInfo, avatarKey, message, buttons);
+}
+
+documentsMenu(key avatarKey) {
     // Prepare a list of documents to hand out
+    string message;
     list buttons = [];
     integer numNotecards = llGetInventoryNumber(INVENTORY_NOTECARD);
     if (numNotecards > 0) {
+        if (numNotecards > 9) {
+            llOwnerSay("Sorry. The collar can only list 9 documents.");
+            numNotecards == 9;
+        }
         message = message + "\nChoose a Notecard:";
         integer index;
         for (index = 0; index < numNotecards; index++) {
@@ -381,8 +402,7 @@ giveInfo(key avatarKey){
             buttons += ["Doc "+(string)inumber];
         }
     }
-
-    setUpMenu(buttonInfo, avatarKey, message, buttons);
+    setUpMenu(buttonDocuments, avatarKey, message, buttons);
 }
 
 doSetPunishmentLevels(key avatarKey, string message)
@@ -522,7 +542,7 @@ default
             sendJSON(RLV, message, avatarKey);
         }
         // Document
-        else if (menuIdentifier == buttonInfo) {
+        else if (menuIdentifier == buttonDocuments) {
             integer inumber = (integer)llGetSubString(message,4,4) - 1;
             sayDebug("listen: message:"+message+ " inumber:"+(string)inumber);
             if (inumber > -1) {
